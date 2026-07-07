@@ -1,0 +1,302 @@
+import { Component, OnInit, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+
+import { ComplianceApiService } from '../../core/services/api/compliance-api.service';
+import { TableComponent, TableColumn, TableAction } from '../../shared/components/table/table.component';
+import { PageComponent } from '../../shared/components/page/page.component';
+import { DateFieldComponent } from '../../shared/components/form/date-field/date-field.component';
+
+import { DialogModule } from 'primeng/dialog';
+import { MultiSelectModule } from 'primeng/multiselect';
+import { ButtonModule } from 'primeng/button';
+
+@Component({
+  selector: 'app-assignments',
+  standalone: true,
+  imports: [
+    CommonModule, 
+    FormsModule, 
+    TableComponent, 
+    PageComponent, 
+    DialogModule, 
+    MultiSelectModule, 
+    ButtonModule,
+    DateFieldComponent
+  ],
+  template: `
+    <app-page title="Compliances & Task Sets" icon="pi pi-sitemap" description="Manage task sets and branch compliances.">
+      
+      <div class="flex border-b border-gray-200 mb-4 mt-2">
+        <button class="px-4 py-2 font-medium" 
+                [ngClass]="activeTab() === 'ASSIGNMENTS' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'"
+                (click)="activeTab.set('ASSIGNMENTS')">
+          Compliances (Assignments)
+        </button>
+      </div>
+
+      <div class="card h-full">
+        <!-- ASSIGNMENTS TAB -->
+        <div *ngIf="activeTab() === 'ASSIGNMENTS'">
+          <app-table
+              [data]="assignments()"
+              [columns]="assignmentColumns"
+              [actions]="assignmentActions"
+              [showAddButton]="false"
+              [showRefreshButton]="true"
+              [paginator]="true"
+              [rows]="limit"
+              [lazy]="true"
+              [totalRecords]="totalRecords()"
+              (onLazyLoad)="handleLazyLoad($event)"
+              (onSearch)="handleSearch($event)"
+              (onRefresh)="loadAssignments()"
+          ></app-table>
+        </div>
+
+        <!-- TASK SETS TAB REMOVED (Moved to Task Sets Master) -->
+      </div>
+    </app-page>
+
+    <!-- Propose Timeline Modal -->
+    <p-dialog [visible]="showProposeModal()" (visibleChange)="showProposeModal.set($event)" [style]="{width: '450px'}" header="Propose Timeline" [modal]="true" class="p-fluid">
+      <ng-template pTemplate="content">
+        <div class="flex flex-column gap-4 mt-3" *ngIf="selectedAssignment()">
+          <p class="text-gray-700">Set a proposed completion date for <strong>{{ selectedAssignment()?.task_set_name }}</strong>.</p>
+          
+          <app-date-field
+            label="Proposed Date"
+            [field]="proposedDate"
+            [required]="true"
+            dateFormat="yy-mm-dd">
+          </app-date-field>
+        </div>
+      </ng-template>
+      <ng-template pTemplate="footer">
+        <button pButton pRipple label="Cancel" icon="pi pi-times" class="p-button-text" (click)="showProposeModal.set(false)"></button>
+        <button pButton pRipple label="Propose" icon="pi pi-check" class="p-button-text" [disabled]="!proposedDate()" (click)="proposeTimeline()"></button>
+      </ng-template>
+    </p-dialog>
+
+    <!-- Assign to Branches Modal -->
+    <p-dialog [visible]="showAssignModal()" (visibleChange)="showAssignModal.set($event)" [style]="{width: '500px'}" header="Assign Task Set" [modal]="true" class="p-fluid">
+      <ng-template pTemplate="content">
+        <div class="flex flex-column gap-4 mt-3" *ngIf="selectedTaskSet()">
+          <div class="bg-indigo-50 text-indigo-700 p-3 rounded text-sm">
+            Assigning Task Set: <strong>{{ selectedTaskSet()?.name }}</strong>
+          </div>
+          
+          <div class="flex flex-column gap-2">
+            <label class="font-medium text-sm text-gray-700">Select Branches <span class="text-red-500">*</span></label>
+            <p-multiSelect 
+              [options]="branches()" 
+              [(ngModel)]="selectedBranchIds" 
+              optionLabel="name" 
+              optionValue="id" 
+              placeholder="Select Branches" 
+              styleClass="w-full">
+            </p-multiSelect>
+          </div>
+          
+          <app-date-field
+            label="Proposed Timeline (Due Date)"
+            [field]="proposedTimeline"
+            [required]="true"
+            dateFormat="yy-mm-dd">
+          </app-date-field>
+        </div>
+      </ng-template>
+      <ng-template pTemplate="footer">
+        <button pButton pRipple label="Cancel" icon="pi pi-times" class="p-button-text" (click)="showAssignModal.set(false)"></button>
+        <button pButton pRipple label="Assign" icon="pi pi-check" class="p-button-text" [disabled]="selectedBranchIds.length === 0 || !proposedTimeline()" (click)="createAssignments()"></button>
+      </ng-template>
+    </p-dialog>
+  `
+})
+export class AssignmentsComponent implements OnInit {
+  activeTab = signal<'ASSIGNMENTS' | 'TASK_SETS'>('ASSIGNMENTS');
+  
+  assignments = signal<any[]>([]);
+  totalRecords = signal<number>(0);
+  page = 1;
+  limit = 10;
+  searchQuery = '';
+  taskSets = signal<any[]>([]);
+  branches = signal<any[]>([]);
+
+  // Propose Timeline Modal
+  showProposeModal = signal<boolean>(false);
+  selectedAssignment = signal<any>(null);
+  proposedDate = signal<Date | null>(null);
+
+  // Assign Modal
+  showAssignModal = signal<boolean>(false);
+  selectedTaskSet = signal<any>(null);
+  selectedBranchIds: number[] = [];
+  proposedTimeline = signal<Date | null>(null);
+
+  assignmentColumns: TableColumn[] = [
+    { field: 'task_set_name', header: 'Task Set Name', width: '30%' },
+    { field: 'proposed_timeline', header: 'Due Date', type: 'date', pipeFormat: 'mediumDate', width: '15%' },
+    { field: 'branch_name', header: 'Branch', width: '20%' },
+    { field: 'status', header: 'Status', type: 'status', width: '15%' }
+  ];
+
+  taskSetColumns: TableColumn[] = [
+    { field: 'name', header: 'Name', width: '40%' },
+    { field: 'default_due_date', header: 'Default Due Date', type: 'date', pipeFormat: 'mediumDate', width: '20%' }
+  ];
+
+  assignmentActions: TableAction[] = [
+    {
+      label: 'Propose Timeline',
+      icon: 'pi pi-calendar',
+      command: (row) => {
+        if (row.status === 'Pending_Timeline') {
+          this.openProposeModal(row);
+        }
+      }
+    },
+    {
+      label: 'Accept Timeline',
+      icon: 'pi pi-check',
+      styleClass: 'text-green-600',
+      command: (row) => {
+        if (row.status === 'Timeline_Review') {
+          this.acceptTimeline(row);
+        }
+      }
+    },
+    {
+      label: 'Execute Tasks',
+      icon: 'pi pi-list',
+      command: (row) => {
+        if (row.status === 'In_Progress' || row.status === 'REVIEW_PENDING' || row.status === 'COMPLETED' || row.status === 'REJECTED') {
+          this.goToTasks(row.id);
+        }
+      }
+    }
+  ];
+
+  taskSetActions: TableAction[] = [
+    {
+      label: 'Assign to Branches',
+      icon: 'pi pi-users',
+      command: (row) => this.openAssignModal(row)
+    }
+  ];
+
+  constructor(private api: ComplianceApiService, private router: Router) {}
+
+  ngOnInit() {
+    this.loadAssignments();
+    this.loadTaskSets();
+    this.api.getBranches().subscribe(data => {
+      // Keep real branch units and tolerate legacy payloads without a type field.
+      this.branches.set(data.filter((b: any) => !b.type || b.type === 'BRANCH'));
+    });
+  }
+
+  loadAssignments() {
+    const params: any = {
+      page: this.page,
+      limit: this.limit,
+    };
+    if (this.searchQuery) {
+      params.search = this.searchQuery;
+    }
+    
+    this.api.getAssignments(params).subscribe(res => {
+      this.assignments.set(res.data);
+      this.totalRecords.set(res.total);
+    });
+  }
+
+  handleLazyLoad(event: any) {
+    this.page = Math.floor(event.first / event.rows) + 1;
+    this.limit = event.rows;
+    if (event.globalFilter !== undefined) {
+      this.searchQuery = event.globalFilter;
+    }
+    this.loadAssignments();
+  }
+
+  handleSearch(query: string) {
+    this.searchQuery = query;
+    this.page = 1;
+    this.loadAssignments();
+  }
+
+  loadTaskSets() {
+    this.api.getTaskSets().subscribe(data => this.taskSets.set(data));
+  }
+
+  openProposeModal(assignment: any) {
+    this.selectedAssignment.set(assignment);
+    if (assignment.proposed_timeline) {
+      this.proposedDate.set(new Date(assignment.proposed_timeline));
+    } else {
+      this.proposedDate.set(null);
+    }
+    this.showProposeModal.set(true);
+  }
+
+  proposeTimeline() {
+    const asg = this.selectedAssignment();
+    const dt = this.proposedDate();
+    if (!asg || !dt) return;
+    
+    // Format date properly
+    const dateStr = dt.toISOString().split('T')[0];
+
+    this.api.proposeTimeline(asg.id, dateStr).subscribe(() => {
+      this.showProposeModal.set(false);
+      this.loadAssignments();
+      alert('Timeline proposed successfully!');
+    });
+  }
+
+  acceptTimeline(assignment: any) {
+    this.api.acceptTimeline(assignment.id).subscribe(() => {
+      this.loadAssignments();
+    });
+  }
+
+  goToTasks(assignmentId: number) {
+    this.router.navigate(['/assignments', assignmentId]);
+  }
+
+  openAssignModal(ts: any) {
+    this.selectedTaskSet.set(ts);
+    this.selectedBranchIds = [];
+    if (ts.default_due_date) {
+      this.proposedTimeline.set(new Date(ts.default_due_date));
+    } else {
+      this.proposedTimeline.set(null);
+    }
+    this.showAssignModal.set(true);
+  }
+
+  createAssignments() {
+    const ts = this.selectedTaskSet();
+    const dt = this.proposedTimeline();
+
+    if (this.selectedBranchIds.length === 0 || !dt || !ts) {
+      return;
+    }
+
+    const payload = {
+      task_set_id: ts.id,
+      branch_ids: this.selectedBranchIds,
+      proposed_timeline: dt.toISOString().split('T')[0]
+    };
+
+    this.api.createAssignment(payload).subscribe(() => {
+      this.showAssignModal.set(false);
+      this.loadAssignments();
+      this.activeTab.set('ASSIGNMENTS');
+      alert('Assignments created successfully!');
+    });
+  }
+}

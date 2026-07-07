@@ -1,0 +1,99 @@
+// Table Component Styles for PrimeNG 21+
+// Using PrimeNG official design tokens
+
+// Thin scrollbar
+.p-datatable-table-container {
+    scrollbar-width: thin;
+}
+
+// Header styling - using PrimeNG tokens
+.p-datatable {
+    thead tr th,
+    thead > tr > th,
+    .p-datatable-thead > tr > th {
+        background: var(--p-datatable-header-cell-background) !important;
+        color: var(--p-datatable-header-cell-color) !important;
+        border-color: var(--p-datatable-header-cell-border-color) !important;
+        border-bottom-width: 2px !important;
+        border-right: 1px solid var(--p-datatable-header-cell-border-color) !important;
+        font-weight: 600 !important;
+        font-size: 0.8125rem !important;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: var(--p-datatable-header-cell-padding) !important;
+        
+        &:last-child {
+            border-right: none !important;
+        }
+    }
+
+    // Body row styling
+    tbody tr,
+    tbody > tr,
+    .p-datatable-tbody > tr {
+        background: var(--p-datatable-row-background) !important;
+        
+        td,
+        > td {
+            padding: var(--p-datatable-body-cell-padding);
+            font-size: 0.9375rem;
+            border-color: var(--p-datatable-body-cell-border-color);
+            border-right: 1px solid var(--p-datatable-body-cell-border-color);
+            color: var(--p-text-color);
+            
+            &:last-child {
+                border-right: none;
+            }
+        }
+
+        &:hover {
+            background: var(--p-datatable-row-hover-background) !important;
+            color: var(--p-datatable-row-hover-color) !important;
+        }
+    }
+}
+
+// Sticky header for scrollable tables
+.p-datatable-scrollable {
+    .p-datatable-thead {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 10 !important;
+    }
+    
+    .p-datatable-thead > tr > th {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 10 !important;
+        background: var(--p-datatable-header-cell-background) !important;
+    }
+}
+
+// Context menu popup styling
+.p-menu.p-menu-overlay,
+.p-menu-overlay {
+    max-width: 180px;
+}
+
+// Prevent global horizontal scrollbar
+html, body {
+    overflow-x: hidden;
+}
+
+.action-icon {
+  cursor: pointer;
+  margin-right: 10px;
+  font-size: 16px;
+  color: #3f51b5;
+}
+
+.action-icon:hover {
+  color: #1a237e;
+  transform: scale(1.2);
+}
+.print-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;   /* 👈 SPACE BETWEEN ICONS */
+}

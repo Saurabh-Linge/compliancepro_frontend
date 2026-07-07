@@ -1,0 +1,148 @@
+<app-page title="Manage Users" icon="pi pi-users">
+    <div class="card h-full">
+    <app-table
+        [data]="users()"
+        [columns]="tableColumns"
+        [loading]="loading()"
+        [actions]="tableActions"
+        (onAdd)="openNew()"
+        [showRefreshButton]="true"
+        [paginator]="true"
+        [rows]="10"
+        (onRefresh)="loadData()"
+    ></app-table>
+    </div>
+</app-page>
+
+<p-drawer
+    [visible]="userDialog()"
+    (visibleChange)="userDialog.set($event)"
+    position="right"
+    [style]="{ width: '700px', maxWidth: '96vw' }"
+    [modal]="true"
+    [dismissible]="true"
+    [showCloseIcon]="false"
+    styleClass="drawer-layout"
+>
+    <ng-template pTemplate="header">
+        <div class="drawer-header-row">
+            <div class="drawer-title-wrap">
+                <span class="drawer-title-icon">
+                    <i class="pi pi-user"></i>
+                </span>
+                <div>
+                    <div class="text-900 font-semibold text-xl">User Details</div>
+                    <div class="text-600 text-sm mt-1">Manage user account</div>
+                </div>
+            </div>
+            <button pButton pRipple type="button" icon="pi pi-times" class="p-button-text p-button-rounded" (click)="hideDialog()"></button>
+        </div>
+    </ng-template>
+
+    <ng-template pTemplate="content">
+        <div class="drawer-content-shell">
+            <section class="drawer-section">
+                <div class="section-heading">
+                    <span class="section-kicker">Account Info</span>
+                    <span class="section-line"></span>
+                </div>
+                <div class="grid formgrid p-fluid drawer-form-grid">
+                    <div class="field col-12 md:col-6">
+                        <app-text-field
+                            label="Username"
+                            [field]="username"
+                            [required]="true"
+                            [error]="submitted() && !username() ? 'Username is required' : ''">
+                        </app-text-field>
+                    </div>
+                    <div class="field col-12 md:col-6">
+                        <app-text-field
+                            label="Full Name"
+                            [field]="fullName"
+                            [required]="true"
+                            [error]="submitted() && !fullName() ? 'Full Name is required' : ''">
+                        </app-text-field>
+                    </div>
+                    
+                    <div class="field col-12">
+                        <app-text-field
+                            label="Email"
+                            [field]="email">
+                        </app-text-field>
+                    </div>
+
+                    <div class="field col-12">
+                        <app-text-field
+                            label="Password"
+                            placeholder="Leave blank to keep existing..."
+                            [field]="password">
+                        </app-text-field>
+                    </div>
+                </div>
+            </section>
+
+            <section class="drawer-section">
+                <div class="section-heading">
+                    <span class="section-kicker">Role & Access</span>
+                    <span class="section-line"></span>
+                </div>
+                <div class="grid formgrid p-fluid drawer-form-grid">
+                    <div class="field col-12 md:col-6">
+                        <app-select-field
+                            label="Role"
+                            [field]="role"
+                            [options]="roles"
+                            optionLabel="label"
+                            optionValue="value"
+                            (onChange)="role() === 'CO' ? branchId.set(null) : managedBranchIds.set([])"
+                            [required]="true"
+                            [error]="submitted() && !role() ? 'Role is required' : ''">
+                        </app-select-field>
+                    </div>
+                    <div class="field col-12 md:col-6">
+                        <ng-container *ngIf="role() !== 'CO'">
+                            <app-select-field
+                                label="Branch / Dept"
+                                [field]="branchId"
+                                [options]="branches()"
+                                optionLabel="label"
+                                optionValue="value"
+                                [showClear]="true">
+                            </app-select-field>
+                        </ng-container>
+                        <ng-container *ngIf="role() === 'CO'">
+                            <div class="flex flex-column gap-2 mt-2">
+                                <label class="font-medium text-sm text-gray-700">Managed Branches / Departments</label>
+                                <p-multiSelect 
+                                    [options]="branches()" 
+                                    [(ngModel)]="managedBranchIds" 
+                                    (ngModelChange)="managedBranchIds.set($event)"
+                                    optionLabel="label" 
+                                    optionValue="value"
+                                    [optionDisabled]="'disabled'"
+                                    display="chip" 
+                                    placeholder="Select Branches" 
+                                    [style]="{'width':'100%'}"
+                                    class="w-full">
+                                </p-multiSelect>
+                            </div>
+                        </ng-container>
+                    </div>
+                    <div class="field col-12">
+                        <app-checkbox-field
+                            label="Account Active"
+                            [field]="isActive">
+                        </app-checkbox-field>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </ng-template>
+
+    <ng-template pTemplate="footer">
+        <div class="drawer-footer-row">
+            <button pButton pRipple label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary" (click)="hideDialog()"></button>
+            <button pButton pRipple label="Save" icon="pi pi-check" class="p-button-primary" (click)="saveUser()"></button>
+        </div>
+    </ng-template>
+</p-drawer>

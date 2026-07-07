@@ -1,0 +1,421 @@
+@use 'mixins' as *;
+
+.layout-topbar {
+    position: fixed;
+    height: 3.5rem;
+    z-index: 997;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0 0.75rem;
+     background-color: rgba(63, 81, 181, 0.85);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    
+    transition: left var(--layout-section-transition-duration);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    -webkit-app-region: no-drag;
+    cursor: default !important;
+
+    // Make all interactive elements non-draggable
+    button,
+    a,
+    input,
+    .p-button,
+    .p-chip,
+    .p-autocomplete,
+    .topbar-search-wrapper,
+    .layout-topbar-logo,
+    .layout-menu-button,
+    .win-btn {
+        -webkit-app-region: no-drag;
+    }
+
+    // Specific cursor for buttons and links - must come after topbar cursor
+    button,
+    a,
+    .p-button,
+    .p-button *,
+    .win-btn,
+    .layout-menu-button,
+    .layout-topbar-action {
+        cursor: pointer !important;
+    }
+
+    // Text cursor for inputs
+    input,
+    .p-autocomplete input {
+        cursor: text !important;
+    }
+
+    // Chips should show default cursor
+    .p-chip {
+        cursor: default !important;
+    }
+
+    .network-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.1);
+        margin-right: 1rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        
+        i {
+            font-size: 1rem;
+        }
+
+        &.online {
+            i {
+                color: #4ade80; // Green Icon only
+            }
+             // Text inherits white from below or default
+        }
+        
+        &.offline {
+            i {
+                color: #ef4444; // Red Icon only
+            }
+        }
+
+        .status-text {
+            color: #ffffff !important;
+        }
+    }
+
+    .window-controls {
+        display: flex;
+        align-items: center;
+        margin-left: 0.25rem;
+        gap: 0.25rem;
+        height: 100%;
+        border-left: 1px solid rgba(255, 255, 255, 0.18);
+        padding-left: 0.5rem;
+        flex-shrink: 0;
+        order: 999;
+
+        .win-btn {
+            background: transparent;
+            border: none;
+            width: 2.5rem;
+            height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+
+            &:hover {
+                background: rgba(255, 255, 255, 0.12);
+            }
+
+            &.close:hover {
+                background: #ef4444;
+                color: white;
+            }
+
+            i {
+                font-size: 1rem;
+            }
+        }
+    }
+
+    .layout-topbar-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        height: 100%;
+        flex-shrink: 0;
+    }
+
+    justify-content: space-between;
+
+
+    .layout-topbar-logo {
+        display: inline-flex;
+        align-items: center;
+        color: #ffffff;
+        height: 100%;
+        padding: 0.25rem 0.5rem 0.25rem 0;
+        cursor: pointer !important;
+        -webkit-app-region: no-drag;
+        gap: 0.75rem;
+
+        .topbar-logo-img {
+            height: 2.25rem;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .bank-name {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 1rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0;
+            white-space: nowrap;
+            color: #ffffff;
+        }
+
+        &:focus-visible {
+            @include focused();
+        }
+    }
+
+    .topbar-role-dropdown {
+        margin-right: 0.5rem;
+    }
+
+    .topbar-language-dropdown {
+        margin-left: 0.5rem;
+    }
+
+    .layout-topbar-action {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        color: #ffffff;
+        border-radius: 4px;
+        width: 2.25rem;
+        height: 2.25rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        border: none;
+        background: transparent;
+
+        &:hover {
+            background-color: rgba(255, 255, 255, 0.12);
+        }
+
+        i {
+            font-size: 1.1rem;
+            color: #ffffff;
+        }
+    }
+
+    .layout-topbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        justify-content: flex-end;
+        min-width: 0;
+        overflow: hidden;
+        height: 100%;
+    }
+
+    .topbar-action-btn {
+        button {
+            height: 2.25rem !important;
+            padding: 0 0.75rem !important;
+            color: var(--text-color) !important;
+            border: 1px solid var(--surface-border) !important;
+            border-radius: 6px !important;
+            font-weight: 600 !important;
+            font-size: 0.875rem !important;
+            background: var(--surface-card) !important;
+            transition: all 0.2s ease !important;
+            
+            .p-button-label,
+            .p-button-icon {
+                color: var(--text-color) !important;
+            }
+            
+            &:hover {
+                background: var(--surface-hover) !important;
+                border-color: var(--surface-border) !important;
+                box-shadow: none !important;
+            }
+        }
+    }
+
+    .layout-topbar-user-profile {
+        margin: 0 1.5rem;
+        padding: 0.5rem 1rem;
+        background: var(--surface-ground);
+        border-radius: 4px;
+        border: 1px solid var(--surface-border);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: none;
+
+        .user-id {
+            font-weight: 700;
+            color: var(--text-color);
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+        }
+
+        &::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: #22c55e; /* Green status dot */
+            border-radius: 50%;
+        }
+    }
+
+    // Search wrapper styling
+    .topbar-search-wrapper {
+        flex: none;
+        max-width: none;
+        min-width: 0;
+
+        .p-autocomplete,
+        .p-autocomplete-input-wrapper {
+            width: 100%;
+        }
+
+        // Icon styling
+        .p-icon-field {
+            width: 100%;
+
+            .p-input-icon {
+                color: var(--text-color);
+                left: 0.75rem;
+            }
+        }
+
+        input,
+        .p-autocomplete-input,
+        input.p-inputtext {
+            height: 2.25rem !important;
+            background: var(--surface-card) !important;
+            border: 1px solid var(--surface-border) !important;
+            border-radius: 6px !important;
+            color: var(--text-color) !important;
+            font-size: 0.9rem !important;
+            font-weight: 500 !important;
+            padding: 0 1rem 0 2.5rem !important; // Extra left padding for icon
+            transition: all 0.2s ease !important;
+            letter-spacing: 0.3px !important;
+
+            &::placeholder {
+                color: var(--text-color-secondary) !important;
+                font-weight: 400 !important;
+            }
+
+            &:focus {
+                background: var(--surface-ground) !important;
+                border-color: var(--primary-color) !important;
+                box-shadow: 0 0 0 3px var(--primary-color-alpha-20) !important;
+                color: var(--text-color) !important;
+            }
+
+            &:enabled:hover {
+                border-color: var(--surface-border-hover) !important;
+            }
+        }
+    }
+
+    // General chip styling (company code, etc.)
+    .p-chip {
+        height: 2.25rem;
+        padding: 0 0.75rem;
+        border-radius: 4px;
+        background: var(--surface-ground);
+        border: 1px solid var(--surface-border);
+        color: var(--text-color);
+        font-weight: 600;
+        font-size: 0.875rem;
+
+        .p-chip-icon {
+            color: var(--text-color);
+            font-size: 0.875rem;
+        }
+
+        .p-chip-text {
+            color: var(--text-color);
+            font-weight: 600;
+        }
+    }
+
+    .logout-button {
+         // Keep existing classes from PrimeNG, just ensure color contrast
+         color: var(--text-color) !important;
+         
+         &:hover {
+            background: rgba(239, 68, 68, 0.2) !important;
+            color: var(--text-color) !important;
+            border-color: #ef4444 !important;
+         }
+    }
+}
+
+@media (max-width: 991px) {
+    .layout-topbar {
+        padding: 0 1rem;
+        
+        .layout-topbar-user-profile {
+            display: none;
+        }
+
+        // Hide non-essential actions on small screens
+        .hide-on-small {
+            display: none !important;
+        }
+
+        // Make search bar more compact
+        .topbar-search-wrapper {
+            max-width: 200px;
+        }
+    }
+}
+
+// Additional breakpoint for very small screens
+@media (max-width: 768px) {
+    .layout-topbar {
+        padding: 0 0.5rem;
+
+        .topbar-search-wrapper {
+            max-width: 150px;
+        }
+
+        .layout-topbar-logo img {
+            height: 3.5rem;
+        }
+    }
+}
+
+.chip-online {
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  border-radius: 6px;
+  background: rgba(34, 197, 94, 0.15) !important;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #22c55e !important;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.chip-online .p-chip-icon {
+  color: #22c55e !important;
+}
+
+.chip-offline {
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.15) !important;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444 !important;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.chip-offline .p-chip-icon {
+  color: #ef4444 !important;
+}

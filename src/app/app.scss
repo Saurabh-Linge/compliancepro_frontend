@@ -1,0 +1,26 @@
+/* VS Code Dark Modern Theme Overrides */
+.app-dark {
+    /* Level 1: Main Background (Editor) - #1f1f1f is VS Code Modern default */
+    --surface-ground: #1f1f1f;
+    --surface-section: #1f1f1f;
+
+    /* Level 2: Sidebar / Cards / Panels - #252526 */
+    --surface-card: #252526;
+
+    /* Level 3: Overlays / Topbar / Elevated - #333333 (Activity Bar style) */
+    --surface-overlay: #333333;
+
+    /* Borders - Subtle separation */
+    --surface-border: #3e3e3e;
+
+    /* Hover - List hover style */
+    --surface-hover: #2a2d2e;
+
+    --text-color: #cccccc;
+    --text-color-secondary: #9fa6b2;
+
+    --primary-color: #3b82f6;
+    --primary-color-text: #ffffff;
+}
+
+/* Global Styles */

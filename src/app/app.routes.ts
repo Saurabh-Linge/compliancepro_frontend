@@ -1,0 +1,38 @@
+import { Routes } from '@angular/router';
+import { AppLayout } from './shell/layout/component/app.layout';
+import { authGuard } from './core/guards/auth.guard';
+
+export const routes: Routes = [
+  {
+    path: '',
+    redirectTo: '/login',
+    pathMatch: 'full'
+  },
+  {
+    path: '',
+    component: AppLayout,
+    canActivate: [authGuard],
+    canActivateChild: [authGuard],
+    children: [
+      { path: '', redirectTo: 'home', pathMatch: 'full' },
+      { path: 'home', loadComponent: () => import('./features/dashboard/dashboard').then(mod => mod.Dashboard) },
+      { path: 'circulars', loadComponent: () => import('./features/circulars/circulars.component').then(mod => mod.CircularsComponent) },
+      { path: 'circulars/:id/chat', loadComponent: () => import('./features/circulars/circular-chat.component').then(m => m.CircularChatComponent) },
+      { path: 'tasks', loadComponent: () => import('./features/tasks/tasks.component').then(mod => mod.TasksComponent) },
+      { path: 'assignments', loadComponent: () => import('./features/assignments/assignments').then(mod => mod.AssignmentsComponent) },
+      { path: 'assignments/:id', loadComponent: () => import('./features/assignments/assignment-details').then(mod => mod.AssignmentDetailsComponent) },
+      { path: 'review', loadComponent: () => import('./features/review/review.component').then(mod => mod.ReviewComponent) },
+      { path: 'review/:id', loadComponent: () => import('./features/review/review-details.component').then(mod => mod.ReviewDetailsComponent) },
+      { path: 'task-sets', loadComponent: () => import('./features/task-sets/task-sets').then(mod => mod.TaskSetsComponent) },
+      { path: 'admin/authorities', loadComponent: () => import('./features/admin/authorities/authorities').then(mod => mod.Authorities) },
+      { path: 'admin/branches', loadComponent: () => import('./features/admin/branches/branches').then(mod => mod.Branches) },
+      { path: 'admin/users', loadComponent: () => import('./features/admin/users/users').then(mod => mod.Users) },
+      { path: 'admin/task-headers', loadComponent: () => import('./features/admin/task-headers.component').then(mod => mod.TaskHeadersComponent) },
+    ]
+  },
+  { 
+    path: 'login', 
+    loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent) 
+  },
+  { path: '**', redirectTo: '/home' },
+];

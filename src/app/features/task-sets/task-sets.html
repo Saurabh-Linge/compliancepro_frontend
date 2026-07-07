@@ -1,0 +1,123 @@
+<app-page title="Task Sets Master" icon="pi pi-server" description="Manage Task Sets, map tasks, assign branches, and reopen for recompliance.">
+  <div class="card h-full">
+    <app-table
+        [data]="taskSets()"
+        [columns]="tableColumns"
+        [actions]="tableActions"
+        (onRefresh)="loadData()"
+        (onAdd)="openCreateModal()"
+        [showAddButton]="true"
+        [showRefreshButton]="true"
+        [paginator]="true"
+        [rows]="10"
+    ></app-table>
+  </div>
+</app-page>
+
+<!-- Task Set Form Drawer -->
+<p-drawer [(visible)]="showFormDrawer" position="right" [style]="{ width: '50rem' }" [header]="isEditMode ? 'Edit Task Set' : 'New Task Set'">
+  <div class="flex flex-column h-full overflow-hidden">
+    
+    <!-- Main Scrollable Area -->
+    <div class="flex-grow-1 overflow-y-auto overflow-x-hidden p-3 flex flex-column gap-5">
+      
+      <!-- Basic Details -->
+      <section>
+        <h4 class="mt-0 mb-3 text-900 border-bottom-1 border-300 pb-2"><i class="pi pi-file-edit mr-2 text-primary"></i>Basic Details</h4>
+        <div class="formgrid grid p-fluid">
+          <div class="field col-12 md:col-6">
+            <app-text-field
+              label="Task Set Name"
+              [field]="newTaskSetName"
+              [required]="true">
+            </app-text-field>
+          </div>
+          <div class="field col-12 md:col-6">
+            <app-select-field
+              label="Task Set Frequency"
+              [field]="newTaskSetFrequency"
+              [options]="frequencies"
+              optionLabel="label"
+              optionValue="value">
+            </app-select-field>
+          </div>
+          <div class="field col-12 md:col-6">
+            <app-date-field
+              label="Start Date"
+              [field]="newTaskSetStartDate"
+              dateFormat="yy-mm-dd">
+            </app-date-field>
+          </div>
+          <div class="field col-12 md:col-6">
+            <app-date-field
+              label="End Date"
+              [field]="newTaskSetEndDate"
+              dateFormat="yy-mm-dd">
+            </app-date-field>
+          </div>
+          <div class="field col-12 md:col-6">
+            <app-date-field
+              label="Reporting Date"
+              [field]="newTaskSetReportingDate"
+              dateFormat="yy-mm-dd">
+            </app-date-field>
+          </div>
+          <div class="field col-12 md:col-6">
+            <app-date-field
+              label="Due Date [For Branch]"
+              [field]="newTaskSetDueDate"
+              dateFormat="yy-mm-dd">
+            </app-date-field>
+          </div>
+        </div>
+      </section>
+
+      <!-- Map Tasks -->
+      <section>
+        <div class="flex align-items-center justify-content-between border-bottom-1 border-300 pb-2 mb-3">
+          <h4 class="m-0 text-900"><i class="pi pi-list mr-2 text-primary"></i>Map Tasks</h4>
+          <span class="text-sm font-bold text-primary"><i class="pi pi-check-circle"></i> {{ targetTasks.length }} Selected</span>
+        </div>
+        <div class="border-round border-1 border-300 w-full" style="height: 22rem; display: flex; flex-direction: column;">
+          <app-table
+            [data]="allTasks"
+            [columns]="taskColumns"
+            [selectable]="true"
+            [(selection)]="targetTasks"
+            [paginator]="true"
+            [rows]="5"
+            [dataKey]="'id'"
+            [showAddButton]="false"
+            style="flex: 1; display: flex; flex-direction: column; overflow: hidden;"
+          ></app-table>
+        </div>
+      </section>
+
+      <!-- Assign Branches -->
+      <section>
+        <h4 class="mt-0 mb-3 text-900 border-bottom-1 border-300 pb-2"><i class="pi pi-sitemap mr-2 text-primary"></i>Assign Branches <span class="font-normal text-600 text-sm">(Optional)</span></h4>
+        <div class="formgrid grid p-fluid align-items-end">
+          <div class="field col-12">
+              <label class="font-bold">Select Branches/Departments</label>
+              <p-multiSelect 
+                [options]="branches" 
+                [(ngModel)]="selectedBranches" 
+                optionLabel="name" 
+                placeholder="Choose one or more branches..." 
+                display="chip"
+                styleClass="w-full"
+                appendTo="body">
+              </p-multiSelect>
+          </div>
+        </div>
+      </section>
+
+    </div>
+    
+    <!-- Footer -->
+    <div class="border-top-1 border-300 p-3 flex justify-content-end gap-2 bg-white flex-shrink-0">
+      <button pButton pRipple type="button" label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary" (click)="showFormDrawer.set(false)"></button>
+      <button pButton pRipple type="button" [label]="isEditMode ? 'Save Changes' : 'Create Task Set'" icon="pi pi-check" [disabled]="!newTaskSetName()" (click)="saveTaskSet()"></button>
+    </div>
+  </div>
+</p-drawer>

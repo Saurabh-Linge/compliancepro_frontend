@@ -1,0 +1,21 @@
+<div class="flex flex-column h-full w-full bg-surface-ground gap-1" style="display: flex; flex-direction: column;">
+  <div class="px-4 py-1 mt-1 flex align-items-center justify-content-between page-header">
+    <!-- DEBUG MARKER: IF YOU SEE THIS, THE COMPONENT IS RENDERING UPDATED HTML -->
+    <div class="flex flex-column">
+      <h1>
+        <i *ngIf="icon()" [class]="icon()"></i>
+        {{title()}}
+      </h1>
+      <span *ngIf="subtitle()" class="subtitle">{{subtitle()}}</span>
+    </div>
+    <div class="flex align-items-center gap-3">
+      <ng-content select="[actions]"></ng-content>
+    </div>
+  </div>
+
+  <div class="flex-grow-1 overflow-hidden px-4 pb-2 mt-0">
+    <div class="h-full w-full relative flex flex-column gap-2" style="display: flex; flex-direction: column;">
+      <ng-content></ng-content>
+    </div>
+  </div>
+</div>

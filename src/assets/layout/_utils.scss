@@ -1,0 +1,158 @@
+/* Utils */
+.clearfix:after {
+    content: ' ';
+    display: block;
+    clear: both;
+}
+
+.card {
+    background: var(--surface-card);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border-radius: var(--content-border-radius);
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+}
+
+.p-toast {
+
+    &.p-toast-top-right,
+    &.p-toast-top-left,
+    &.p-toast-top-center {
+        top: 100px;
+    }
+}
+
+/* Global Form Layout Utilities */
+.form-row {
+    display: grid;
+    gap: 20px;
+    width: 100%;
+
+    &.cols-1 {
+        grid-template-columns: 1fr;
+    }
+
+    &.cols-2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    &.cols-3 {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    &.cols-4 {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    @media (max-width: 768px) {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+.form-section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+}
+
+/* Compliance Pro Page Utilities */
+.ap-page {
+    padding: 1rem;
+}
+
+.ap-page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.ap-page-title-wrap {
+    min-width: 0;
+}
+
+.ap-page-title {
+    margin: 0;
+    color: var(--ap-heading-color);
+    font-size: 1.35rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.ap-page-subtitle {
+    margin: 0.25rem 0 0;
+    color: var(--ap-muted-color);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.ap-page-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* Compliance Pro Card Utilities */
+.ap-card {
+    background: var(--surface-card);
+    border: 1px solid var(--ap-border-color);
+    border-radius: var(--ap-radius-lg);
+    box-shadow: var(--ap-shadow-soft);
+    padding: 1rem;
+}
+
+.ap-card+.ap-card {
+    margin-top: 1rem;
+}
+
+.ap-section-title {
+    margin: 0 0 0.75rem;
+    color: var(--ap-heading-color);
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+/* Compliance Pro Compact Helpers */
+.ap-muted {
+    color: var(--ap-muted-color);
+}
+
+.ap-text-strong {
+    color: var(--ap-heading-color);
+    font-weight: 700;
+}
+
+.ap-compact-table {
+    font-size: 0.86rem;
+}
+
+.ap-compact-table th,
+.ap-compact-table td {
+    padding: 0.55rem 0.65rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .ap-page {
+        padding: 0.75rem;
+    }
+
+    .ap-page-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .ap-page-actions {
+        justify-content: flex-start;
+    }
+}

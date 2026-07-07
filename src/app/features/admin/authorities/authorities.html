@@ -1,0 +1,76 @@
+<app-page title="Manage Authorities" icon="pi pi-building">
+    <div class="card h-full">
+    <app-table
+        [data]="authorities()"
+        [columns]="tableColumns"
+        [loading]="loading()"
+        [actions]="tableActions"
+        (onAdd)="openNew()"
+        [showRefreshButton]="true"
+        [paginator]="true"
+        [rows]="10"
+        (onRefresh)="loadAuthorities()"
+    ></app-table>
+    </div>
+</app-page>
+
+<p-drawer
+    [visible]="authorityDialog()"
+    (visibleChange)="authorityDialog.set($event)"
+    position="right"
+    [style]="{ width: '450px', maxWidth: '96vw' }"
+    [modal]="true"
+    [dismissible]="true"
+    [showCloseIcon]="false"
+    styleClass="drawer-layout"
+>
+    <ng-template pTemplate="header">
+        <div class="drawer-header-row">
+            <div class="drawer-title-wrap">
+                <span class="drawer-title-icon">
+                    <i class="pi pi-building"></i>
+                </span>
+                <div>
+                    <div class="text-900 font-semibold text-xl">Authority Details</div>
+                    <div class="text-600 text-sm mt-1">Manage authority record</div>
+                </div>
+            </div>
+            <button pButton pRipple type="button" icon="pi pi-times" class="p-button-text p-button-rounded" (click)="hideDialog()"></button>
+        </div>
+    </ng-template>
+
+    <ng-template pTemplate="content">
+        <div class="drawer-content-shell">
+            <section class="drawer-section">
+                <div class="section-heading">
+                    <span class="section-kicker">Authority Info</span>
+                    <span class="section-line"></span>
+                </div>
+                <div class="grid formgrid p-fluid drawer-form-grid">
+                    <div class="field col-12">
+                        <app-text-field
+                            label="Authority Name"
+                            [field]="authName"
+                            [required]="true"
+                            [error]="submitted() && !authName() ? 'Name is required' : ''">
+                        </app-text-field>
+                    </div>
+                    <div class="field col-12">
+                        <app-text-field
+                            label="Source URL"
+                            [field]="authSourceUrl"
+                            placeholder="https://...">
+                        </app-text-field>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </ng-template>
+
+    <ng-template pTemplate="footer">
+        <div class="drawer-footer-row">
+            <button pButton pRipple label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary" (click)="hideDialog()"></button>
+            <button pButton pRipple label="Save" icon="pi pi-check" class="p-button-primary" (click)="saveAuthority()"></button>
+        </div>
+    </ng-template>
+</p-drawer>

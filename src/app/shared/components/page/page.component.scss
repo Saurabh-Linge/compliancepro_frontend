@@ -1,0 +1,56 @@
+/* Page Component Styles */
+app-page {
+    display: block;
+    height: 100%;
+    width: 100%;
+}
+
+.page-header {
+    // margin-bottom: 2.5rem;
+    position: relative;
+    z-index: 1;
+
+    h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-color);
+        margin: 0.75rem 0 0.75rem 0;
+        display: flex;
+        align-items: center;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        position: relative;
+        line-height: 1.2;
+
+        // &::after {
+        //     content: '';
+        //     position: absolute;
+        //     bottom: -8px;
+        //     left: 0;
+        //     width: 40px;
+        //     height: 3px;
+        //     border-radius: 3px;
+        //     background-color: var(--primary-color);
+        // }
+
+        i {
+            color: var(--primary-color);
+            margin-right: 0.75rem;
+            // Inherit size to satisfy "same size" requirement if distinct from dashboard, 
+            // but user asked for "same as dashboard". Dashboard has 1.75rem.
+            // I will use inherit to be safe based on previous interaction, 
+            // or I can just use the dashboard value. 
+            // Let's use the dashboard value but maybe tweak it to be closer if needed.
+            // Actually, let's stick to the 'same styling' request.
+            font-size: 1.75rem; 
+        }
+    }
+
+    .subtitle {
+        color: var(--text-color-secondary);
+        font-size: 1.1rem;
+        font-weight: 400;
+        letter-spacing: 0.3px;
+        max-width: 600px;
+        display: block;
+    }
+}

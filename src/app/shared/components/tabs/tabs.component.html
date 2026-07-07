@@ -1,0 +1,53 @@
+<p-tabs
+  [value]="activeIndex()"
+  [scrollable]="scrollable()"
+  (valueChange)="onTabChange($event)"
+  styleClass="app-tabs"
+>
+  <!-- Dynamic Tab Headers -->
+  <p-tablist>
+    @for (tab of tabs(); track tab.key) {
+      <p-tab
+        [value]="$index"
+        [disabled]="tab.disabled ?? false"
+        [pTooltip]="tab.tooltip ?? ''"
+        tooltipPosition="top"
+      >
+        <span class="tab-header-content">
+          @if (tab.icon) {
+            <i [class]="tab.icon + ' tab-icon'"></i>
+          }
+          <span class="tab-label">{{ tab.label }}</span>
+          @if (tab.badge !== undefined && tab.badge !== null) {
+            <p-badge
+              [value]="tab.badge"
+              [severity]="tab.badgeSeverity ?? 'info'"
+              styleClass="tab-badge"
+            />
+          }
+
+          <!-- Status Indicators (Always show a dot) -->
+          @if (showStatusIndicators()) {
+            @if (tab.status === 'pending' || !tab.isFilled) {
+              <i class="pi pi-circle-fill status-dot-pending" [pTooltip]="tab.status === 'pending' ? 'Unsaved changes' : 'Not Filled'"></i>
+            } @else if (tab.isFilled) {
+              <i class="pi pi-circle-fill status-dot-saved" pTooltip="Completed"></i>
+            }
+          }
+        </span>
+      </p-tab>
+    }
+  </p-tablist>
+
+  <p-tabpanels>
+    @for (tab of tabs(); track tab.key) {
+      <p-tabpanel [value]="$index">
+        @if (activeTabKey() === tab.key) {
+          <ng-container
+            *ngTemplateOutlet="getTemplate(tab.key)"
+          />
+        }
+      </p-tabpanel>
+    }
+  </p-tabpanels>
+</p-tabs>

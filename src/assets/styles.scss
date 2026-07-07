@@ -1,0 +1,566 @@
+/* You can add global styles to this file, and also import other style files */
+
+@use './layout/layout.scss';
+@use 'primeicons/primeicons.css';
+@import 'primeflex/primeflex.css';
+
+/* Inter Font - Local (Static) */
+@font-face {
+  font-family: 'Inter';
+  src: url('./fonts/inter/static/Inter_18pt-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('./fonts/inter/static/Inter_18pt-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('./fonts/inter/static/Inter_18pt-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: url('./fonts/inter/static/Inter_18pt-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+
+/* Apply Inter font globally */
+* {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* Prevent text selection during sidebar resize */
+body.sidebar-resizing {
+  user-select: none;
+  cursor: ew-resize !important;
+}
+
+body.sidebar-resizing * {
+  cursor: ew-resize !important;
+}
+
+.official-report-sheet {
+  background: #ffffff;
+  border: 1px solid #d7e1eb;
+  border-radius: 6px;
+  padding: .8rem;
+}
+
+.official-report-header {
+  margin-bottom: .65rem;
+}
+
+.official-report-brand-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.35rem;
+  padding-bottom: .2rem;
+  border-bottom: 1px solid #d9d9d9;
+}
+
+.official-report-logo {
+  display: inline-block;
+  width: 44mm;
+  height: 12mm;
+  background-color: #182433;
+  position: relative;
+}
+
+.official-report-logo::after {
+  content: '';
+  position: absolute;
+  left: 5mm;
+  bottom: -2.4mm;
+  width: 0;
+  height: 0;
+  border-left: 2.4mm solid transparent;
+  border-right: 2.4mm solid transparent;
+  border-top: 2.4mm solid #182433;
+}
+
+.official-report-bank {
+  min-width: 18rem;
+  text-align: right;
+}
+
+.official-report-meta {
+  margin-bottom: 1.35rem;
+}
+
+.official-report-header p {
+  margin: 0;
+  color: #102a43;
+  font-size: .86rem;
+  line-height: 1.35;
+}
+
+.official-report-header strong {
+  font-weight: 800;
+}
+
+.print-only {
+  display: none !important;
+}
+
+.official-report-table-wrap {
+  overflow: auto;
+  border: 1px solid #d7e1eb;
+}
+
+.official-report-table {
+  width: 100%;
+  min-width: 1120px;
+  border-collapse: collapse;
+  font-size: .88rem;
+}
+
+.official-report-table th,
+.official-report-table td {
+  border: 1px solid #d7e1eb;
+  padding: .55rem .65rem;
+  vertical-align: top;
+  text-align: left;
+}
+
+.official-report-table th {
+  background: #eaf1f8;
+  color: #173a59;
+  font-size: .80rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 5mm;
+  }
+
+  @page landscape-page {
+    size: A4 landscape;
+    margin: 5mm;
+  }
+
+  body.print-landscape {
+    page: landscape-page;
+  }
+
+  body.printing-report {
+    background: #ffffff !important;
+  }
+
+  body.printing-report .layout-topbar,
+  body.printing-report .layout-sidebar,
+  body.printing-report .layout-mask,
+  body.printing-report .no-print {
+    display: none !important;
+  }
+
+  body.printing-report .print-only {
+    display: block !important;
+  }
+
+  body.printing-report .layout-main-container,
+  body.printing-report .layout-main,
+  body.printing-report app-layout,
+  body.printing-report router-outlet {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    background: #ffffff !important;
+  }
+
+  body.printing-report .card,
+  body.printing-report .official-report-sheet {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  body.printing-report .official-report-sheet {
+    display: block;
+    border: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+
+  body.printing-report .official-report-header {
+    margin-bottom: 10px;
+  }
+
+  body.printing-report .official-report-header p {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  body.printing-report .official-report-brand-row {
+    margin-bottom: 18px;
+    padding-bottom: 2px;
+    border-bottom: 1px solid #d9d9d9;
+  }
+
+  body.printing-report .official-report-logo {
+    display: inline-block !important;
+    width: 44mm !important;
+    height: 12mm !important;
+    background-color: #182433 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body.printing-report .official-report-bank {
+    min-width: 220px;
+    text-align: right;
+  }
+
+  body.printing-report .official-report-meta {
+    margin-bottom: 18px;
+  }
+
+  body.printing-report .official-report-table-wrap {
+    overflow: visible !important;
+    border: 0 !important;
+  }
+
+  body.printing-report .official-report-table {
+    min-width: 0 !important;
+    width: 100% !important;
+    font-size: 12px !important;
+  }
+
+  body.printing-report .official-report-table th,
+  body.printing-report .official-report-table td {
+    border: 1px solid #333 !important;
+    padding: 4px 5px !important;
+  }
+
+  body.printing-report .official-report-table th {
+    background: #e6e6e6 !important;
+    color: #000 !important;
+    font-size: 12px !important;
+  }
+
+  body.printing-report .official-report-table thead {
+    display: table-row-group !important;
+  }
+
+  body.printing-report .official-report-table .p-tag {
+    background: transparent !important;
+    border: 0 !important;
+    color: #000 !important;
+    padding: 0 !important;
+    font-size: inherit !important;
+    font-weight: 700 !important;
+  }
+
+  body.printing-report .risk-wise-report-table {
+    table-layout: fixed !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    font-size: 10px !important;
+  }
+
+  body.printing-report .risk-wise-report-table th,
+  body.printing-report .risk-wise-report-table td {
+    width: auto !important;
+    padding: 3px 4px !important;
+    font-size: 10px !important;
+    line-height: 1.25 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+    vertical-align: middle !important;
+  }
+
+  body.printing-report .risk-wise-report-table th {
+    font-size: 10px !important;
+  }
+
+  body.printing-report .report-account-table td,
+  body.printing-report .report-annexure-table th,
+  body.printing-report .report-annexure-table td {
+    font-size: 11px !important;
+    padding: 3px 4px !important;
+  }
+}
+
+/* Modern Compliance Pro Glassmorphism & UI Tokens */
+
+:root {
+  --primary-color: #4F46E5;
+  --primary-color-hover: #4338CA;
+  --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+}
+
+body {
+  background: var(--bg-gradient);
+  background-attachment: fixed;
+}
+
+/* Glassmorphism Panels */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--glass-shadow);
+  padding: 2rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-panel:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.1);
+}
+
+/* Dynamic Buttons */
+.btn-dynamic {
+  background: var(--primary-color);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2), 0 2px 4px -1px rgba(79, 70, 229, 0.1);
+}
+
+.btn-dynamic:hover {
+  background: var(--primary-color-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3), 0 4px 6px -2px rgba(79, 70, 229, 0.15);
+}
+
+.btn-dynamic:active {
+  transform: translateY(1px);
+}
+
+/* Gradient Text */
+.gradient-text {
+  background: linear-gradient(to right, #4F46E5, #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}
+
+/* Modern Inputs */
+.modern-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.9);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+
+.modern-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+/* Table Enhancements */
+.modern-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.modern-table th {
+  background: rgba(243, 244, 246, 0.8);
+  padding: 1rem;
+  font-weight: 600;
+  text-align: left;
+  color: #374151;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.modern-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  color: #4b5563;
+  transition: background 0.2s;
+}
+
+.modern-table tr:hover td {
+  background: rgba(249, 250, 251, 0.5);
+}
+
+/* Micro animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Modern Compliance Pro Glassmorphism & UI Tokens */
+
+:root {
+  --primary-color: #4F46E5;
+  --primary-color-hover: #4338CA;
+  --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+}
+
+body {
+  background: var(--bg-gradient);
+  background-attachment: fixed;
+}
+
+/* Glassmorphism Panels */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--glass-shadow);
+  padding: 2rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-panel:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.1);
+}
+
+/* Dynamic Buttons */
+.btn-dynamic {
+  background: var(--primary-color);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2), 0 2px 4px -1px rgba(79, 70, 229, 0.1);
+}
+
+.btn-dynamic:hover {
+  background: var(--primary-color-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3), 0 4px 6px -2px rgba(79, 70, 229, 0.15);
+}
+
+.btn-dynamic:active {
+  transform: translateY(1px);
+}
+
+/* Gradient Text */
+.gradient-text {
+  background: linear-gradient(to right, #4F46E5, #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}
+
+/* Modern Inputs */
+.modern-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.9);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+
+.modern-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+/* Table Enhancements */
+.modern-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.modern-table th {
+  background: rgba(243, 244, 246, 0.8);
+  padding: 1rem;
+  font-weight: 600;
+  text-align: left;
+  color: #374151;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.modern-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  color: #4b5563;
+  transition: background 0.2s;
+}
+
+.modern-table tr:hover td {
+  background: rgba(249, 250, 251, 0.5);
+}
+
+/* Micro animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Fix for PrimeNG overlay mask blocking clicks during exit animation */
+.p-component-overlay-leave, 
+.p-component-overlay-leave-active,
+.p-dialog-mask-leave, 
+.p-drawer-mask-leave, 
+.p-drawer-mask-leave-active,
+.p-sidebar-mask-leave {
+  pointer-events: none !important;
+  animation-duration: 0.01s !important;
+  transition-duration: 0.01s !important;
+  opacity: 0 !important;
+  display: none !important;
+}
+
+/* Also speed up the actual drawer sliding out so the mask is destroyed instantly */
+.p-drawer-leave-active,
+.p-drawer-leave-to {
+  animation-duration: 0.01s !important;
+  transition-duration: 0.01s !important;
+  display: none !important;
+}

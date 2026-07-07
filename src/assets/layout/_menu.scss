@@ -1,0 +1,201 @@
+@use 'mixins' as *;
+
+.layout-sidebar {
+    position: fixed;
+    // width is now controlled by the component
+    height: calc(100vh - 3.5rem);
+    z-index: 999;
+    overflow-y: auto;
+    overflow-x: hidden;
+    user-select: none;
+    top: 3.5rem;
+    left: 0;
+    transition:
+        transform var(--layout-section-transition-duration),
+        left var(--layout-section-transition-duration);
+    background:
+        linear-gradient(
+            180deg,
+            #f4f8fc 0%,
+            #f8fafc 42%,
+            #f7f9fc 100%
+        );
+    border-right: 1px solid #d9e2ec;
+    box-shadow: inset -1px 0 0 rgba(31, 59, 87, 0.04);
+    border-radius: 0;
+    padding: 0.5rem 0.625rem;
+}
+
+.layout-menu {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+
+    .layout-root-menuitem {
+        > .layout-menuitem-root-text {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            font-weight: 800;
+            letter-spacing: 0;
+            color: #52677a;
+            margin: 0.85rem 0.35rem 0.4rem;
+            padding: 0.35rem 0.5rem;
+            border-bottom: 1px solid #e2eaf2;
+        }
+
+        > a {
+            display: none;
+        }
+    }
+
+    a {
+        user-select: none;
+
+        &.active-menuitem {
+            > .layout-submenu-toggler {
+                transform: rotate(-180deg);
+            }
+        }
+    }
+
+    li.active-menuitem {
+        > a {
+            .layout-submenu-toggler {
+                transform: rotate(-180deg);
+            }
+        }
+    }
+
+    ul {
+        margin: 0;
+        padding: 0;
+        list-style-type: none;
+
+        a {
+            display: flex;
+            align-items: center;
+            position: relative;
+            outline: 0 none;
+            color: var(--text-color);
+            cursor: pointer;
+            padding: 0.5rem 0.6rem;
+            border-left: 3px solid transparent;
+            border-radius: 4px;
+            transition:
+                background-color var(--element-transition-duration),
+                box-shadow var(--element-transition-duration);
+
+            .layout-menuitem-icon {
+                margin-right: 0.5rem;
+                color: #496a86;
+                font-size: 0.95rem;
+            }
+
+            .layout-menuitem-copy {
+                min-width: 0;
+                flex: 1;
+            }
+
+            .layout-menuitem-text {
+                display: block;
+                font-size: 0.86rem;
+                font-weight: 500;
+                line-height: 1.2;
+                letter-spacing: 0;
+            }
+
+            .layout-menuitem-meta {
+                font-size: 0.68rem;
+                line-height: 1.2;
+            }
+
+            .layout-submenu-toggler {
+                font-size: 75%;
+                margin-left: auto;
+                transition: transform var(--element-transition-duration);
+                color: #7a8fa1;
+            }
+
+            &.active-route {
+                font-weight: 700;
+                color: #14395c;
+                background: #dfeaf5;
+                border-left-color: #1f5f93;
+
+                .layout-menuitem-icon,
+                .layout-submenu-toggler {
+                    color: #1f5f93;
+                }
+            }
+
+            &:hover {
+                background-color: #eaf1f7;
+            }
+
+            &:focus {
+                @include focused-inset();
+            }
+        }
+
+        ul {
+            overflow: hidden;
+            border-radius: var(--content-border-radius);
+
+            li {
+                a {
+                    margin-left: 0.5rem;
+                }
+
+                li {
+                    a {
+                        margin-left: 1rem;
+                    }
+
+                    li {
+                        a {
+                            margin-left: 1.25rem;
+                        }
+
+                        li {
+                            a {
+                                margin-left: 1.5rem;
+                            }
+
+                            li {
+                                a {
+                                    margin-left: 1.75rem;
+                                }
+
+                                li {
+                                    a {
+                                        margin-left: 2rem;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+.layout-submenu-enter-from,
+.layout-submenu-leave-to {
+    max-height: 0;
+}
+
+.layout-submenu-enter-to,
+.layout-submenu-leave-from {
+    max-height: 1000px;
+}
+
+.layout-submenu-leave-active {
+    overflow: hidden;
+    transition: max-height 0.45s cubic-bezier(0, 1, 0, 1);
+}
+
+.layout-submenu-enter-active {
+    overflow: hidden;
+    transition: max-height 1s ease-in-out;
+}

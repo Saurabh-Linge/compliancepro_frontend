@@ -1,0 +1,261 @@
+import { Component, inject, OnInit, signal, ViewChild } from '@angular/core';
+import { Router, RouterOutlet, NavigationStart, Event as RouterEvent } from '@angular/router';
+import { updatePreset } from '@primeuix/themes';
+import { APP_CONFIG } from './core/services/config/config.token';
+import { KeyboardShortcutService } from './core/services/keyboard-shortcut';
+import { SearchService } from './core/services/search.service';
+
+@Component({
+  selector: 'app-root',
+  imports: [RouterOutlet],
+  templateUrl: './app.html',
+  styleUrl: './app.scss'
+})
+export class App implements OnInit {
+  protected readonly title = signal('audit_frontend_local');
+  private config = inject(APP_CONFIG);
+
+  // @ViewChild('appSearch') appSearch!: AppSearch; // Removed: Using service instead
+
+  constructor(private router: Router) {
+    this.router.events.subscribe((event: RouterEvent) => {
+      if (event instanceof NavigationStart) {
+        // Aggressively clear any PrimeNG overlays on navigation
+        document.querySelectorAll('.p-menu, .p-menu-overlay, .p-popover, .p-tooltip, [data-pc-name="menu"]').forEach(el => {
+          try {
+            if (el && el.parentNode === document.body) {
+              el.parentNode.removeChild(el);
+            }
+          } catch(e) {}
+        });
+      }
+    });
+  }
+
+  ngOnInit(): void {
+    console.log(this.config);
+
+    // Initialize theme with indigo primary color (#3F51B5)
+    const indigoPalette = {
+      50: '#e8eaf6',
+      100: '#c5cae9',
+      200: '#9fa8da',
+      300: '#7986cb',
+      400: '#5c6bc0',
+      500: '#3F51B5',
+      600: '#3949ab',
+      700: '#303f9f',
+      800: '#283593',
+      900: '#1a237e',
+      950: '#0d1642'
+    };
+
+    updatePreset({
+      semantic: {
+        primary: indigoPalette,
+        surface: "ocean",
+
+        /* ------------------------------------------------------
+         * COLOR SCHEMES
+         * ------------------------------------------------------*/
+        colorScheme: {
+          light: {
+            surface: {
+              ground: '#ffffff',
+              section: '#f8f9fd',
+              card: '#ffffff',
+              border: 'rgba(0,0,0,0.08)',
+              hover: '{primary.50}'
+            },
+
+            text: {
+              color: '#1f2937',
+              secondaryColor: '#4b5563',
+              mutedColor: '#6b7280'
+            },
+
+            primary: {
+              color: '{primary.500}',
+              contrastColor: '#ffffff',
+              hoverColor: '{primary.600}',
+              activeColor: '{primary.700}'
+            },
+
+            highlight: {
+              background: '{primary.50}',
+              focusBackground: '{primary.100}',
+              color: '{primary.700}',
+              focusColor: '{primary.800}'
+            }
+          },
+
+          dark: {
+            surface: {
+              ground: '{primary.950}',
+              section: '{primary.900}',
+              card: '{primary.900}',
+              border: 'rgba(255,255,255,0.08)',
+              hover: 'rgba(255,255,255,0.04)'
+            },
+
+            text: {
+              color: 'rgba(255,255,255,0.87)',
+              secondaryColor: 'rgba(255,255,255,0.6)',
+              mutedColor: 'rgba(255,255,255,0.45)'
+            },
+
+            primary: {
+              color: '{primary.400}',
+              contrastColor: '#ffffff',
+              hoverColor: '{primary.300}',
+              activeColor: '{primary.200}'
+            },
+
+            highlight: {
+              background: 'color-mix(in srgb, {primary.400}, transparent 82%)',
+              focusBackground: 'color-mix(in srgb, {primary.400}, transparent 70%)',
+              color: '#ffffff',
+              focusColor: '#ffffff'
+            }
+          }
+        },
+
+        /* ------------------------------------------------------
+         * COMPONENT TUNING
+         * ------------------------------------------------------*/
+        components: {
+
+          /* BUTTON */
+          button: {
+            borderRadius: '8px',
+            paddingX: '1rem',
+            paddingY: '0.6rem',
+            fontWeight: '500',
+            shadow:
+              '0 2px 6px color-mix(in srgb, {primary.500}, transparent 70%)',
+            focusRing: {
+              width: '2px',
+              style: 'solid',
+              color: '{primary.400}'
+            }
+          },
+
+          /* INPUT / TEXTBOX */
+          inputtext: {
+            borderRadius: '8px',
+            paddingX: '0.75rem',
+            paddingY: '0.55rem',
+            borderColor: '{surface.border}',
+            focusBorderColor: '{primary.400}',
+            hoverBorderColor: '{primary.300}'
+          },
+
+          /* DROPDOWN / SELECT */
+          dropdown: {
+            borderRadius: '8px',
+            borderColor: '{surface.border}',
+            focusBorderColor: '{primary.400}',
+            itemHoverBackground: '{highlight.background}',
+            itemActiveBackground: '{highlight.focusBackground}'
+          },
+
+          /* MULTISELECT */
+          multiselect: {
+            borderRadius: '8px',
+            chipBackground: '{primary.100}',
+            chipColor: '{primary.800}'
+          },
+
+          /* CHECKBOX */
+          checkbox: {
+            borderRadius: '4px',
+            checkedBackground: '{primary.500}',
+            checkedBorderColor: '{primary.500}'
+          },
+
+          /* RADIO */
+          radiobutton: {
+            checkedBackground: '{primary.500}',
+            checkedBorderColor: '{primary.500}'
+          },
+
+          /* TOGGLE */
+          toggleswitch: {
+            checkedBackground: '{primary.500}'
+          },
+
+          /* TABLE */
+          datatable: {
+            headerBackground: '{surface.section}',
+            headerTextColor: '{text.color}',
+            rowHoverBackground: '{surface.hover}',
+            rowSelectedBackground:
+              'color-mix(in srgb, {primary.500}, transparent 88%)',
+            borderColor: '{surface.border}'
+          },
+
+          /* PAGINATOR */
+          paginator: {
+            buttonHoverBackground: '{highlight.background}',
+            buttonActiveBackground: '{highlight.focusBackground}',
+            borderRadius: '8px'
+          },
+
+          /* CARD */
+          card: {
+            borderRadius: '12px',
+            shadow: '0 8px 24px rgba(0,0,0,0.08)',
+            background: '{surface.card}'
+          },
+
+          /* DIALOG / MODAL */
+          dialog: {
+            borderRadius: '14px',
+            headerBackground: '{surface.section}',
+            contentBackground: '{surface.card}',
+            shadow: '0 24px 64px rgba(0,0,0,0.35)'
+          },
+
+          /* MENU / SIDEBAR */
+          menu: {
+            itemHoverBackground: '{highlight.background}',
+            itemActiveBackground: '{highlight.focusBackground}',
+            itemBorderRadius: '6px'
+          },
+
+          /* TABVIEW */
+          tabview: {
+            inkBarColor: '{primary.500}',
+            headerHoverBackground: '{highlight.background}',
+            headerActiveColor: '{primary.600}'
+          },
+
+          /* TOAST */
+          toast: {
+            borderRadius: '10px',
+            shadow: '0 12px 40px rgba(0,0,0,0.25)'
+          },
+
+          /* TOOLTIP */
+          tooltip: {
+            background: '{surface.card}',
+            textColor: '{text.color}',
+            borderRadius: '6px',
+            shadow: '0 8px 24px rgba(0,0,0,0.25)'
+          },
+
+          /* PROGRESSBAR */
+          progressbar: {
+            valueBackground: '{primary.500}',
+            height: '6px',
+            borderRadius: '999px'
+          }
+        }
+      }
+    });
+
+  }
+
+
+
+}

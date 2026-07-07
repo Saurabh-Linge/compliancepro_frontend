@@ -1,0 +1,451 @@
+<div class="flex flex-column h-full gap-4">
+  <p-menu
+    #menu
+    [model]="menuItems()"
+    [popup]="true"
+    appendTo="body"
+    [autoZIndex]="true"
+    [baseZIndex]="1000"
+  ></p-menu>
+
+  <!-- Detached Toolbar -->
+  @if (showToolbar()) {
+  <div
+    style="
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      gap: 0.5rem;
+      padding: 0.25rem;
+      margin-bottom: 0.5rem;
+    "
+  >
+    <div style="display: flex; flex-direction: row; align-items: center; gap: 0.5rem">
+      <p-iconfield iconPosition="left">
+        <p-inputicon styleClass="pi pi-search" />
+        <input
+          #searchInput
+          pInputText
+          type="text"
+          (input)="handleSearch($event)"
+          placeholder="Search (Ctrl+F)"
+          style="width: auto; height: 2.5rem"
+        />
+      </p-iconfield>
+      <ng-content select="[toolbar-actions]"></ng-content>
+    </div>
+    <div style="display: flex; flex-direction: row; align-items: center; gap: 0.5rem">
+      <button
+        *ngIf="showRefreshButton()"
+        pButton
+        pRipple
+        icon="pi pi-refresh"
+        class="p-button-secondary p-button-outlined"
+        (click)="handleRefresh()"
+        pTooltip="Refresh Data"
+        tooltipPosition="bottom"
+      ></button>
+      <button
+        *ngIf="showExportButton()"
+        pButton
+        pRipple
+        label="Export"
+        icon="pi pi-download"
+        class="p-button-help p-button-outlined"
+        (click)="handleExport()"
+        pTooltip="Export to Excel"
+        tooltipPosition="bottom"
+      ></button>
+      <button
+        *ngIf="showAddButton()"
+        pButton
+        pRipple
+        label="New (Ctrl+N)"
+        icon="pi pi-plus"
+        class="p-button-primary"
+        (click)="handleAdd()"
+      ></button>
+    </div>
+  </div>
+  }
+
+  <!-- Table Container -->
+  <div
+    class="table-container flex-1 overflow-hidden relative surface-card border-round-xl shadow-sm border-1 surface-border flex flex-column p-2"
+  >
+    <p-table
+      #dt
+      [value]="loading() ? [] : data()"
+      [columns]="columns()"
+      [rows]="rows()"
+      [paginator]="paginator() && !virtualScroll()"
+      [rowsPerPageOptions]="rowsPerPageOptions"
+      [globalFilterFields]="globalFilterFields()"
+      [loading]="loading()"
+      [virtualScroll]="virtualScroll()"
+      [virtualScrollItemSize]="virtualScrollItemSize()"
+      [scrollHeight]="scrollHeight()"
+      [scrollable]="true"
+      [lazy]="lazy()"
+      [totalRecords]="totalRecords()"
+      [sortField]="sortField()"
+      [sortOrder]="sortOrder()"
+      (onLazyLoad)="onLazyLoad.emit($event)"
+      (onPage)="handlePageChange($event)"
+      (onSort)="handleSort($event)"
+      [showLoader]="false"
+      [styleClass]="tableStyleClass()"
+      [tableStyle]="tableStyle()"
+      [dt]="scopedTokens()"
+      [dataKey]="dataKey()"
+      [rowGroupMode]="rowGroupMode()"
+      [groupRowsBy]="groupRowsBy()"
+      [selection]="selection()"
+      (selectionChange)="selectionChange.emit($event)"
+    >
+      <!-- Distinct Header -->
+      <ng-template pTemplate="header" let-columns>
+        <!-- Report Headers (Merged & Centered) -->
+        <tr *ngFor="let header of reportHeaders()">
+          <th
+            [attr.colspan]="totalColumns()"
+            class="text-center font-bold"
+            style="
+              background: transparent;
+              border: none;
+              padding-top: 5px;
+              padding-bottom: 5px;
+              font-size: 1.1rem;
+              text-align: center !important;
+              display: table-cell;
+            "
+          >
+            {{ header }}
+          </th>
+        </tr>
+
+        <tr>
+          <!-- Selection Checkbox Header -->
+          <th *ngIf="selectable()" style="width: 3rem; text-align: center">
+            <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+          </th>
+
+          <!-- Expansion Toggler Header -->
+          <th *ngIf="rowExpansionTemplate" style="width: 3rem"></th>
+
+          <!-- Action Columns (Left Side) -->
+          <th
+            *ngFor="let col of actionColumns()"
+            [pSortableColumn]="col.sortable !== false ? col.sortField || col.field : undefined"
+            [style.width]="col.width || 'auto'"
+            [style.text-align]="getAlignment(col, true)"
+            [class]="col.cssClass || ''"
+          >
+            <div
+              class="flex align-items-center"
+              [style.justify-content]="
+                getAlignment(col, true) === 'center'
+                  ? 'center'
+                  : getAlignment(col, true) === 'right'
+                  ? 'flex-end'
+                  : 'flex-start'
+              "
+            >
+              @if (headerTemplate()) {
+              <ng-container
+                *ngTemplateOutlet="headerTemplate(); context: { col: col }"
+              ></ng-container>
+              } @else {
+              {{ col.header }}
+              } @if (col.sortable !== false) {
+              <p-sortIcon [field]="col.sortField || col.field"></p-sortIcon>
+              }
+              <p-columnFilter
+                *ngIf="col.filterable"
+                type="text"
+                [field]="col.field"
+                display="menu"
+                class="ml-auto"
+              ></p-columnFilter>
+            </div>
+          </th>
+
+          <!-- Serial Number Header -->
+          <th *ngIf="showSerialNumber()" style="width: 4rem; text-align: center">Sr No</th>
+
+          <!-- Data Columns -->
+          <th
+            *ngFor="let col of dataColumns()"
+            [pSortableColumn]="col.sortable !== false ? col.sortField || col.field : undefined"
+            [style.width]="col.width || 'auto'"
+            [style.text-align]="getAlignment(col, true)"
+            [class]="col.cssClass || ''"
+          >
+            <div
+              class="flex align-items-center"
+              [style.justify-content]="
+                getAlignment(col, true) === 'center'
+                  ? 'center'
+                  : getAlignment(col, true) === 'right'
+                  ? 'flex-end'
+                  : 'flex-start'
+              "
+            >
+              @if (headerTemplate()) {
+              <ng-container
+                *ngTemplateOutlet="headerTemplate(); context: { col: col }"
+              ></ng-container>
+              } @else {
+              {{ col.header }}
+              } @if (col.sortable !== false) {
+              <p-sortIcon [field]="col.sortField || col.field"></p-sortIcon>
+              }
+              <p-columnFilter
+                *ngIf="col.filterable"
+                type="text"
+                [field]="col.field"
+                display="menu"
+                class="ml-auto"
+              ></p-columnFilter>
+            </div>
+          </th>
+          <th
+            [style.width]="
+              actionDisplayMode() === 'buttons' ? actions().length * 2.5 + 'rem' : '4rem'
+            "
+            style="text-align: center"
+            *ngIf="actions().length"
+          >
+            Action
+          </th>
+        </tr>
+      </ng-template>
+
+      <!-- Group Header Template -->
+      <ng-template
+        pTemplate="groupheader"
+        let-rowData
+        let-columns="columns"
+        let-expanded="expanded"
+      >
+        <ng-container *ngIf="groupHeaderTemplate">
+          <ng-container
+            *ngTemplateOutlet="
+              groupHeaderTemplate;
+              context: { $implicit: rowData, columns: columns, expanded: expanded }
+            "
+          ></ng-container>
+        </ng-container>
+      </ng-template>
+
+      <!-- Group Footer Template -->
+      <ng-template pTemplate="groupfooter" let-rowData let-columns="columns">
+        <ng-container *ngIf="groupFooterTemplate">
+          <ng-container
+            *ngTemplateOutlet="
+              groupFooterTemplate;
+              context: { $implicit: rowData, columns: columns }
+            "
+          ></ng-container>
+        </ng-container>
+      </ng-template>
+
+      <ng-template
+        pTemplate="body"
+        let-rowData
+        let-columns="columns"
+        let-rowIndex="rowIndex"
+        let-expanded="expanded"
+      >
+        <tr [style.height.px]="virtualScroll() ? virtualScrollItemSize() : 'auto'">
+          <!-- Selection Checkbox Cell -->
+          <td *ngIf="selectable()" style="text-align: center">
+            <p-tableCheckbox [value]="rowData"></p-tableCheckbox>
+          </td>
+
+          <!-- Expansion Toggler Cell -->
+          <td *ngIf="rowExpansionTemplate">
+            <button
+              type="button"
+              pButton
+              pRipple
+              [pRowToggler]="rowData"
+              class="p-button-text p-button-rounded p-button-plain"
+              [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+            ></button>
+          </td>
+
+          <!-- Custom Body Template -->
+          <ng-container *ngIf="bodyTemplate(); else defaultBody">
+            <ng-container
+              *ngTemplateOutlet="
+                bodyTemplate()!;
+                context: { $implicit: rowData, columns: columns, rowIndex: rowIndex }
+              "
+            ></ng-container>
+          </ng-container>
+
+          <ng-template #defaultBody>
+            <!-- Action Columns (Left Side) -->
+            <td *ngFor="let col of actionColumns()" [style.text-align]="getAlignment(col, false)">
+              <!-- ✅ CUSTOM PRINT COLUMN -->
+              <ng-container *ngIf="col.field === '_print'; else normalAction">
+                <div class="print-container">
+                  <!-- Loan Application -->
+                  <i
+                    class="pi pi-print action-icon"
+                    title="Loan Application"
+                    (click)="onActionClick.emit({ name: 'print_app', row: rowData })"
+                  >
+                  </i>
+
+                  <!-- Branch Scrutiny -->
+                  <i
+                    class="pi pi-print action-icon"
+                    title="Branch Scrutiny"
+                    (click)="onActionClick.emit({ name: 'print_scrutiny', row: rowData })"
+                  >
+                  </i>
+                </div>
+              </ng-container>
+
+              <!-- ✅ NORMAL ACTION BUTTON -->
+              <ng-template #normalAction>
+                <button
+                  pButton
+                  pRipple
+                  [icon]="col.actionIcon || 'pi pi-question'"
+                  class="p-button-text p-button-rounded p-button-primary"
+                  (click)="onActionClick.emit({ name: col.actionName || col.field, row: rowData })"
+                  [pTooltip]="col.tooltip || col.header"
+                  tooltipPosition="top"
+                ></button>
+              </ng-template>
+            </td>
+
+            <!-- Serial Number Cell -->
+            <td *ngIf="showSerialNumber()" style="text-align: center">{{ rowIndex + 1 }}</td>
+
+            <td
+              *ngFor="let col of dataColumns()"
+              [style.text-align]="getAlignment(col, false)"
+              [class]="col.cssClass || ''"
+            >
+              <ng-container [ngSwitch]="col.type">
+                <!-- Badge Type -->
+                <ng-container *ngSwitchCase="'badge'">
+                  <span class="p-badge p-component" 
+                        [class]="getBadgeClass(rowData[col.field])">
+                    {{ formatValue(rowData[col.field], col) }}
+                  </span>
+                </ng-container>
+                
+                <!-- Default Text -->
+                <ng-container *ngSwitchDefault>
+                  {{ formatValue(rowData[col.field], col) }}
+                </ng-container>
+              </ng-container>
+            </td>
+            <td style="text-align: center" *ngIf="actions().length">
+              @if (actionDisplayMode() === 'buttons') {
+              <!-- Button mode: Show individual buttons (icon-only by default) -->
+              <div class="flex gap-1 justify-content-center align-items-center">
+                @for (action of actions(); track action.label) {
+                  @if (action.visible === undefined || action.visible(rowData)) {
+                  <button
+                    pButton
+                    pRipple
+                    [icon]="action.icon"
+                    [label]="showActionLabels() ? action.label : ''"
+                    [class]="
+                      'p-button-text p-button-rounded ' + (action.styleClass || 'p-button-primary')
+                    "
+                    [disabled]="action.disabled ? action.disabled(rowData) : false"
+                    (click)="action.command(rowData); $event.stopPropagation()"
+                    [pTooltip]="action.label"
+                    tooltipPosition="top"
+                  ></button>
+                  }
+                }
+              </div>
+              } @else {
+              <!-- Menu mode: Show three dots menu (default) -->
+              <button
+                pButton
+                pRipple
+                icon="pi pi-ellipsis-v"
+                class="p-button-text p-button-secondary p-button-rounded"
+                (click)="showMenu($event, rowData, menu)"
+              ></button>
+              }
+            </td>
+          </ng-template>
+        </tr>
+      </ng-template>
+
+      <!-- Row Expansion Template -->
+      <ng-template
+        pTemplate="rowexpansion"
+        let-rowData
+        let-columns="columns"
+        let-expanded="expanded"
+      >
+        <ng-container
+          *ngTemplateOutlet="
+            rowExpansionTemplate;
+            context: { $implicit: rowData, expanded: expanded }
+          "
+        ></ng-container>
+      </ng-template>
+
+      <ng-template pTemplate="loadingbody">
+        <tr *ngFor="let i of skeletonRows()">
+          <td *ngIf="rowExpansionTemplate"><p-skeleton width="2rem" height="2rem"></p-skeleton></td>
+          <td *ngIf="showSerialNumber()" style="text-align: center">
+            <p-skeleton width="2rem" height="1.5rem"></p-skeleton>
+          </td>
+          <td *ngFor="let col of columns()" [style.text-align]="getAlignment(col, false)">
+            <p-skeleton styleClass="w-full" height="1.5rem"></p-skeleton>
+          </td>
+          <td style="text-align: center" *ngIf="actions().length">
+            <p-skeleton shape="w-full" height="1.5rem"></p-skeleton>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td
+            [attr.colspan]="
+              columns().length + (showSerialNumber() ? 2 : 1) + (rowExpansionTemplate ? 1 : 0)
+            "
+            class="text-center py-6"
+          >
+            <div class="flex justify-content-center">
+              <p-message severity="info">
+                <ng-template #icon>
+                  <!-- <img src="assets/images/logos/kredpool_logo.png" width="32" alt="Logo" /> -->
+                </ng-template>
+                <span class="ml-2">No Content Found.</span>
+              </p-message>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="footer" let-columns>
+        <ng-container *ngIf="footerTemplate">
+          <ng-container
+            *ngTemplateOutlet="footerTemplate; context: { columns: columns }"
+          ></ng-container>
+        </ng-container>
+      </ng-template>
+
+      <ng-template pTemplate="paginatorleft">
+        <span class="text-xs text-color-secondary">Total Records: {{ displayTotalRecords() }}</span>
+      </ng-template>
+    </p-table>
+  </div>
+</div>

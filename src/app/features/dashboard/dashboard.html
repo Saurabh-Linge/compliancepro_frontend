@@ -1,0 +1,1022 @@
+<div class="dashboard-wrapper">
+  <!-- Loading overlay -->
+  <div class="loading-overlay" *ngIf="loading">
+    <div class="spinner-container">
+      <i class="pi pi-spin pi-spinner spinner-icon"></i>
+      <span class="loading-text">Loading Dashboard Metrics...</span>
+    </div>
+  </div>
+
+  <!-- Main container when not loading -->
+  <div class="dashboard-container" *ngIf="!loading">
+    
+    <!-- 1. ADMIN DASHBOARD VIEW -->
+    <div class="admin-view-panel" *ngIf="userTypeId === 1 || userTypeId === 9 || userTypeId === 5">
+      <!-- Welcome Header -->
+      <div class="dashboard-hero">
+        <div class="hero-left">
+          <div class="hero-tag">System Administration</div>
+          <h1>System Overview Dashboard</h1>
+          <p>Real-time metrics, audit frequencies, and global progress tracker.</p>
+        </div>
+        <div class="hero-right">
+          <span class="role-badge"><i class="pi pi-shield"></i> {{ roleName }}</span>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Grid -->
+      <div class="metrics-grid">
+        <div class="metric-card theme-blue">
+          <div class="card-glow"></div>
+          <div class="card-icon"><i class="pi pi-users"></i></div>
+          <div class="card-details">
+            <span class="card-title">Total Employees</span>
+            <span class="card-value">{{ adminMetrics?.total_employees }}</span>
+          </div>
+        </div>
+
+        <div class="metric-card theme-purple">
+          <div class="card-glow"></div>
+          <div class="card-icon"><i class="pi pi-building"></i></div>
+          <div class="card-details">
+            <span class="card-title">Active Branches</span>
+            <span class="card-value">{{ adminMetrics?.total_branch }}</span>
+          </div>
+        </div>
+
+        <div class="metric-card theme-emerald">
+          <div class="card-glow"></div>
+          <div class="card-icon"><i class="pi pi-home"></i></div>
+          <div class="card-details">
+            <span class="card-title">Head Offices</span>
+            <span class="card-value">{{ adminMetrics?.total_head_office }}</span>
+          </div>
+        </div>
+
+        <div class="metric-card theme-amber">
+          <div class="card-glow"></div>
+          <div class="card-icon"><i class="pi pi-sitemap"></i></div>
+          <div class="card-details">
+            <span class="card-title">Audit Schemes</span>
+            <span class="card-value">{{ adminMetrics?.total_schemes }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts & Detail Section -->
+      <div class="dashboard-grid-2col">
+        <!-- Pie Chart -->
+        <div class="dashboard-panel chart-panel">
+          <div class="panel-header">
+            <h3>Assessment Status Distribution</h3>
+            <span class="panel-subtitle">Current status of all scheduled audits</span>
+          </div>
+          <div class="panel-body chart-wrapper">
+            <p-chart type="pie" [data]="adminPieData" [options]="adminPieOptions" height="320px"></p-chart>
+          </div>
+        </div>
+
+        <!-- Detail Counts List / Progress -->
+        <div class="dashboard-panel table-panel">
+          <div class="panel-header">
+            <h3>Operational Audit Progress</h3>
+            <span class="panel-subtitle">Completion breakdown relative to total audits</span>
+          </div>
+          <div class="panel-body">
+            <div class="progress-list">
+              <!-- Item 1: Pending Audit -->
+              <div class="progress-item">
+                <div class="item-meta">
+                  <span class="item-name"><i class="pi pi-clock text-blue"></i> Pending Audits</span>
+                  <span class="item-val">{{ adminMetrics?.total_pending_audit }} / {{ adminMetrics?.total_audit_count }}</span>
+                </div>
+                <div class="progress-bar-bg">
+                  <div class="progress-bar-fill bg-blue" [style.width.%]="(adminMetrics?.total_pending_audit / (adminMetrics?.total_audit_count || 1)) * 100"></div>
+                </div>
+              </div>
+
+              <!-- Item 2: Completed Audit -->
+              <div class="progress-item">
+                <div class="item-meta">
+                  <span class="item-name"><i class="pi pi-check-circle text-emerald"></i> Completed Audits</span>
+                  <span class="item-val">{{ adminMetrics?.total_completed_audit }} / {{ adminMetrics?.total_audit_count }}</span>
+                </div>
+                <div class="progress-bar-bg">
+                  <div class="progress-bar-fill bg-emerald" [style.width.%]="(adminMetrics?.total_completed_audit / (adminMetrics?.total_audit_count || 1)) * 100"></div>
+                </div>
+              </div>
+
+              <!-- Item 3: Compliance Completed -->
+              <div class="progress-item">
+                <div class="item-meta">
+                  <span class="item-name"><i class="pi pi-verified text-purple"></i> Compliance Completed</span>
+                  <span class="item-val">{{ adminMetrics?.total_completed_compliance }} / {{ adminMetrics?.total_audit_count }}</span>
+                </div>
+                <div class="progress-bar-bg">
+                  <div class="progress-bar-fill bg-purple" [style.width.%]="(adminMetrics?.total_completed_compliance / (adminMetrics?.total_audit_count || 1)) * 100"></div>
+                </div>
+              </div>
+
+              <!-- Item 4: Blocked -->
+              <div class="progress-item">
+                <div class="item-meta">
+                  <span class="item-name"><i class="pi pi-ban text-red"></i> Blocked Audits</span>
+                  <span class="item-val">{{ adminMetrics?.total_blocked_assesment }} / {{ adminMetrics?.total_audit_count }}</span>
+                </div>
+                <div class="progress-bar-bg">
+                  <div class="progress-bar-fill bg-red" [style.width.%]="(adminMetrics?.total_blocked_assesment / (adminMetrics?.total_audit_count || 1)) * 100"></div>
+                </div>
+              </div>
+
+              <!-- Item 5: Expired Audit -->
+              <div class="progress-item">
+                <div class="item-meta">
+                  <span class="item-name"><i class="pi pi-exclamation-triangle text-amber"></i> Expired Audits</span>
+                  <span class="item-val">{{ adminMetrics?.total_expired_audit }} / {{ adminMetrics?.total_audit_count }}</span>
+                </div>
+                <div class="progress-bar-bg">
+                  <div class="progress-bar-fill bg-amber" [style.width.%]="(adminMetrics?.total_expired_audit / (adminMetrics?.total_audit_count || 1)) * 100"></div>
+                </div>
+              </div>
+
+              <!-- Item 6: Expired Compliance -->
+              <div class="progress-item">
+                <div class="item-meta">
+                  <span class="item-name"><i class="pi pi-calendar-times text-indigo"></i> Expired Compliance</span>
+                  <span class="item-val">{{ adminMetrics?.total_expired_compliance }} / {{ adminMetrics?.total_audit_count }}</span>
+                </div>
+                <div class="progress-bar-bg">
+                  <div class="progress-bar-fill bg-indigo" [style.width.%]="(adminMetrics?.total_expired_compliance / (adminMetrics?.total_audit_count || 1)) * 100"></div>
+                </div>
+              </div>
+
+              <!-- Item 7: Not Started Branches -->
+              <div class="progress-item">
+                <div class="item-meta">
+                  <span class="item-name"><i class="pi pi-play text-cyan"></i> Not Started Branches</span>
+                  <span class="item-val">{{ adminMetrics?.total_not_yet_startd_audit_branch_count }} / {{ adminMetrics?.total_audit_count }}</span>
+                </div>
+                <div class="progress-bar-bg">
+                  <div class="progress-bar-fill bg-cyan" [style.width.%]="(adminMetrics?.total_not_yet_startd_audit_branch_count / (adminMetrics?.total_audit_count || 1)) * 100"></div>
+                </div>
+              </div>
+
+              <!-- Item 8: Not Started HO -->
+              <div class="progress-item">
+                <div class="item-meta">
+                  <span class="item-name"><i class="pi pi-stop text-pink"></i> Not Started HO</span>
+                  <span class="item-val">{{ adminMetrics?.total_not_yet_startd_audit_ho_count }} / {{ adminMetrics?.total_audit_count }}</span>
+                </div>
+                <div class="progress-bar-bg">
+                  <div class="progress-bar-fill bg-pink" [style.width.%]="(adminMetrics?.total_not_yet_startd_audit_ho_count / (adminMetrics?.total_audit_count || 1)) * 100"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Branch Risk Analytics Section for Admin -->
+      <div class="dashboard-toolbar margin-top-2rem">
+        <div class="toolbar-title">
+          <h3>Branch Risk Analytics</h3>
+          <span>Detailed risk category investigation and completed assessments history</span>
+        </div>
+        <div class="filter-col" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+          <div class="select-wrapper">
+            <label class="dropdown-label">Select Audit Unit</label>
+            <p-select
+              [options]="unitsList"
+              [ngModel]="selectedUnitId"
+              (ngModelChange)="onUnitChange($event)"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Select Audit Unit"
+              [filter]="true"
+              filterBy="label"
+              appendTo="body"
+              styleClass="dashboard-select"
+            ></p-select>
+          </div>
+          <div class="select-wrapper" *ngIf="selectedUnitId !== null">
+            <label class="dropdown-label">Financial Year</label>
+            <p-select
+              [options]="yearFilterOptions"
+              [ngModel]="selectedYearId"
+              (ngModelChange)="onYearChange($event)"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="All Years"
+              [showClear]="true"
+              appendTo="body"
+              styleClass="dashboard-select"
+            ></p-select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detail Loading spinner when dropdown changes unit -->
+      <div class="loading-overlay" *ngIf="detailsLoading">
+        <div class="spinner-container">
+          <i class="pi pi-spin pi-spinner spinner-icon"></i>
+          <span class="loading-text">Loading unit metrics...</span>
+        </div>
+      </div>
+
+      <div *ngIf="!detailsLoading && selectedUnitId !== null">
+        <!-- Period Selector Toolbar -->
+        <div class="dashboard-toolbar">
+          <div class="toolbar-title">
+            <h3>Visual Risk & Score Analytics</h3>
+            <span>Filtered charts for detailed risk category investigation</span>
+          </div>
+          <div class="select-wrapper">
+            <p-select
+              [options]="filteredAssessmentPeriods"
+              [ngModel]="selectedAssessmentPeriodId"
+              (ngModelChange)="onPeriodChange($event)"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Select Period"
+              styleClass="dashboard-select"
+            ></p-select>
+          </div>
+        </div>
+
+        <!-- Detail Loading spinner when period dropdown changes -->
+        <div class="loading-overlay" *ngIf="chartsLoading">
+          <div class="spinner-container">
+            <i class="pi pi-spin pi-spinner spinner-icon"></i>
+            <span class="loading-text">Loading period charts...</span>
+          </div>
+        </div>
+
+        <!-- 3 Charts Grid -->
+        <div class="dashboard-grid-3col" *ngIf="!chartsLoading">
+          <!-- Stacked Chart -->
+          <div class="dashboard-panel chart-panel">
+            <div class="panel-header">
+              <h3>Risk Trend by Period</h3>
+              <span class="panel-subtitle">Weighted risk severity share</span>
+            </div>
+            <div class="panel-body chart-wrapper">
+              <p-chart type="bar" [data]="unitStackedData" [options]="unitStackedOptions" height="280px"></p-chart>
+            </div>
+          </div>
+
+          <!-- Risk Pie Chart -->
+          <div class="dashboard-panel chart-panel">
+            <div class="panel-header">
+              <h3>Category Count Share</h3>
+              <span class="panel-subtitle">Risk classification count distribution</span>
+            </div>
+            <div class="panel-body chart-wrapper">
+              <p-chart type="pie" [data]="unitPieData" [options]="unitPieOptions" height="280px"></p-chart>
+            </div>
+          </div>
+
+          <!-- Risk Bar Chart -->
+          <div class="dashboard-panel chart-panel">
+            <div class="panel-header">
+              <h3>Risk Type Wise Scores</h3>
+              <span class="panel-subtitle">Weighted risk categories scores list</span>
+            </div>
+            <div class="panel-body chart-wrapper">
+              <p-chart type="bar" [data]="unitBarData" [options]="unitBarOptions" height="280px"></p-chart>
+            </div>
+          </div>
+
+          <!-- Risk Heatmap -->
+          <div class="dashboard-panel chart-panel">
+            <div class="panel-header">
+              <h3>Risk Assessment Heatmap</h3>
+              <span class="panel-subtitle">Inherent Business Risk vs Control Effectiveness</span>
+            </div>
+            <div class="panel-body chart-wrapper">
+              <div class="modern-heatmap-card">
+                <table class="modern-heatmap-table">
+                  <thead>
+                    <tr>
+                      <th style="border: none; background: transparent; width: 60px;"></th>
+                      <th class="heatmap-axis-label">Low CR</th>
+                      <th class="heatmap-axis-label">Med CR</th>
+                      <th class="heatmap-axis-label">High CR</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="heatmap-row-header">High BR</td>
+                      <td class="heatmap-cell cell-medium" [class.empty-cell]="unitHeatmap[0][0] === 0">{{ unitHeatmap[0][0] > 0 ? unitHeatmap[0][0] : '' }}</td>
+                      <td class="heatmap-cell cell-high" [class.empty-cell]="unitHeatmap[0][1] === 0">{{ unitHeatmap[0][1] > 0 ? unitHeatmap[0][1] : '' }}</td>
+                      <td class="heatmap-cell cell-critical" [class.empty-cell]="unitHeatmap[0][2] === 0">{{ unitHeatmap[0][2] > 0 ? unitHeatmap[0][2] : '' }}</td>
+                    </tr>
+                    <tr>
+                      <td class="heatmap-row-header">Med BR</td>
+                      <td class="heatmap-cell cell-medlow" [class.empty-cell]="unitHeatmap[1][0] === 0">{{ unitHeatmap[1][0] > 0 ? unitHeatmap[1][0] : '' }}</td>
+                      <td class="heatmap-cell cell-medium" [class.empty-cell]="unitHeatmap[1][1] === 0">{{ unitHeatmap[1][1] > 0 ? unitHeatmap[1][1] : '' }}</td>
+                      <td class="heatmap-cell cell-high" [class.empty-cell]="unitHeatmap[1][2] === 0">{{ unitHeatmap[1][2] > 0 ? unitHeatmap[1][2] : '' }}</td>
+                    </tr>
+                    <tr>
+                      <td class="heatmap-row-header">Low BR</td>
+                      <td class="heatmap-cell cell-low" [class.empty-cell]="unitHeatmap[2][0] === 0">{{ unitHeatmap[2][0] > 0 ? unitHeatmap[2][0] : '' }}</td>
+                      <td class="heatmap-cell cell-medlow" [class.empty-cell]="unitHeatmap[2][1] === 0">{{ unitHeatmap[2][1] > 0 ? unitHeatmap[2][1] : '' }}</td>
+                      <td class="heatmap-cell cell-medium" [class.empty-cell]="unitHeatmap[2][2] === 0">{{ unitHeatmap[2][2] > 0 ? unitHeatmap[2][2] : '' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="modern-legend">
+                  <span class="legend-badge"><span class="legend-dot" style="background: #4ade80;"></span> Low</span>
+                  <span class="legend-badge"><span class="legend-dot" style="background: #a3e635;"></span> Med-Low</span>
+                  <span class="legend-badge"><span class="legend-dot" style="background: #fb923c;"></span> Medium</span>
+                  <span class="legend-badge"><span class="legend-dot" style="background: #fb7185;"></span> High</span>
+                  <span class="legend-badge"><span class="legend-dot" style="background: #f43f5e;"></span> Critical</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Completed Assessments Table -->
+        <div class="dashboard-panel table-panel full-width">
+          <div class="panel-header">
+            <h3>Completed Assessment Periods History</h3>
+            <span class="panel-subtitle">Full list of all previously authorized and finalized assessments</span>
+          </div>
+          <div class="panel-body">
+            <div class="table-responsive">
+              <table class="dashboard-table">
+                <thead>
+                  <tr>
+                    <th>Assessment Period</th>
+                    <th>Frequency (Months)</th>
+                    <th>Weighted Score</th>
+                    <th>Risk Trend</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngIf="assessmentListTable.length === 0">
+                    <td colspan="4" class="text-center empty-cell">
+                      <i class="pi pi-folder-open empty-icon"></i>
+                      <span>No completed assessments found for this unit.</span>
+                    </td>
+                  </tr>
+                  <tr *ngFor="let ass of assessmentListTable">
+                    <td><strong>{{ ass.assesment_period }}</strong></td>
+                    <td>{{ ass.frequency }} months</td>
+                    <td>
+                      <span class="score-pill">{{ ass.weighted_score }}</span>
+                    </td>
+                    <td>
+                      <span class="trend-badge" [ngClass]="{
+                        'trend-up': ass.trend === 'Increasing',
+                        'trend-down': ass.trend === 'Decreasing',
+                        'trend-stable': ass.trend === '-'
+                      }">
+                        <i class="pi" [ngClass]="{
+                          'pi-arrow-up': ass.trend === 'Increasing',
+                          'pi-arrow-down': ass.trend === 'Decreasing',
+                          'pi-minus': ass.trend === '-'
+                        }"></i>
+                        {{ ass.trend === '-' ? 'Stable' : ass.trend }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty unit handling -->
+      <div class="dashboard-panel text-center padding-3rem" *ngIf="unitsList.length === 0">
+        <i class="pi pi-exclamation-circle text-amber font-3rem"></i>
+        <h2>No Authorized Audit Units</h2>
+        <p class="text-secondary max-width-35rem margin-auto">You do not have any authorized branch/audit units configured. Please consult the system administrator to assign units to your employee profile.</p>
+      </div>
+    </div>
+
+
+    <!-- 2. AUDITOR / EMPLOYEE / REVIEWER VIEW -->
+    <div class="role-view-panel" *ngIf="[2, 3, 4].includes(userTypeId)">
+      
+      <!-- Welcome Header with Selection Dropdown -->
+      <div class="dashboard-hero select-hero">
+        <div class="hero-left">
+          <div class="hero-tag">Workspaces & Review</div>
+          <h1>{{ roleName }} Portal</h1>
+          <p>Analyze branch risks, completed assessments, and trend metrics.</p>
+        </div>
+        <div class="hero-right filter-col" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+          <div class="select-wrapper">
+            <label class="dropdown-label">Select Audit Unit</label>
+            <p-select
+              [options]="unitsList"
+              [ngModel]="selectedUnitId"
+              (ngModelChange)="onUnitChange($event)"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Select Audit Unit"
+              [filter]="true"
+              filterBy="label"
+              appendTo="body"
+              styleClass="dashboard-select"
+            ></p-select>
+          </div>
+          <div class="select-wrapper" *ngIf="selectedUnitId !== null && userTypeId === 3">
+            <label class="dropdown-label">Financial Year</label>
+            <p-select
+              [options]="yearFilterOptions"
+              [ngModel]="selectedYearId"
+              (ngModelChange)="onYearChange($event)"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="All Years"
+              [showClear]="true"
+              appendTo="body"
+              styleClass="dashboard-select"
+            ></p-select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detail Loading spinner when dropdown changes unit -->
+      <div class="loading-overlay" *ngIf="detailsLoading">
+        <div class="spinner-container">
+          <i class="pi pi-spin pi-spinner spinner-icon"></i>
+          <span class="loading-text">Loading unit metrics...</span>
+        </div>
+      </div>
+
+      <div *ngIf="!detailsLoading && selectedUnitId !== null">
+        <!-- Status Metrics Grid -->
+        <div class="metrics-grid" *ngIf="userTypeId !== 3">
+          <div class="metric-card theme-purple">
+            <div class="card-glow"></div>
+            <div class="card-icon"><i class="pi pi-chart-bar"></i></div>
+            <div class="card-details">
+              <span class="card-title">Weighted Risk Score (FY)</span>
+              <span class="card-value">{{ unitSummary?.totalWeightedRiskScore || '0.00' }}</span>
+            </div>
+          </div>
+
+          <div class="metric-card theme-blue">
+            <div class="card-glow"></div>
+            <div class="card-icon"><i class="pi pi-clock"></i></div>
+            <div class="card-details">
+              <span class="card-title">Assessments Pending</span>
+              <span class="card-value">{{ unitSummary?.assessmentPendingCount || 0 }}</span>
+            </div>
+          </div>
+
+          <div class="metric-card theme-red">
+            <div class="card-glow"></div>
+            <div class="card-icon"><i class="pi pi-exclamation-triangle"></i></div>
+            <div class="card-details">
+              <span class="card-title">Assessments Expired</span>
+              <span class="card-value">{{ unitSummary?.assessmentExpiredCount || 0 }}</span>
+            </div>
+          </div>
+
+          <div class="metric-card theme-amber">
+            <div class="card-glow"></div>
+            <div class="card-icon"><i class="pi pi-play"></i></div>
+            <div class="card-details">
+              <span class="card-title">Assessments Not Started</span>
+              <span class="card-value">{{ unitSummary?.assessmentNotStartedCount || 0 }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Period Selector Toolbar -->
+        <div class="dashboard-toolbar">
+          <div class="toolbar-title">
+            <h3>Visual Risk & Score Analytics</h3>
+            <span>Filtered charts for detailed risk category investigation</span>
+          </div>
+          <div class="select-wrapper">
+            <p-select
+              [options]="filteredAssessmentPeriods"
+              [ngModel]="selectedAssessmentPeriodId"
+              (ngModelChange)="onPeriodChange($event)"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Select Period"
+              styleClass="dashboard-select"
+            ></p-select>
+          </div>
+        </div>
+
+        <!-- Detail Loading spinner when period dropdown changes -->
+        <div class="loading-overlay" *ngIf="chartsLoading">
+          <div class="spinner-container">
+            <i class="pi pi-spin pi-spinner spinner-icon"></i>
+            <span class="loading-text">Loading period charts...</span>
+          </div>
+        </div>
+
+        <!-- 3 Charts Grid -->
+        <div class="dashboard-grid-3col" *ngIf="!chartsLoading">
+          <!-- Stacked Chart -->
+          <div class="dashboard-panel chart-panel">
+            <div class="panel-header">
+              <h3>Risk Trend by Period</h3>
+              <span class="panel-subtitle">Weighted risk severity share</span>
+            </div>
+            <div class="panel-body chart-wrapper">
+              <p-chart type="bar" [data]="unitStackedData" [options]="unitStackedOptions" height="280px"></p-chart>
+            </div>
+          </div>
+
+          <!-- Risk Pie Chart -->
+          <div class="dashboard-panel chart-panel">
+            <div class="panel-header">
+              <h3>Category Count Share</h3>
+              <span class="panel-subtitle">Risk classification count distribution</span>
+            </div>
+            <div class="panel-body chart-wrapper">
+              <p-chart type="pie" [data]="unitPieData" [options]="unitPieOptions" height="280px"></p-chart>
+            </div>
+          </div>
+
+          <!-- Risk Bar Chart -->
+          <div class="dashboard-panel chart-panel">
+            <div class="panel-header">
+              <h3>Risk Type Wise Scores</h3>
+              <span class="panel-subtitle">Weighted risk categories scores list</span>
+            </div>
+            <div class="panel-body chart-wrapper">
+              <p-chart type="bar" [data]="unitBarData" [options]="unitBarOptions" height="280px"></p-chart>
+            </div>
+          </div>
+
+          <!-- Risk Heatmap -->
+          <div class="dashboard-panel chart-panel">
+            <div class="panel-header">
+              <h3>Risk Assessment Heatmap</h3>
+              <span class="panel-subtitle">Inherent Business Risk vs Control Effectiveness</span>
+            </div>
+            <div class="panel-body chart-wrapper">
+              <div class="modern-heatmap-card">
+                <table class="modern-heatmap-table">
+                  <thead>
+                    <tr>
+                      <th style="border: none; background: transparent; width: 60px;"></th>
+                      <th class="heatmap-axis-label">Low CR</th>
+                      <th class="heatmap-axis-label">Med CR</th>
+                      <th class="heatmap-axis-label">High CR</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="heatmap-row-header">High BR</td>
+                      <td class="heatmap-cell cell-medium" [class.empty-cell]="unitHeatmap[0][0] === 0">{{ unitHeatmap[0][0] > 0 ? unitHeatmap[0][0] : '' }}</td>
+                      <td class="heatmap-cell cell-high" [class.empty-cell]="unitHeatmap[0][1] === 0">{{ unitHeatmap[0][1] > 0 ? unitHeatmap[0][1] : '' }}</td>
+                      <td class="heatmap-cell cell-critical" [class.empty-cell]="unitHeatmap[0][2] === 0">{{ unitHeatmap[0][2] > 0 ? unitHeatmap[0][2] : '' }}</td>
+                    </tr>
+                    <tr>
+                      <td class="heatmap-row-header">Med BR</td>
+                      <td class="heatmap-cell cell-medlow" [class.empty-cell]="unitHeatmap[1][0] === 0">{{ unitHeatmap[1][0] > 0 ? unitHeatmap[1][0] : '' }}</td>
+                      <td class="heatmap-cell cell-medium" [class.empty-cell]="unitHeatmap[1][1] === 0">{{ unitHeatmap[1][1] > 0 ? unitHeatmap[1][1] : '' }}</td>
+                      <td class="heatmap-cell cell-high" [class.empty-cell]="unitHeatmap[1][2] === 0">{{ unitHeatmap[1][2] > 0 ? unitHeatmap[1][2] : '' }}</td>
+                    </tr>
+                    <tr>
+                      <td class="heatmap-row-header">Low BR</td>
+                      <td class="heatmap-cell cell-low" [class.empty-cell]="unitHeatmap[2][0] === 0">{{ unitHeatmap[2][0] > 0 ? unitHeatmap[2][0] : '' }}</td>
+                      <td class="heatmap-cell cell-medlow" [class.empty-cell]="unitHeatmap[2][1] === 0">{{ unitHeatmap[2][1] > 0 ? unitHeatmap[2][1] : '' }}</td>
+                      <td class="heatmap-cell cell-medium" [class.empty-cell]="unitHeatmap[2][2] === 0">{{ unitHeatmap[2][2] > 0 ? unitHeatmap[2][2] : '' }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="modern-legend">
+                  <span class="legend-badge"><span class="legend-dot" style="background: #4ade80;"></span> Low</span>
+                  <span class="legend-badge"><span class="legend-dot" style="background: #a3e635;"></span> Med-Low</span>
+                  <span class="legend-badge"><span class="legend-dot" style="background: #fb923c;"></span> Medium</span>
+                  <span class="legend-badge"><span class="legend-dot" style="background: #fb7185;"></span> High</span>
+                  <span class="legend-badge"><span class="legend-dot" style="background: #f43f5e;"></span> Critical</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Completed Assessments Table -->
+        <div class="dashboard-panel table-panel full-width">
+          <div class="panel-header">
+            <h3>Completed Assessment Periods History</h3>
+            <span class="panel-subtitle">Full list of all previously authorized and finalized assessments</span>
+          </div>
+          <div class="panel-body">
+            <div class="table-responsive">
+              <table class="dashboard-table">
+                <thead>
+                  <tr>
+                    <th>Assessment Period</th>
+                    <th>Frequency (Months)</th>
+                    <th>Weighted Score</th>
+                    <th>Risk Trend</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngIf="assessmentListTable.length === 0">
+                    <td colspan="4" class="text-center empty-cell">
+                      <i class="pi pi-folder-open empty-icon"></i>
+                      <span>No completed assessments found for this unit.</span>
+                    </td>
+                  </tr>
+                  <tr *ngFor="let ass of assessmentListTable">
+                    <td><strong>{{ ass.assesment_period }}</strong></td>
+                    <td>{{ ass.frequency }} months</td>
+                    <td>
+                      <span class="score-pill">{{ ass.weighted_score }}</span>
+                    </td>
+                    <td>
+                      <span class="trend-badge" [ngClass]="{
+                        'trend-up': ass.trend === 'Increasing',
+                        'trend-down': ass.trend === 'Decreasing',
+                        'trend-stable': ass.trend === '-'
+                      }">
+                        <i class="pi" [ngClass]="{
+                          'pi-arrow-up': ass.trend === 'Increasing',
+                          'pi-arrow-down': ass.trend === 'Decreasing',
+                          'pi-minus': ass.trend === '-'
+                        }"></i>
+                        {{ ass.trend === '-' ? 'Stable' : ass.trend }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Year-wise Assessment Schedule List -->
+        <ng-container *ngIf="userTypeId !== 3">
+          <div class="dashboard-panel table-panel full-width margin-top-2rem" *ngFor="let yearGroup of filteredYearWiseAssessments">
+            <div class="panel-header header-with-select">
+              <div>
+                <h3>Financial Year: <span class="text-primary font-600">{{ yearGroup.year_label }}</span></h3>
+                <span class="panel-subtitle">Complete schedule breakdown, due dates, and workspace triggers</span>
+              </div>
+              
+              <!-- Start Assessment button for Auditor role -->
+              <div class="start-btn-wrapper" *ngIf="userTypeId === 2 && yearGroup.showStartBtn">
+                <button
+                  pButton
+                  type="button"
+                  icon="pi pi-play"
+                  label="Start Assessment"
+                  class="p-button-primary p-button-raised"
+                  (click)="startNewAssessment(yearGroup.year_id)"
+                ></button>
+              </div>
+            </div>
+            
+            <div class="panel-body">
+              <div class="table-responsive">
+                <table class="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th width="80" class="text-center">Sr. No.</th>
+                      <th>Assessment Period</th>
+                      <th>Audit Status</th>
+                      <th>Compliance Status</th>
+                      <th class="text-center" width="220">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngIf="yearGroup.assessments.length === 0">
+                      <td colspan="5" class="text-center empty-cell">
+                        <i class="pi pi-folder-open empty-icon"></i>
+                        <span>No assessments scheduled under this financial year.</span>
+                      </td>
+                    </tr>
+                    <tr *ngFor="let ass of yearGroup.assessments; let idx = index">
+                      <td class="text-center">{{ idx + 1 }}</td>
+                      <td>
+                        <div><strong>{{ ass.assesment_period_from }} to {{ ass.assesment_period_to }}</strong></div>
+                        <div class="text-secondary font-sm">( Frequency: {{ ass.frequency }} months )</div>
+                        
+                        <!-- Due date warnings -->
+                        <div class="text-danger font-sm font-medium margin-top-025" *ngIf="[1, 3].includes(ass.audit_status_id)">
+                          Audit Due Date: {{ ass.audit_due_date || '-' }}
+                        </div>
+                        <div class="text-danger font-sm font-medium margin-top-025" *ngIf="[4, 6].includes(ass.audit_status_id)">
+                          Compliance Due Date: {{ ass.compliance_due_date || '-' }}
+                        </div>
+                      </td>
+                      <td>
+                        <span class="status-badge status-id-{{ ass.audit_status_id }}">
+                          {{ getAuditStatusLabel(ass.audit_status_id) }}
+                        </span>
+                        <div class="text-danger font-sm font-medium margin-top-025" *ngIf="ass.audit_status_id > 1">
+                          Reviewer Status: {{ getReviewerAuditStatusLabel(ass.audit_status_id) }}
+                        </div>
+                      </td>
+                      <td>
+                        <span class="status-badge status-id-{{ ass.audit_status_id }}" *ngIf="ass.audit_status_id >= 4">
+                          {{ getComplianceStatusLabel(ass.audit_status_id) }}
+                        </span>
+                        <span *ngIf="ass.audit_status_id < 4">-</span>
+                        
+                        <div class="text-danger font-sm font-medium margin-top-025" *ngIf="ass.audit_status_id > 4">
+                          Reviewer Status: {{ getReviewerComplianceStatusLabel(ass.audit_status_id) }}
+                        </div>
+                      </td>
+                      <td class="text-center">
+                        <!-- Overdue / Expired labels -->
+                        <div *ngIf="isPeriodExpired(ass)">
+                          <span class="expired-label" *ngIf="[1, 3].includes(ass.audit_status_id)">AUDIT PERIOD EXPIRED</span>
+                          <span class="expired-label" *ngIf="[4, 6].includes(ass.audit_status_id)">COMPLIANCE PERIOD EXPIRED</span>
+                        </div>
+
+                        <!-- Blocked labels -->
+                        <div *ngIf="ass.is_limit_blocked">
+                          <span class="expired-label" *ngIf="ass.audit_status_id <= 3">AUDIT BLOCKED</span>
+                          <span class="expired-label" *ngIf="ass.audit_status_id > 3">COMPLIANCE BLOCKED</span>
+                        </div>
+
+                        <!-- Action Buttons depending on role and status (when not blocked and not expired) -->
+                        <div *ngIf="!ass.is_limit_blocked && !isPeriodExpired(ass)">
+                          
+                          <!-- Auditor Actions -->
+                          <ng-container *ngIf="userTypeId === 2">
+                            <button
+                              pButton
+                              type="button"
+                              icon="pi pi-pencil"
+                              label="DO ASSESSMENT"
+                              class="p-button-sm p-button-primary"
+                              *ngIf="ass.audit_status_id === 1"
+                              (click)="openAssessmentWorkspace(ass.id)"
+                            ></button>
+                            
+                            <button
+                              pButton
+                              type="button"
+                              icon="pi pi-refresh"
+                              label="DO RE-ASSESSMENT"
+                              class="p-button-sm p-button-primary"
+                              *ngIf="ass.audit_status_id === 3"
+                              (click)="openAssessmentWorkspace(ass.id)"
+                            ></button>
+                          </ng-container>
+
+                          <!-- Compliance Employee Actions -->
+                          <ng-container *ngIf="userTypeId === 3">
+                            <button
+                              pButton
+                              type="button"
+                              icon="pi pi-check-square"
+                              label="DO COMPLIANCE"
+                              class="p-button-sm p-button-primary"
+                              *ngIf="ass.audit_status_id === 4"
+                              (click)="openComplianceWorkspace()"
+                            ></button>
+                            
+                            <button
+                              pButton
+                              type="button"
+                              icon="pi pi-refresh"
+                              label="DO RE-COMPLIANCE"
+                              class="p-button-sm p-button-primary"
+                              *ngIf="ass.audit_status_id === 6"
+                              (click)="openComplianceWorkspace()"
+                            ></button>
+                          </ng-container>
+
+                          <!-- Reviewer Actions -->
+                          <ng-container *ngIf="userTypeId === 4">
+                            <button
+                              pButton
+                              type="button"
+                              icon="pi pi-eye"
+                              label="REVIEW AUDIT"
+                              class="p-button-sm p-button-primary"
+                              *ngIf="ass.audit_status_id === 2"
+                              (click)="openReviewerWorkspace()"
+                            ></button>
+                            
+                            <button
+                              pButton
+                              type="button"
+                              icon="pi pi-eye"
+                              label="REVIEW COMPLIANCE"
+                              class="p-button-sm p-button-primary"
+                              *ngIf="ass.audit_status_id === 5"
+                              (click)="openReviewerWorkspace()"
+                            ></button>
+                          </ng-container>
+
+                          <!-- Completed status text -->
+                          <span class="completed-badge" *ngIf="ass.audit_status_id === 7">
+                            COMPLETED
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+      
+      <!-- Empty unit handling -->
+      <div class="dashboard-panel text-center padding-3rem" *ngIf="unitsList.length === 0">
+        <i class="pi pi-exclamation-circle text-amber font-3rem"></i>
+        <h2>No Authorized Audit Units</h2>
+        <p class="text-secondary max-width-35rem margin-auto">You do not have any authorized branch/audit units configured. Please consult the system administrator to assign units to your employee profile.</p>
+      </div>
+    </div>
+
+
+    <!-- 3. TOP-LEVEL MANAGEMENT VIEW (Type 5) -->
+    <div class="mgmt-view-panel" *ngIf="userTypeId === 5 && false">
+      
+      <!-- Welcome Header -->
+      <div class="dashboard-hero">
+        <div class="hero-left">
+          <div class="hero-tag">Executive Summary</div>
+          <h1>Management Analytics Dashboard</h1>
+          <p>Global risk assessment indicators, average scores, and audit review performance.</p>
+        </div>
+        <div class="hero-right">
+          <span class="role-badge"><i class="pi pi-briefcase"></i> {{ roleName }}</span>
+        </div>
+      </div>
+
+      <!-- Global Metrics Grid -->
+      <div class="metrics-grid">
+        <div class="metric-card theme-blue">
+          <div class="card-glow"></div>
+          <div class="card-icon"><i class="pi pi-chart-line"></i></div>
+          <div class="card-details">
+            <span class="card-title">Total Weighted Risk</span>
+            <span class="card-value">{{ managementMetrics?.totalWeightedRiskScore || '0.00' }}</span>
+          </div>
+        </div>
+
+        <div class="metric-card theme-purple">
+          <div class="card-glow"></div>
+          <div class="card-icon"><i class="pi pi-clock"></i></div>
+          <div class="card-details">
+            <span class="card-title">Pending Audits</span>
+            <span class="card-value">{{ managementMetrics?.auditPendingCount || 0 }}</span>
+          </div>
+        </div>
+
+        <div class="metric-card theme-red">
+          <div class="card-glow"></div>
+          <div class="card-icon"><i class="pi pi-exclamation-circle"></i></div>
+          <div class="card-details">
+            <span class="card-title">Expired Audits</span>
+            <span class="card-value">{{ managementMetrics?.auditExpiredCount || 0 }}</span>
+          </div>
+        </div>
+
+        <div class="metric-card theme-amber">
+          <div class="card-glow"></div>
+          <div class="card-icon"><i class="pi pi-calendar-times"></i></div>
+          <div class="card-details">
+            <span class="card-title">Expired Compliances</span>
+            <span class="card-value">{{ managementMetrics?.complianceExpiredCount || 0 }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Split Layout: Unit-Specific Days Taken & Global Bar Chart -->
+      <div class="dashboard-grid-2col">
+        
+        <!-- Left Side: Days Taken Analysis -->
+        <div class="dashboard-panel chart-panel flex-column">
+          <div class="panel-header header-with-select">
+            <div>
+              <h3>Branch Performance & Timeline</h3>
+              <span class="panel-subtitle">Analysis of days spent at each assessment phase</span>
+            </div>
+            <div class="select-wrapper">
+              <p-select
+                [options]="mgmtUnitSelectorOptions"
+                [ngModel]="selectedMgmtUnitId"
+                (ngModelChange)="onMgmtUnitChange($event)"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Select Unit"
+                styleClass="dashboard-select"
+              ></p-select>
+            </div>
+          </div>
+          
+          <div class="panel-body">
+            <!-- Spinner for days taken reloading -->
+            <div class="loading-overlay" *ngIf="detailsLoading">
+              <div class="spinner-container">
+                <i class="pi pi-spin pi-spinner spinner-icon"></i>
+                <span class="loading-text">Loading branch stats...</span>
+              </div>
+            </div>
+
+            <div *ngIf="!detailsLoading && selectedMgmtUnitId">
+              <!-- Sub-cards for selected branch score -->
+              <div class="sub-metrics-row">
+                <div class="sub-metric-pill">
+                  <span class="pill-label">Total Score:</span>
+                  <span class="pill-val text-blue">{{ mgmtBranchTotalWeightedScore }}</span>
+                </div>
+                <div class="sub-metric-pill">
+                  <span class="pill-label">Average Score:</span>
+                  <span class="pill-val text-purple">{{ mgmtBranchAvgWeightedScore }}</span>
+                </div>
+              </div>
+
+              <!-- Days Taken Stacked Chart -->
+              <div class="chart-wrapper margin-bottom-2rem">
+                <p-chart type="bar" [data]="mgmtDaysChartData" [options]="mgmtDaysChartOptions" height="260px"></p-chart>
+              </div>
+
+              <!-- Question Risk Pie Chart -->
+              <div class="chart-wrapper">
+                <h4 class="text-center font-600 margin-bottom-1rem">Risk Classification Distribution</h4>
+                <p-chart type="pie" [data]="mgmtPieData" [options]="mgmtPieOptions" height="200px"></p-chart>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Side: Branches Risk Rating Bar Chart -->
+        <div class="dashboard-panel chart-panel">
+          <div class="panel-header">
+            <h3>Branches Risk Overview</h3>
+            <span class="panel-subtitle">Aggregated risk rating index across branches</span>
+          </div>
+          <div class="panel-body chart-wrapper">
+            <p-chart type="bar" [data]="mgmtBranchesBarData" [options]="mgmtBranchesBarOptions" height="400px"></p-chart>
+          </div>
+        </div>
+      </div>
+
+      <!-- Branches List Table -->
+      <div class="dashboard-panel table-panel">
+        <div class="panel-header">
+          <h3>Branches Overview & Ratings</h3>
+          <span class="panel-subtitle">Audit units listing with final ratings and historical trend</span>
+        </div>
+        <div class="panel-body">
+          <div class="table-responsive">
+            <table class="dashboard-table">
+              <thead>
+                <tr>
+                  <th>Branch Name</th>
+                  <th>Weighted Risk Score</th>
+                  <th>Trend</th>
+                  <th class="text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="mgmtTableData.length === 0">
+                  <td colspan="4" class="text-center empty-cell">
+                    <i class="pi pi-folder-open empty-icon"></i>
+                    <span>No branch details available.</span>
+                  </td>
+                </tr>
+                <tr *ngFor="let branch of mgmtTableData">
+                  <td><strong>{{ branch.name }}</strong></td>
+                  <td>
+                    <span class="score-pill">{{ branch.weighted_score }}</span>
+                  </td>
+                  <td>
+                    <span class="trend-badge" [ngClass]="{
+                      'trend-up': branch.trend === 'Increasing',
+                      'trend-down': branch.trend === 'Decreasing',
+                      'trend-stable': branch.trend === '-'
+                    }">
+                      <i class="pi" [ngClass]="{
+                        'pi-arrow-up': branch.trend === 'Increasing',
+                        'pi-arrow-down': branch.trend === 'Decreasing',
+                        'pi-minus': branch.trend === '-'
+                      }"></i>
+                      {{ branch.trend === '-' ? 'Stable' : branch.trend }}
+                    </span>
+                  </td>
+                  <td class="text-center">
+                    <button
+                      pButton
+                      type="button"
+                      icon="pi pi-chevron-right"
+                      label="Details"
+                      class="p-button-sm p-button-text"
+                      (click)="navigateToUnit(branch.id)"
+                    ></button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
