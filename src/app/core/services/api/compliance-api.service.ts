@@ -309,8 +309,17 @@ export class ComplianceApiService {
     return this.http.put<any>(`${this.baseUrl}/assignments/${assignmentId}/status`, { status });
   }
 
+  updateTaskSetBranches(setId: number, branchIds: number[]) {
+    return this.http.post<any>(`${this.baseUrl}/task-sets/${setId}/branches`, { branchIds });
+  }
+
+  generateAssignments(taskSetId?: number) {
+    return this.http.post<any>(`${this.baseUrl}/assignments/generate-assignments`, { task_set_id: taskSetId });
+  }
+
   // Dashboard
   getDashboardStats() {
     return this.http.get<any>(`${this.baseUrl}/dashboard/stats?_t=${Date.now()}`);
   }
 }
+

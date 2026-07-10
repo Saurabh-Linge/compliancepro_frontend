@@ -2,9 +2,8 @@
 
   <!-- Back -->
   <div style="margin-bottom: 1rem;">
-    <button (click)="goBack()" class="back-btn">
-      <i class="pi pi-arrow-left"></i> Back to CO Review Queue
-    </button>
+    <p-button (click)="goBack()" label="Back to CO Review Queue"
+              icon="pi pi-arrow-left" [text]="true" severity="secondary" size="small" />
   </div>
 
   <!-- Assignment Header Card -->
@@ -15,31 +14,79 @@
       <div><div class="review-header-label">Authority</div><div class="review-header-value">{{ assignmentMeta()?.authority_name || '—' }}</div></div>
       <div>
         <div class="review-header-label">Status</div>
-        <span class="status-badge status-review">REVIEW PENDING</span>
+        <p-tag value="REVIEW PENDING" severity="warn" [rounded]="true" />
       </div>
     </div>
-    <div class="review-progress">
-      <span class="progress-complied">✅ Complied: {{ compliedCount() }}</span>
-      <span class="progress-not">❌ Not Complied: {{ notCompliedCount() }}</span>
-      <span class="progress-approved">🟢 CO Approved: {{ approvedCount() }}</span>
-      <span class="progress-redo">🔄 Needs Redo: {{ needsRedoCount() }}</span>
-      <span class="progress-total">📋 Total: {{ tasks().length }}</span>
+    <!-- Progress stats using clickable p-button chips -->
+    <div class="review-progress" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+      <p-button
+        [label]="'Complied: ' + compliedCount()"
+        icon="pi pi-check-circle"
+        severity="success"
+        [outlined]="activeFilter() !== 'COMPLIED'"
+        size="small"
+        styleClass="progress-btn-chip"
+        (click)="toggleFilter('COMPLIED')"
+        pTooltip="Click to show only complied tasks" />
+      <p-button
+        [label]="'Not Complied: ' + notCompliedCount()"
+        icon="pi pi-times-circle"
+        severity="danger"
+        [outlined]="activeFilter() !== 'NOT_COMPLIED'"
+        size="small"
+        styleClass="progress-btn-chip"
+        (click)="toggleFilter('NOT_COMPLIED')"
+        pTooltip="Click to show only not complied tasks" />
+      <p-button
+        [label]="'CO Approved: ' + approvedCount()"
+        icon="pi pi-verified"
+        severity="success"
+        [outlined]="activeFilter() !== 'APPROVED'"
+        size="small"
+        styleClass="progress-btn-chip"
+        (click)="toggleFilter('APPROVED')"
+        pTooltip="Click to show only approved tasks" />
+      <p-button
+        [label]="'Needs Redo: ' + needsRedoCount()"
+        icon="pi pi-refresh"
+        severity="warn"
+        [outlined]="activeFilter() !== 'NEEDS_REDO'"
+        size="small"
+        styleClass="progress-btn-chip"
+        (click)="toggleFilter('NEEDS_REDO')"
+        pTooltip="Click to show only tasks flagged for redo" />
+      <p-button
+        [label]="'Total: ' + tasks().length"
+        icon="pi pi-list"
+        severity="secondary"
+        [text]="true"
+        size="small"
+        styleClass="progress-btn-chip"
+        (click)="clearFilter()"
+        pTooltip="Click to show all tasks" />
     </div>
   </div>
 
   <!-- Bulk Actions Bar -->
   <div class="bulk-actions-bar">
     <span class="bulk-label">Quick Actions:</span>
-    <button class="bulk-btn bulk-approve-all" (click)="markAllApproved()" [disabled]="submitting">
-      <i class="pi pi-check-circle"></i> Mark All Approved
-    </button>
-    <button class="bulk-btn bulk-needs-redo" (click)="markAllNeedsRedo()" [disabled]="submitting">
-      <i class="pi pi-refresh"></i> Flag All for Redo
-    </button>
+    <p-button label="Mark All Approved" icon="pi pi-check-circle"
+              severity="success" [outlined]="true" size="small"
+              [disabled]="submitting" (click)="markAllApproved()" />
+    <p-button label="Flag All for Redo" icon="pi pi-refresh"
+              severity="warn" [outlined]="true" size="small"
+              [disabled]="submitting" (click)="markAllNeedsRedo()" />
+  </div>
+
+  <!-- Active filter banner -->
+  <div *ngIf="activeFilter()" style="display:flex; align-items:center; gap:0.5rem; padding:0.5rem 1rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; margin-bottom:0.5rem; font-size:0.82rem; font-weight:600; color:#1d4ed8;">
+    <i class="pi pi-filter" style="font-size:0.85rem;"></i>
+    Showing only: <strong>{{ activeFilter() === 'APPROVED' ? 'Approved' : activeFilter() === 'NEEDS_REDO' ? 'Needs Redo' : 'Not Reviewed' }}</strong> tasks
+    <p-button label="Clear" icon="pi pi-times" [text]="true" severity="secondary" size="small" (click)="clearFilter()" [style]="{'margin-left': 'auto'}"/>
   </div>
 
   <!-- Task Groups -->
-  <div *ngFor="let group of taskGroups()" class="task-group-wrapper">
+  <div *ngFor="let group of filteredTaskGroups()" class="task-group-wrapper">
     <div class="task-group-header">
       <i class="pi pi-folder-open" style="color: #4f46e5;"></i>
       {{ group.headerName }}
@@ -69,19 +116,23 @@
           <!-- Branch's Answer Column -->
           <div class="branch-answer-col">
             <div class="control-label">Branch Declaration</div>
-            <div class="compliance-badge-large"
-                 [class.badge-complied]="t.compliance_status === 'COMPLIED'"
-                 [class.badge-not-complied]="t.compliance_status === 'NOT_COMPLIED'"
-                 [class.badge-pending]="!t.compliance_status || t.compliance_status === 'PENDING'">
-              <i class="pi"
-                 [class.pi-check-circle]="t.compliance_status === 'COMPLIED'"
-                 [class.pi-times-circle]="t.compliance_status === 'NOT_COMPLIED'"
-                 [class.pi-clock]="!t.compliance_status || t.compliance_status === 'PENDING'"></i>
-              {{ t.compliance_status || 'PENDING' }}
+
+            <!-- Compliance status using p-tag -->
+            <div>
+              <p-tag *ngIf="t.compliance_status === 'COMPLIED'"
+                     value="COMPLIED" severity="success" icon="pi pi-check-circle" />
+              <p-tag *ngIf="t.compliance_status === 'NOT_COMPLIED'"
+                     value="NOT COMPLIED" severity="danger" icon="pi pi-times-circle" />
+              <p-tag *ngIf="!t.compliance_status || t.compliance_status === 'PENDING'"
+                     value="PENDING" severity="secondary" icon="pi pi-clock" />
             </div>
-            <a *ngIf="t.has_evidence && t.evidence_url" [href]="t.evidence_url" target="_blank" class="evidence-link">
-              <i class="pi pi-file-pdf" style="color: #ef4444;"></i> View Evidence PDF
-            </a>
+
+            <!-- Evidence link -->
+            <p-button *ngIf="t.has_evidence && t.evidence_url"
+                      label="View Evidence PDF" icon="pi pi-file-pdf"
+                      [text]="true" size="small"
+                      styleClass="evidence-link p-0"
+                      (click)="openEvidence(t.evidence_url)" />
             <span *ngIf="!t.has_evidence" class="no-evidence">No evidence uploaded</span>
           </div>
 
@@ -91,23 +142,27 @@
               <div class="control-label">Branch Remarks</div>
               <div class="branch-remark-box">{{ t.remarks || '—' }}</div>
             </div>
+
+            <!-- Per-task Approve / Needs Redo toggle -->
             <div class="review-toggle-row">
-              <button class="toggle-btn toggle-approve"
-                      [class.active]="t.review_status === 'APPROVED'"
-                      (click)="setTaskReviewStatus(t, 'APPROVED')"
-                      [disabled]="savingTaskId() === t.assignment_task_id">
-                <i class="pi pi-check"></i> Approve
-              </button>
-              <button class="toggle-btn toggle-redo"
-                      [class.active]="t.review_status === 'NEEDS_REDO'"
-                      (click)="setTaskReviewStatus(t, 'NEEDS_REDO')"
-                      [disabled]="savingTaskId() === t.assignment_task_id">
-                <i class="pi pi-refresh"></i> Needs Redo
-              </button>
-              <i *ngIf="savingTaskId() === t.assignment_task_id" class="pi pi-spin pi-spinner" style="color: #6b7280;"></i>
+              <p-button label="Approve" icon="pi pi-check" size="small"
+                        [severity]="t.review_status === 'APPROVED' ? 'success' : 'secondary'"
+                        [outlined]="t.review_status !== 'APPROVED'"
+                        [loading]="savingTaskId() === t.assignment_task_id && pendingStatus === 'APPROVED'"
+                        [disabled]="savingTaskId() === t.assignment_task_id"
+                        (click)="setTaskReviewStatus(t, 'APPROVED')" />
+              <p-button label="Needs Redo" icon="pi pi-refresh" size="small"
+                        [severity]="t.review_status === 'NEEDS_REDO' ? 'warn' : 'secondary'"
+                        [outlined]="t.review_status !== 'NEEDS_REDO'"
+                        [loading]="savingTaskId() === t.assignment_task_id && pendingStatus === 'NEEDS_REDO'"
+                        [disabled]="savingTaskId() === t.assignment_task_id"
+                        (click)="setTaskReviewStatus(t, 'NEEDS_REDO')" />
             </div>
+
+            <!-- CO remark textarea for Needs Redo -->
             <div *ngIf="t.review_status === 'NEEDS_REDO'" style="margin-top: 0.5rem;">
-              <textarea [(ngModel)]="t.review_remark"
+              <textarea pTextarea
+                        [(ngModel)]="t.review_remark"
                         placeholder="Explain what needs to be redone..."
                         class="co-remark-input"
                         rows="2"
@@ -126,29 +181,68 @@
       <i class="pi pi-shield" style="color: #4f46e5; font-size: 1.2rem;"></i>
       CO Final Decision
     </div>
+
+    <!-- Clickable filter chips — click to highlight tasks of that type -->
     <div class="decision-summary">
-      <span class="ds-approved">✅ {{ approvedCount() }} Approved</span>
-      <span class="ds-redo">🔄 {{ needsRedoCount() }} Needs Redo</span>
-      <span class="ds-unreviewed">⏳ {{ unreviewedCount() }} Not Reviewed</span>
+      <p-button
+        [label]="approvedCount() + ' Approved'"
+        icon="pi pi-check-circle"
+        severity="success" [outlined]="activeFilter() !== 'APPROVED'"
+        size="small" styleClass="ds-chip"
+        (click)="toggleFilter('APPROVED')"
+        [badge]="activeFilter() === 'APPROVED' ? 'active' : ''"
+        pTooltip="Click to show only Approved tasks" />
+      <p-button
+        [label]="needsRedoCount() + ' Needs Redo'"
+        icon="pi pi-refresh"
+        severity="warn" [outlined]="activeFilter() !== 'NEEDS_REDO'"
+        size="small" styleClass="ds-chip"
+        (click)="toggleFilter('NEEDS_REDO')"
+        pTooltip="Click to show only Needs Redo tasks" />
+      <p-button
+        [label]="unreviewedCount() + ' Not Reviewed'"
+        icon="pi pi-clock"
+        severity="secondary" [outlined]="activeFilter() !== 'UNREVIEWED'"
+        size="small" styleClass="ds-chip"
+        (click)="toggleFilter('UNREVIEWED')"
+        pTooltip="Click to show only unreviewed tasks" />
+      <p-button *ngIf="activeFilter()"
+        label="Show All" icon="pi pi-filter-slash"
+        severity="secondary" [text]="true" size="small"
+        (click)="clearFilter()" />
     </div>
+
     <div class="decision-remark-row">
-      <label class="control-label">Overall CO Remarks <span style="color:#ef4444;" *ngIf="lastAction === 'REJECT' || lastAction === 'ESCALATE'">*</span></label>
-      <textarea [(ngModel)]="overallRemark" class="overall-remark-input" rows="3"
+      <label class="control-label">
+        Overall CO Remarks
+        <span style="color:#ef4444;" *ngIf="lastAction === 'REJECT' || lastAction === 'ESCALATE'"> *</span>
+      </label>
+      <textarea pTextarea [(ngModel)]="overallRemark" rows="3"
+                class="overall-remark-input"
                 placeholder="Add an overall review note (required for Reject / Escalate)..."></textarea>
     </div>
+
     <div class="decision-buttons">
-      <button class="decision-btn btn-reject" (click)="submitReview('REJECT')" [disabled]="submitting">
-        <i class="pi" [class.pi-spin]="submitting && lastAction === 'REJECT'" [class.pi-spinner]="submitting && lastAction === 'REJECT'" [class.pi-times-circle]="!(submitting && lastAction === 'REJECT')"></i>
-        Reject &amp; Request Re-compliance
-      </button>
-      <button class="decision-btn btn-escalate" (click)="submitReview('ESCALATE')" [disabled]="submitting">
-        <i class="pi" [class.pi-spin]="submitting && lastAction === 'ESCALATE'" [class.pi-spinner]="submitting && lastAction === 'ESCALATE'" [class.pi-exclamation-triangle]="!(submitting && lastAction === 'ESCALATE')"></i>
-        Escalate to CCO
-      </button>
-      <button class="decision-btn btn-accept" (click)="submitReview('ACCEPT')" [disabled]="submitting">
-        <i class="pi" [class.pi-spin]="submitting && lastAction === 'ACCEPT'" [class.pi-spinner]="submitting && lastAction === 'ACCEPT'" [class.pi-check-circle]="!(submitting && lastAction === 'ACCEPT')"></i>
-        Accept &amp; Complete
-      </button>
+      <p-button label="Reject & Request Re-compliance"
+                icon="pi pi-times-circle" severity="danger"
+                styleClass="decision-btn btn-reject"
+                [loading]="submitting && lastAction === 'REJECT'"
+                [disabled]="submitting"
+                (click)="submitReview('REJECT')" />
+
+      <p-button label="Escalate to CCO"
+                icon="pi pi-exclamation-triangle" severity="warn"
+                styleClass="decision-btn btn-escalate"
+                [loading]="submitting && lastAction === 'ESCALATE'"
+                [disabled]="submitting"
+                (click)="submitReview('ESCALATE')" />
+
+      <p-button label="Accept & Complete"
+                icon="pi pi-check-circle" severity="success"
+                styleClass="decision-btn btn-accept"
+                [loading]="submitting && lastAction === 'ACCEPT'"
+                [disabled]="submitting"
+                (click)="submitReview('ACCEPT')" />
     </div>
   </div>
 

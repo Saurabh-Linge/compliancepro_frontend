@@ -57,6 +57,12 @@ export class TaskSetsComponent implements OnInit {
       command: (row) => this.openFormDrawer(row)
     },
     {
+      label: 'Auto-Generate Assignments',
+      icon: 'pi pi-cog',
+      command: (row) => this.triggerAssignmentGeneration(row),
+      styleClass: 'p-button-success'
+    },
+    {
       label: 'Reopen For Recompliance',
       icon: 'pi pi-refresh',
       command: (row) => this.reopenTaskSet(row),
@@ -69,6 +75,7 @@ export class TaskSetsComponent implements OnInit {
       styleClass: 'p-button-danger'
     }
   ];
+
 
   // Modals state
   showFormDrawer = signal(false);
@@ -133,13 +140,14 @@ export class TaskSetsComponent implements OnInit {
     this.targetTasks = [];
     this.selectedBranches = [];
     this.proposedDate.set(null);
-    this.showBranchAssignment.set(false);
+    this.showBranchAssignment.set(true);
     
     // Reset tasks
     this.api.getApprovedTasks().subscribe(res => {
       this.allTasks.set(res.data);
       this.showFormDrawer.set(true);
     });
+
   }
 
   openFormDrawer(row: any) {
@@ -151,20 +159,23 @@ export class TaskSetsComponent implements OnInit {
     this.newTaskSetEndDate.set(row.end_date ? new Date(row.end_date) : null);
     this.newTaskSetFrequency.set(row.frequency || '');
     this.newTaskSetReportingDate.set(row.reporting_date ? new Date(row.reporting_date) : null);
-    this.selectedBranches = []; // We don't fetch existing branches for assignments, just allow adding new ones.
-    this.showBranchAssignment.set(false);
+    this.selectedBranches = [];
+    this.showBranchAssignment.set(true);
     if (row.default_due_date) {
       this.proposedDate.set(new Date(row.default_due_date));
     } else {
       this.proposedDate.set(null);
     }
+
     
     this.api.getTaskSet(row.id).subscribe(details => {
       const mappedIds = new Set((details.tasks || []).map((t: any) => t.id));
+      const mappedBranchIds = new Set((details.branches || []).map((b: any) => b.id));
       
       this.api.getApprovedTasks().subscribe(res => {
         this.allTasks.set(res.data);
         this.targetTasks = res.data.filter((t: any) => mappedIds.has(t.id));
+        this.selectedBranches = this.branches().filter((b: any) => mappedBranchIds.has(b.id));
         this.showFormDrawer.set(true);
       });
     });
@@ -190,23 +201,18 @@ export class TaskSetsComponent implements OnInit {
     const finalizeAssignments = (setId: number) => {
       // Map tasks
       const taskIds = this.targetTasks.map(t => t.id);
+      const branchIds = this.selectedBranches.map(b => b.id);
+
       this.api.updateTaskSetMapping(setId, taskIds).subscribe(() => {
-        if (this.selectedBranches.length > 0) {
-          const branchIds = this.selectedBranches.map(b => b.id);
-          this.api.createAssignment({ 
-            task_set_id: setId,
-            branch_ids: branchIds,
-            proposed_timeline: this.newTaskSetDueDate() ? this.formatDate(this.newTaskSetDueDate())! : ''
-          }).subscribe(() => {
-            this.showFormDrawer.set(false);
-            this.loadData();
-            this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Task set saved, tasks mapped and assigned successfully' });
-          });
-        } else {
+        this.api.updateTaskSetBranches(setId, branchIds).subscribe(() => {
           this.showFormDrawer.set(false);
           this.loadData();
-          this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Task set saved and tasks mapped successfully' });
-        }
+          this.messageService.add({ 
+            severity: 'success', 
+            summary: 'Success', 
+            detail: 'Task set and mappings updated. Assignments will generate based on schedule.' 
+          });
+        });
       });
     };
 
@@ -220,6 +226,7 @@ export class TaskSetsComponent implements OnInit {
       });
     }
   }
+
 
   reopenTaskSet(row: any) {
     if (confirm(`Are you sure you want to reopen "${row.name}" for recompliance? All associated branch assignments will be set back to Pending.`)) {
@@ -237,4 +244,25 @@ export class TaskSetsComponent implements OnInit {
       });
     }
   }
+
+  triggerAssignmentGeneration(row: any) {
+    this.messageService.add({ severity: 'info', summary: 'Processing', detail: `Auto-generating assignments for "${row.name}"...` });
+    this.api.generateAssignments(row.id).subscribe({
+      next: (res) => {
+        this.messageService.add({ 
+          severity: 'success', 
+          summary: 'Success', 
+          detail: `Generated ${res.generated} new assignments, skipped ${res.skipped} existing.` 
+        });
+      },
+      error: (err) => {
+        this.messageService.add({ 
+          severity: 'error', 
+          summary: 'Error', 
+          detail: 'Failed to auto-generate assignments: ' + (err.message || err.statusText) 
+        });
+      }
+    });
+  }
 }
+

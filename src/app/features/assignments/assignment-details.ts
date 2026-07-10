@@ -4,20 +4,25 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ComplianceApiService } from '../../core/services/api/compliance-api.service';
 import { NotificationService } from '../../core/services/notification/notification.service';
+import { ButtonModule } from 'primeng/button';
+import { SelectModule } from 'primeng/select';
+import { Textarea } from 'primeng/textarea';
+import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
 
 @Component({
   selector: 'app-assignment-details',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ButtonModule, SelectModule, Textarea, TagModule, TooltipModule],
+  styleUrls: ['../../shared/styles/checklist-shared.css'],
   template: `
     <!-- Scrollable Page Wrapper -->
     <div style="height: calc(100vh - 70px); overflow-y: auto; padding: 1rem; box-sizing: border-box;">
       
       <!-- Back navigation link -->
       <div class="mb-2">
-        <button class="text-indigo-600 hover:text-indigo-800 font-medium bg-transparent border-none cursor-pointer flex items-center gap-1" (click)="goBack()">
-          <i class="pi pi-arrow-left"></i> Back to Assignments
-        </button>
+        <p-button (click)="goBack()" label="Back to Assignments" icon="pi pi-arrow-left"
+                  [text]="true" severity="secondary" size="small" />
       </div>
       
       <!-- Compact Premium Dashboard Header -->
@@ -151,17 +156,19 @@ import { NotificationService } from '../../core/services/notification/notificati
                   <div class="answer-field" style="display: flex; flex-direction: column; gap: 0.5rem;">
                     <div>
                       <label class="control-label">Compliance <span class="text-red-500">*</span></label>
-                      <select [(ngModel)]="t.temp_compliance_status" 
-                              [disabled]="!canEditAssignment()"
-                              class="answer-control"
-                              [ngClass]="{
-                                'border-green-500 text-green-700 font-bold bg-green-50/30': t.temp_compliance_status === 'COMPLIED',
-                                'border-red-500 text-red-700 font-bold bg-red-50/30': t.temp_compliance_status === 'NOT_COMPLIED'
-                              }">
-                        <option value="PENDING">PENDING DECLARATION</option>
-                        <option value="COMPLIED">COMPLIED</option>
-                        <option value="NOT_COMPLIED">NOT COMPLIED</option>
-                      </select>
+                      <p-select
+                        [(ngModel)]="t.temp_compliance_status"
+                        [options]="complianceOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                        [disabled]="!canEditAssignment()"
+                        styleClass="answer-control w-full"
+                        [ngClass]="{
+                          'border-green-500': t.temp_compliance_status === 'COMPLIED',
+                          'border-red-500': t.temp_compliance_status === 'NOT_COMPLIED'
+                        }"
+                        placeholder="Select status..."
+                      />
                     </div>
 
                     <!-- Upload PDF Button (Full Width) -->
@@ -177,35 +184,42 @@ import { NotificationService } from '../../core/services/notification/notificati
                       </label>
                     </div>
 
-                    <!-- View PDF link and Attached label -->
-                    <div class="flex items-center justify-between" style="display: flex; justify-content: space-between; align-items: center; min-height: 1.25rem; margin-top: -0.15rem; margin-bottom: -0.15rem;">
+                    <!-- View PDF link -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; min-height: 1.25rem; margin-top: -0.15rem; margin-bottom: -0.15rem;">
                       <div>
-                        <a *ngIf="t.has_evidence && t.evidence_url" 
-                           [href]="t.evidence_url" 
-                           target="_blank" 
-                           class="text-indigo-600 hover:text-indigo-800 text-xs font-semibold flex items-center gap-1">
-                          <i class="pi pi-file-pdf text-red-500"></i> View PDF
+                        <a *ngIf="t.has_evidence && t.evidence_url"
+                           [href]="t.evidence_url"
+                           target="_blank"
+                           class="evidence-link">
+                          <i class="pi pi-file-pdf" style="color: #ef4444;"></i> View PDF
                         </a>
                       </div>
-                      <small *ngIf="getSelectedFileName(t.assignment_task_id)" class="text-[10px] text-indigo-600 font-medium truncate max-w-[120px]" [title]="getSelectedFileName(t.assignment_task_id)">
-                        Attached: {{ getSelectedFileName(t.assignment_task_id) }}
+                      <small *ngIf="getSelectedFileName(t.assignment_task_id)"
+                             class="text-indigo-600 font-medium"
+                             style="font-size: 0.65rem;"
+                             [pTooltip]="getSelectedFileName(t.assignment_task_id)">
+                        Attached: {{ getSelectedFileName(t.assignment_task_id) | slice:0:18 }}…
                       </small>
                     </div>
 
-                    <!-- Save Row button (Full Width) -->
-                    <button *ngIf="canEditAssignment()"
-                            class="save-row-btn"
-                            [disabled]="rowSavingMap()[t.assignment_task_id] || t.temp_compliance_status === 'PENDING' || !t.temp_remarks?.trim()"
-                            (click)="saveSingleTask(t)">
-                      <i class="pi mr-1" [ngClass]="rowSavingMap()[t.assignment_task_id] ? 'pi-spin pi-spinner' : 'pi-save'"></i>
-                      {{ rowSavingMap()[t.assignment_task_id] ? 'Saving' : 'Save Task' }}
-                    </button>
+                    <!-- Save Row button -->
+                    <p-button *ngIf="canEditAssignment()"
+                              label="Save Task"
+                              [loading]="!!rowSavingMap()[t.assignment_task_id]"
+                              loadingIcon="pi pi-spinner pi-spin"
+                              icon="pi pi-save"
+                              iconPos="left"
+                              [disabled]="rowSavingMap()[t.assignment_task_id] || t.temp_compliance_status === 'PENDING' || !t.temp_remarks?.trim()"
+                              (click)="saveSingleTask(t)"
+                              styleClass="w-full save-row-btn"
+                              size="small" />
                   </div>
 
-                  <!-- Right Sub-column: Remarks/Explanation Textarea (Stretched) -->
+                  <!-- Right Sub-column: Remarks textarea -->
                   <div class="answer-field" style="display: flex; flex-direction: column; height: 100%;">
                     <label class="control-label">Remarks / Explanation <span class="text-red-500">*</span></label>
-                    <textarea [(ngModel)]="t.temp_remarks"
+                    <textarea pTextarea
+                              [(ngModel)]="t.temp_remarks"
                               [disabled]="!canEditAssignment()"
                               class="answer-control"
                               style="flex: 1; resize: none; min-height: 6rem;"
@@ -220,14 +234,16 @@ import { NotificationService } from '../../core/services/notification/notificati
         </div>
       </ng-container>
 
-      <!-- Bulk Submit Compliance Button (Full-width matching PHP view) -->
+      <!-- Bulk Submit Compliance Button -->
       <div class="mt-4 mb-5" *ngIf="canEditAssignment()">
-        <button class="submit-compliance-btn"
-                [disabled]="submitting"
-                (click)="submitAllCompliance()">
-          <i class="pi mr-2" [ngClass]="submitting ? 'pi-spin pi-spinner' : 'pi-send'"></i>
-          Submit Compliance
-        </button>
+        <p-button
+          label="Submit Compliance"
+          icon="pi pi-send"
+          [loading]="submitting"
+          loadingIcon="pi pi-spinner pi-spin"
+          (click)="submitAllCompliance()"
+          styleClass="w-full submit-compliance-btn"
+          size="large" />
       </div>
 
       <div *ngIf="taskGroups().length === 0" class="glass-panel text-center py-8 text-gray-500 bg-white rounded-xl border border-gray-100">
@@ -237,201 +253,6 @@ import { NotificationService } from '../../core/services/notification/notificati
       <div style="height: 4rem;"></div> <!-- bottom padding spacing -->
     </div>
   `,
-  styles: [`
-    .flex-column {
-      display: flex;
-      flex-direction: column;
-    }
-    .flex-1 { flex: 1; }
-    .flex-2 { flex: 2; }
-    .flex-1-5 { flex: 1.5; }
-    .hidden { display: none; }
-    
-    /* AuditPro Question Card layout */
-    .question-card {
-      display: grid;
-      grid-template-columns: minmax(18rem, 1.1fr) minmax(22rem, 0.9fr);
-      gap: 1.25rem;
-      align-items: start;
-      padding: 0.65rem 0.75rem;
-      border: 1px solid #e5e7eb;
-      border-left: 3px solid #d1d5db;
-      border-radius: 6px;
-      background: white;
-      margin-bottom: 0.75rem;
-      position: relative;
-    }
-    .question-card + .question-card {
-      margin-top: 0.5rem;
-    }
-    
-    /* Left border status indicators */
-    .border-left-green { border-left-color: #10b981 !important; }
-    .border-left-red { border-left-color: #ef4444 !important; }
-    .border-left-yellow { border-left-color: #f59e0b !important; }
-
-    /* Left section styling */
-    .question-main {
-      display: grid;
-      grid-template-columns: 1.8rem minmax(0, 1fr);
-      gap: 0.6rem;
-    }
-
-    .question-number {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 1.8rem;
-      height: 1.8rem;
-      border-radius: 6px;
-      background: #e0f2fe;
-      color: #0369a1;
-      font-size: 0.85rem;
-      font-weight: 700;
-    }
-
-    /* Right section sub-grid styling */
-    .answer-form {
-      min-width: 0;
-    }
-
-    .answer-form-grid {
-      display: grid;
-      grid-template-columns: minmax(10rem, 1fr) minmax(11rem, 1.2fr);
-      gap: 0.6rem;
-      align-items: stretch;
-    }
-
-    .answer-field {
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-    }
-
-    .control-label {
-      font-size: 0.7rem;
-      font-weight: 800;
-      color: #9ca3af;
-      text-transform: uppercase;
-      margin-bottom: 0.2rem;
-      letter-spacing: 0.05em;
-      display: block;
-    }
-
-    /* Input Controls */
-    .answer-control {
-      width: 100%;
-      min-height: 2.15rem;
-      padding: 0.4rem 0.5rem;
-      border: 1px solid #b8c7d5;
-      border-radius: 6px;
-      font-size: 0.875rem;
-      color: #374151;
-      background-color: white;
-      box-sizing: border-box;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    .answer-control:focus {
-      border-color: #4f46e5;
-    }
-
-    /* Modern Save row button */
-    .save-row-btn {
-      background: #4f46e5;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 0.4rem;
-      font-size: 0.85rem;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.2rem;
-      width: 100%;
-      height: 2.15rem;
-      transition: background 0.2s;
-    }
-    .save-row-btn:hover:not(:disabled) {
-      background: #4338ca;
-    }
-    .save-row-btn:disabled {
-      color: #9ca3af;
-      background: #f3f4f6;
-      cursor: not-allowed;
-      border: 1px solid #e5e7eb;
-    }
-
-    /* Full width submit compliance button matching PHP UI */
-    .submit-compliance-btn {
-      background: #4f46e5;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 0.75rem 1.5rem;
-      font-size: 0.95rem;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      transition: background 0.2s;
-    }
-    .submit-compliance-btn:hover:not(:disabled) {
-      background: #4338ca;
-    }
-    .submit-compliance-btn:disabled {
-      background: #d1d5db;
-      cursor: not-allowed;
-    }
-
-    /* Styled upload button label */
-    .upload-btn {
-      background: #f3f4f6;
-      color: #374151;
-      border: 1px solid #b8c7d5;
-      border-radius: 6px;
-      padding: 0.4rem 0.5rem;
-      font-size: 0.85rem;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s;
-      height: 2.15rem;
-      box-sizing: border-box;
-      width: 100%;
-    }
-    .upload-btn:hover {
-      background: #e5e7eb;
-    }
-    .upload-btn-attached {
-      background: #e0f2fe;
-      color: #0369a1;
-      border-color: #bae6fd;
-    }
-    .upload-btn-attached:hover {
-      background: #bae6fd;
-    }
-
-    /* Responsive scaling matching AuditPro styles */
-    @media (max-width: 991px) {
-      .question-card {
-        grid-template-columns: 1fr;
-        gap: 0.75rem;
-      }
-      .answer-form-grid {
-        grid-template-columns: 1fr;
-        gap: 0.6rem;
-      }
-    }
-  `]
 })
 export class AssignmentDetailsComponent implements OnInit {
   assignmentId: number | null = null;
@@ -454,6 +275,13 @@ export class AssignmentDetailsComponent implements OnInit {
   authorityName = signal<string>('');
 
   submitting = false;
+
+  // Options for the p-select compliance status dropdown
+  complianceOptions = [
+    { label: 'Pending Declaration', value: 'PENDING' },
+    { label: 'Complied', value: 'COMPLIED' },
+    { label: 'Not Complied', value: 'NOT_COMPLIED' }
+  ];
 
   // Local reactive signals to track newly selected files and saving states
   selectedFilesMap = signal<Record<number, File>>({});

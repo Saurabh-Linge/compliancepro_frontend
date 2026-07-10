@@ -1,16 +1,20 @@
-﻿import { Component, OnInit, signal, computed } from "@angular/core";
+import { Component, OnInit, signal, computed } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
 import { ComplianceApiService } from "../../core/services/api/compliance-api.service";
 import { NotificationService } from "../../core/services/notification/notification.service";
+import { ButtonModule } from "primeng/button";
+import { TagModule } from "primeng/tag";
+import { Textarea } from "primeng/textarea";
+import { TooltipModule } from "primeng/tooltip";
 
 @Component({
   selector: "app-cco-review-details",
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ButtonModule, TagModule, Textarea, TooltipModule],
   templateUrl: "./cco-review-details.component.html",
-  styleUrls: ["./cco-review-details.component.css"]
+  styleUrls: ["../../shared/styles/checklist-shared.css", "./cco-review-details.component.css"]
 })
 export class CcoReviewDetailsComponent implements OnInit {
   assignmentId: number | null = null;
@@ -20,6 +24,8 @@ export class CcoReviewDetailsComponent implements OnInit {
   submitting = false;
   lastAction: string = "";
   savingTaskId = signal<number | null>(null);
+  pendingStatus: string = ""; // tracks which button triggered the loading spinner
+  activeFilter = signal<string>(""); // APPROVED | NEEDS_REDO | UNREVIEWED | ''
 
   assignmentMeta = computed(() => this.tasks()[0] ?? null);
   compliedCount = computed(() => this.tasks().filter(t => t.compliance_status === "COMPLIED").length);
@@ -27,6 +33,23 @@ export class CcoReviewDetailsComponent implements OnInit {
   approvedCount = computed(() => this.tasks().filter(t => t.review_status === "APPROVED").length);
   needsRedoCount = computed(() => this.tasks().filter(t => t.review_status === "NEEDS_REDO").length);
   unreviewedCount = computed(() => this.tasks().filter(t => !t.review_status).length);
+
+  // Filtered view for decision-summary and header chip clicks
+  filteredTaskGroups = computed(() => {
+    const filter = this.activeFilter();
+    if (!filter) return this.taskGroups();
+    return this.taskGroups().map(g => ({
+      ...g,
+      tasks: g.tasks.filter(t => {
+        if (filter === 'COMPLIED')     return t.compliance_status === 'COMPLIED';
+        if (filter === 'NOT_COMPLIED') return t.compliance_status === 'NOT_COMPLIED';
+        if (filter === 'APPROVED')     return t.review_status === 'APPROVED';
+        if (filter === 'NEEDS_REDO')   return t.review_status === 'NEEDS_REDO';
+        if (filter === 'UNREVIEWED')   return !t.review_status;
+        return true;
+      })
+    })).filter(g => g.tasks.length > 0);
+  });
 
   constructor(
     private route: ActivatedRoute,
@@ -76,10 +99,11 @@ export class CcoReviewDetailsComponent implements OnInit {
     if (!this.assignmentId) return;
     const newStatus = task.review_status === status ? null : status;
     this.savingTaskId.set(task.assignment_task_id);
+    this.pendingStatus = newStatus || "";
     if (newStatus === null) {
       this.tasks.update(ts => ts.map(t => t.assignment_task_id === task.assignment_task_id ? { ...t, review_status: null, review_remark: "" } : t));
       this.groupTasks(this.tasks());
-      setTimeout(() => this.savingTaskId.set(null));
+      setTimeout(() => { this.savingTaskId.set(null); this.pendingStatus = ""; });
       return;
     }
     this.api.reviewTaskStatus(this.assignmentId, task.assignment_task_id, newStatus, task.review_remark).subscribe({
@@ -87,10 +111,13 @@ export class CcoReviewDetailsComponent implements OnInit {
         this.tasks.update(ts => ts.map(t => t.assignment_task_id === task.assignment_task_id ? { ...t, review_status: newStatus } : t));
         this.groupTasks(this.tasks());
         this.savingTaskId.set(null);
+        this.pendingStatus = "";
       },
-      error: () => { this.savingTaskId.set(null); this.notification.error("Failed to update task review status."); }
+      error: () => { this.savingTaskId.set(null); this.pendingStatus = ""; this.notification.error("Failed to update task review status."); }
     });
   }
+
+  openEvidence(url: string) { window.open(url, "_blank"); }
 
   saveCoRemark(task: any) {
     if (!this.assignmentId || task.review_status !== "NEEDS_REDO") return;
@@ -120,6 +147,13 @@ export class CcoReviewDetailsComponent implements OnInit {
     });
   }
 
+  toggleFilter(status: string) {
+    this.activeFilter.set(this.activeFilter() === status ? "" : status);
+  }
+
+  clearFilter() { this.activeFilter.set(""); }
+
   goBack() { this.router.navigate(["/cco-review"]); }
 }
+
 

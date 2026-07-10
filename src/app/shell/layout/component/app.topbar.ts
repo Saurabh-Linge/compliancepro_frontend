@@ -127,16 +127,21 @@ interface SearchItem {
           </ng-template>
         </p-select>
 
-        <p-button
-          icon="pi pi-bell"
-          pTooltip="Notification"
-          tooltipPosition="bottom"
-          styleClass="hide-on-small relative"
-          severity="secondary"
-          (click)="op.toggle($event)"
-        >
-          <p-badge *ngIf="unreadCount > 0" [value]="unreadCount.toString()" severity="danger" styleClass="absolute top-0 right-0 -mt-1 -mr-1"></p-badge>
-        </p-button>
+        <div class="notification-container hide-on-small">
+          <p-button
+            icon="pi pi-bell"
+            pTooltip="Notification"
+            tooltipPosition="bottom"
+            severity="secondary"
+            (click)="op.toggle($event)"
+          >
+          </p-button>
+          <span *ngIf="unreadCount() > 0" class="notification-badge animate-fadein">
+            {{ unreadCount() }}
+          </span>
+        </div>
+
+
 
         <p-popover #op [style]="{ width: '400px' }">
           <div class="p-3">
@@ -242,12 +247,40 @@ interface SearchItem {
           background: #f0f0f0;
         }
 
+        .notification-container {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+        }
+
+        .notification-badge {
+          position: absolute;
+          top: -4px;
+          right: -4px;
+          background-color: #ef4444;
+          color: #ffffff;
+          font-size: 0.65rem;
+          font-weight: 700;
+          border-radius: 9999px;
+          min-width: 1rem;
+          height: 1rem;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 4px;
+          border: 1.5px solid #5c6bc0; /* matches topbar header background color nicely */
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+          pointer-events: none;
+          z-index: 10;
+        }
+
         .layout-topbar-actions .p-button {
           width: 2.25rem;
           height: 2.25rem;
           border-radius: 4px;
           box-shadow: none;
         }
+
 
         .layout-topbar-actions .p-button.p-button-secondary {
           background: rgba(255, 255, 255, 0.1);
@@ -379,7 +412,7 @@ export class AppTopbar implements OnInit, OnDestroy {
 
   // Notifications State
   notifications: any[] = [];
-  unreadCount = 0;
+  unreadCount = signal(0);
   private notificationInterval: any;
   http = inject(HttpClient);
 
@@ -433,17 +466,18 @@ export class AppTopbar implements OnInit, OnDestroy {
     this.http.get<any[]>(`${this.config.apiUrl}/notifications`).subscribe({
       next: (data) => {
         this.notifications = data;
-        this.unreadCount = data.filter(n => !n.is_read).length;
+        this.unreadCount.set(data.filter(n => !n.is_read).length);
       },
       error: () => {} // silently ignore — topbar should not break on notification errors
     });
   }
 
+
   markAsRead(n: any) {
     if (n.is_read) return;
     this.http.put(`${this.config.apiUrl}/notifications/${n.id}/read`, {}).subscribe(() => {
       n.is_read = true;
-      this.unreadCount = this.notifications.filter(x => !x.is_read).length;
+      this.unreadCount.set(this.notifications.filter(x => !x.is_read).length);
     });
   }
 

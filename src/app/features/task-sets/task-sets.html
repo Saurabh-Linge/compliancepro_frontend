@@ -99,14 +99,15 @@
           <div class="flex align-items-center gap-2">
             <i class="pi pi-sitemap text-primary text-xl"></i>
             <div>
-              <span class="font-semibold text-900">Assign Branches</span>
-              <span class="text-xs text-600 ml-2">(Optional)</span>
+              <span class="font-semibold text-900">Assigned Branches (Permanent Mapping)</span>
+              <span class="text-xs text-700 ml-2 font-bold">(Required for Auto-Generation)</span>
             </div>
           </div>
           <i [class]="showBranchAssignment() ? 'pi pi-chevron-up text-600' : 'pi pi-chevron-down text-600'"></i>
         </div>
         
         <div *ngIf="showBranchAssignment()" class="mt-3 formgrid grid p-fluid animate-fadein">
+
           <div class="field col-12">
             <label class="font-medium text-700 mb-2">Select Branches/Departments</label>
             <p-multiSelect 
