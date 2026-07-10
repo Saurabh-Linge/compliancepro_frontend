@@ -96,6 +96,7 @@
                             optionValue="value"
                             (onChange)="role() === 'CO' ? branchId.set(null) : managedBranchIds.set([])"
                             [required]="true"
+                            [virtualScroll]="false"
                             [error]="submitted() && !role() ? 'Role is required' : ''">
                         </app-select-field>
                     </div>

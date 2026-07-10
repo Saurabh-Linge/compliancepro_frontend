@@ -63,6 +63,7 @@
                             optionLabel="label"
                             optionValue="value"
                             [required]="true"
+                            [virtualScroll]="false"
                             [error]="submitted() && !branchType() ? 'Type is required' : ''">
                         </app-select-field>
                     </div>
