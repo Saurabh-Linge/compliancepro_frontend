@@ -20,16 +20,76 @@ export class App implements OnInit {
   constructor(private router: Router) {
     this.router.events.subscribe((event: RouterEvent) => {
       if (event instanceof NavigationStart) {
-        // Aggressively clear any PrimeNG overlays on navigation
-        document.querySelectorAll('.p-menu, .p-menu-overlay, .p-popover, .p-tooltip, [data-pc-name="menu"]').forEach(el => {
+        // Aggressively clear any PrimeNG overlays, masks and overlays on navigation
+        document.querySelectorAll('.p-menu, .p-menu-overlay, .p-popover, .p-tooltip, [data-pc-name="menu"], .p-drawer-mask, .p-sidebar-mask, .p-dialog-mask, .p-component-overlay, .p-overlay-mask').forEach(el => {
           try {
             if (el && el.parentNode === document.body) {
               el.parentNode.removeChild(el);
             }
           } catch(e) {}
         });
+        // Restore scroll and interaction states on the body and html tags
+        try {
+          document.body.classList.remove('blocked-scroll', 'p-overflow-hidden');
+          document.documentElement.classList.remove('p-overflow-hidden');
+          document.body.style.overflow = '';
+          document.body.style.pointerEvents = '';
+          document.documentElement.style.overflow = '';
+          document.documentElement.style.pointerEvents = '';
+        } catch(e) {}
       }
     });
+
+    // Global MutationObserver to clean up stranded PrimeNG masks when any overlay is hidden or closed
+    if (typeof MutationObserver !== 'undefined') {
+      const observer = new MutationObserver(() => {
+        const masks = document.querySelectorAll('.p-drawer-mask, .p-sidebar-mask, .p-dialog-mask, .p-component-overlay, .p-overlay-mask');
+        if (masks.length > 0) {
+          // Check if any drawer or dialog is actively visible to the user in the viewport
+          const activeOverlays = Array.from(document.querySelectorAll('.p-drawer, .p-dialog')).some(el => {
+            const rect = el.getBoundingClientRect();
+            // Check if it has dimensions AND is positioned within screen boundaries (i.e. not translated off-screen)
+            return rect.width > 0 && rect.height > 0 && rect.left < window.innerWidth && rect.right > 0;
+          });
+          
+          // If no active overlays are open, remove any lingering masks from the body
+          if (!activeOverlays) {
+            // Temporarily disconnect to prevent feedback loops when removing elements/attributes
+            observer.disconnect();
+            
+            try {
+              masks.forEach(el => {
+                try {
+                  if (el && el.parentNode === document.body) {
+                    el.parentNode.removeChild(el);
+                  }
+                } catch(e) {}
+              });
+              try {
+                document.body.classList.remove('blocked-scroll', 'p-overflow-hidden');
+                document.documentElement.classList.remove('p-overflow-hidden');
+                document.body.style.overflow = '';
+                document.body.style.pointerEvents = '';
+                document.documentElement.style.overflow = '';
+                document.documentElement.style.pointerEvents = '';
+              } catch(e) {}
+            } finally {
+              // Re-enable observation after modification is complete
+              observer.observe(document.body, {
+                childList: true,
+                subtree: false
+              });
+            }
+          }
+        }
+      });
+
+      // Only observe direct children (since PrimeNG masks are direct children of body) and don't watch attributes/subtree
+      observer.observe(document.body, {
+        childList: true,
+        subtree: false
+      });
+    }
   }
 
   ngOnInit(): void {

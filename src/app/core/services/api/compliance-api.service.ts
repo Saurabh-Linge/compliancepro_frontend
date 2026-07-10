@@ -177,6 +177,10 @@ export class ComplianceApiService {
     return this.http.get<PaginatedResponse<ComplianceTask>>(`${this.baseUrl}/tasks`, { params: httpParams });
   }
 
+  getTaskStats() {
+    return this.http.get<{ total: number, pending: number, approved: number }>(`${this.baseUrl}/tasks/stats`);
+  }
+
   // Backward compatibility methods if still used
   getPendingTasks() {
     return this.http.get<PaginatedResponse<ComplianceTask>>(`${this.baseUrl}/tasks?status=Pending`);
@@ -275,7 +279,7 @@ export class ComplianceApiService {
   }
 
   getAssignmentTasks(id: number) {
-    return this.http.get<any[]>(`${this.baseUrl}/assignments/${id}/tasks`);
+    return this.http.get<any[]>(`${this.baseUrl}/assignments/${id}/tasks?_t=${Date.now()}`);
   }
 
   getAssignmentEvidence(id: number) {
@@ -290,8 +294,23 @@ export class ComplianceApiService {
     return this.http.put(`${this.baseUrl}/assignments/${assignmentId}/review`, { action, remark });
   }
 
+  reviewTaskStatus(assignmentId: number, taskId: number, reviewStatus: 'APPROVED' | 'NEEDS_REDO', reviewRemark?: string) {
+    return this.http.patch<any>(`${this.baseUrl}/assignments/${assignmentId}/tasks/${taskId}/review-status`, {
+      review_status: reviewStatus,
+      review_remark: reviewRemark
+    });
+  }
+
+  completeTaskDirectly(assignmentId: number, taskId: number, complianceStatus: 'COMPLIED' | 'NOT_COMPLIED', remarks: string) {
+    return this.http.patch<any>(`${this.baseUrl}/assignments/${assignmentId}/tasks/${taskId}/complete`, { compliance_status: complianceStatus, remarks });
+  }
+
+  updateAssignmentStatus(assignmentId: number, status: string) {
+    return this.http.put<any>(`${this.baseUrl}/assignments/${assignmentId}/status`, { status });
+  }
+
   // Dashboard
   getDashboardStats() {
-    return this.http.get<any>(`${this.baseUrl}/dashboard/stats`);
+    return this.http.get<any>(`${this.baseUrl}/dashboard/stats?_t=${Date.now()}`);
   }
 }

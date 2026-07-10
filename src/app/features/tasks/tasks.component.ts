@@ -71,8 +71,6 @@ import { SelectModule } from 'primeng/select';
             [loading]="loading()"
             [columns]="tableColumns"
             [actions]="tableActions"
-            [selectable]="true"
-            [(selection)]="selectedTasksList"
             [showAddButton]="isCcoOrAdmin"
             (onAdd)="openCreateManualTaskModal()"
             [showRefreshButton]="true"
@@ -86,7 +84,7 @@ import { SelectModule } from 'primeng/select';
           >
             <ng-container toolbar-actions>
               <p-select 
-                [options]="circulars" 
+                [options]="circulars()" 
                 optionLabel="title" 
                 optionValue="id" 
                 [(ngModel)]="selectedCircularFilter" 
@@ -139,8 +137,9 @@ import { SelectModule } from 'primeng/select';
                 <div class="field col-12">
                   <app-select-field
                     label="Task Header"
+                    [virtualScroll]="false"
                     [field]="editTaskHeaderId"
-                    [options]="taskHeaders"
+                    [options]="taskHeaders()"
                     optionLabel="name"
                     optionValue="id"
                     [showAddButton]="true"
@@ -153,6 +152,7 @@ import { SelectModule } from 'primeng/select';
                 <div class="field col-12 md:col-6">
                   <app-select-field
                     label="Priority"
+                    [virtualScroll]="false"
                     [field]="editTaskPriority"
                     [options]="priorityOptions"
                     optionLabel="label"
@@ -164,6 +164,7 @@ import { SelectModule } from 'primeng/select';
                 <div class="field col-12 md:col-6">
                   <app-select-field
                     label="Risk Category"
+                    [virtualScroll]="false"
                     [field]="editTaskRiskCategory"
                     [options]="riskCategoryOptions"
                     optionLabel="label"
@@ -175,6 +176,7 @@ import { SelectModule } from 'primeng/select';
                 <div class="field col-12 md:col-6">
                   <app-select-field
                     label="Business Risk"
+                    [virtualScroll]="false"
                     [field]="editTaskBusinessRisk"
                     [options]="businessRiskOptions"
                     optionLabel="label"
@@ -186,6 +188,7 @@ import { SelectModule } from 'primeng/select';
                 <div class="field col-12 md:col-6">
                   <app-select-field
                     label="Control Risk"
+                    [virtualScroll]="false"
                     [field]="editTaskControlRisk"
                     [options]="controlRiskOptions"
                     optionLabel="label"
@@ -198,7 +201,7 @@ import { SelectModule } from 'primeng/select';
                   <app-select-field
                     label="Audit Area Mapping"
                     [field]="editTaskAuditAreaId"
-                    [options]="auditAreas"
+                    [options]="auditAreas()"
                     optionLabel="name"
                     optionValue="id"
                     placeholder="Please select broader area of audit non-compliance">
@@ -269,10 +272,11 @@ import { SelectModule } from 'primeng/select';
                     <app-select-field
                       label="Select Circular"
                       [field]="manualTaskCircularId"
-                      [options]="circulars"
+                      [options]="circulars()"
                       optionLabel="title"
                       optionValue="id"
                       [required]="true"
+                      [virtualScroll]="true"
                       placeholder="Select a Circular">
                     </app-select-field>
                   </div>
@@ -281,8 +285,9 @@ import { SelectModule } from 'primeng/select';
                 <div class="field col-12">
                   <app-select-field
                     label="Task Header"
+                    [virtualScroll]="false"
                     [field]="manualTaskHeaderId"
-                    [options]="taskHeaders"
+                    [options]="taskHeaders()"
                     optionLabel="name"
                     optionValue="id"
                     [showAddButton]="true"
@@ -299,7 +304,8 @@ import { SelectModule } from 'primeng/select';
                     [options]="priorityOptions"
                     optionLabel="label"
                     optionValue="value"
-                    placeholder="Select Priority">
+                    placeholder="Select Priority"
+                    [virtualScroll]="false">
                   </app-select-field>
                 </div>
 
@@ -310,7 +316,8 @@ import { SelectModule } from 'primeng/select';
                     [options]="riskCategoryOptions"
                     optionLabel="label"
                     optionValue="value"
-                    placeholder="Select Risk Category">
+                    placeholder="Select Risk Category"
+                    [virtualScroll]="false">
                   </app-select-field>
                 </div>
 
@@ -321,7 +328,8 @@ import { SelectModule } from 'primeng/select';
                     [options]="businessRiskOptions"
                     optionLabel="label"
                     optionValue="value"
-                    placeholder="Select Business Risk">
+                    placeholder="Select Business Risk"
+                    [virtualScroll]="false">
                   </app-select-field>
                 </div>
 
@@ -332,7 +340,8 @@ import { SelectModule } from 'primeng/select';
                     [options]="controlRiskOptions"
                     optionLabel="label"
                     optionValue="value"
-                    placeholder="Select Control Risk">
+                    placeholder="Select Control Risk"
+                    [virtualScroll]="false">
                   </app-select-field>
                 </div>
 
@@ -340,7 +349,7 @@ import { SelectModule } from 'primeng/select';
                   <app-select-field
                     label="Broader Area of Audit Non-Compliance"
                     [field]="manualTaskAuditAreaId"
-                    [options]="auditAreas"
+                    [options]="auditAreas()"
                     optionLabel="name"
                     optionValue="id"
                     placeholder="Please select broader area of audit non-compliance">
@@ -503,10 +512,10 @@ import { SelectModule } from 'primeng/select';
 })
 export class TasksComponent implements OnInit {
   selectedCircularId: number | null = null;
-  
+
   loading = signal<boolean>(false);
   activeFilter = signal<'All' | 'Pending' | 'Approved'>('All');
-  
+
   allTasks = signal<ComplianceTask[]>([]);
   totalRecords = signal<number>(0);
 
@@ -515,7 +524,7 @@ export class TasksComponent implements OnInit {
   limit = 10;
   searchQuery = '';
   selectedCircularFilter: number | null = null;
-  
+
   // Filtering Logic
   // Since pagination is server-side, counts are updated from server response if available,
   // or we can fetch a separate stats endpoint. For now, we will leave counts as 0 unless returned.
@@ -558,9 +567,9 @@ export class TasksComponent implements OnInit {
     { field: 'authority_name', header: 'Authority', width: '15%', filterable: true },
     { field: 'header_name', header: 'Task Header', width: '15%' },
     { field: 'description', header: 'Task Description', width: '30%' },
-    { 
-      field: 'status', 
-      header: 'Status', 
+    {
+      field: 'status',
+      header: 'Status',
       type: 'badge',
       width: '10%',
       filterable: true
@@ -619,8 +628,8 @@ export class TasksComponent implements OnInit {
   editTaskControlRisk = signal<string | null>(null);
   editTaskAuditAreaId = signal<number | null>(null);
 
-  taskHeaders: any[] = [];
-  auditAreas: any[] = [];
+  taskHeaders = signal<any[]>([]);
+  auditAreas = signal<any[]>([]);
 
   // Quick Add Header State
   showAddHeaderModal = false;
@@ -638,19 +647,19 @@ export class TasksComponent implements OnInit {
   manualTaskBusinessRisk = signal<string | null>(null);
   manualTaskControlRisk = signal<string | null>(null);
   manualTaskAuditAreaId = signal<number | null>(null);
-  circulars: any[] = [];
+  circulars = signal<any[]>([]);
 
   get isCcoOrAdmin(): boolean {
     const role = this.auth.currentUser()?.role;
     return role === 'CCO' || role === 'ADMIN';
   }
 
-  constructor(private api: ComplianceApiService, private route: ActivatedRoute, private auth: AuthService) {}
+  constructor(private api: ComplianceApiService, private route: ActivatedRoute, private auth: AuthService) { }
 
   ngOnInit() {
-    this.api.getTaskHeaders().subscribe(data => this.taskHeaders = data);
-    this.api.getCirculars({limit: 1000, has_tasks: true}).subscribe(res => this.circulars = res.data);
-    this.api.getAuditAreas().subscribe(data => this.auditAreas = data);
+    this.api.getTaskHeaders().subscribe(data => this.taskHeaders.set(data));
+    this.api.getCirculars({ limit: 1000, has_tasks: true }).subscribe(res => this.circulars.set(res.data));
+    this.api.getAuditAreas().subscribe(data => this.auditAreas.set(data));
 
     this.route.queryParamMap.subscribe(params => {
       const circularId = params.get('circular_id');
@@ -680,6 +689,16 @@ export class TasksComponent implements OnInit {
       params.search = this.searchQuery;
     }
 
+    // Fetch dynamic task counts for the summary cards
+    this.api.getTaskStats().subscribe({
+      next: (stats) => {
+        this.totalCount.set(stats.total);
+        this.pendingCount.set(stats.pending);
+        this.approvedCount.set(stats.approved);
+      },
+      error: (err) => console.error('Error fetching task stats:', err)
+    });
+
     this.api.getTasks(params).subscribe({
       next: (res) => {
         const mappedTasks = res.data.map((t: any) => ({
@@ -688,8 +707,6 @@ export class TasksComponent implements OnInit {
         }));
         this.allTasks.set(mappedTasks);
         this.totalRecords.set(res.total);
-        // Clean up selected items that might no longer exist or are no longer pending
-        this.selectedTasksList = this.selectedTasksList.filter(sel => mappedTasks.some((t: any) => t.id === sel.id && t.is_approved));
         this.loading.set(false);
       },
       error: () => this.loading.set(false)
@@ -775,7 +792,7 @@ export class TasksComponent implements OnInit {
     this.api.createTaskHeader(this.newHeaderName).subscribe(newHeader => {
       // Reload headers
       this.api.getTaskHeaders().subscribe(data => {
-        this.taskHeaders = data;
+        this.taskHeaders.set(data);
         if (this.activeHeaderTarget === 'MANUAL') {
           this.manualTaskHeaderId.set(newHeader.id);
         } else {

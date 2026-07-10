@@ -52,9 +52,10 @@ export class AppMenu implements OnInit {
     }
     if (userRole === 'co') {
       taskSubItems.push({ label: 'Compliances', icon: 'pi pi-fw pi-briefcase', routerLink: ['/assignments'] });
+      taskSubItems.push({ label: 'CO Review Queue', icon: 'pi pi-fw pi-check-circle', routerLink: ['/co-review'] });
     }
-    if (['co', 'cco'].includes(userRole)) {
-      taskSubItems.push({ label: 'CO Review', icon: 'pi pi-fw pi-check-circle', routerLink: ['/review'] });
+    if (userRole === 'cco') {
+      taskSubItems.push({ label: 'CCO Review Queue', icon: 'pi pi-fw pi-shield', routerLink: ['/cco-review'] });
     }
     if (userRole === 'admin') {
       taskSubItems.push({ label: 'Task Headers Master', icon: 'pi pi-fw pi-tags', routerLink: ['/admin/task-headers'] });

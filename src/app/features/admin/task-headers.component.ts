@@ -17,7 +17,7 @@ import { ButtonModule } from 'primeng/button';
     <app-page title="Task Headers Master" icon="pi pi-tags" description="Manage categories for grouping tasks in branch assignments.">
       <div class="card h-full">
         <app-table
-          [data]="headers"
+          [data]="headers()"
           [columns]="columns"
           [actions]="actions"
           (onAdd)="openModal()"
@@ -188,7 +188,7 @@ import { ButtonModule } from 'primeng/button';
   `]
 })
 export class TaskHeadersComponent implements OnInit {
-  headers: any[] = [];
+  headers = signal<any[]>([]);
   showModal = signal(false);
   
   headerName = signal('');
@@ -222,7 +222,7 @@ export class TaskHeadersComponent implements OnInit {
   }
 
   loadHeaders() {
-    this.api.getTaskHeaders().subscribe((data: any) => this.headers = data);
+    this.api.getTaskHeaders().subscribe((data: any) => this.headers.set(data));
   }
 
   openModal() {

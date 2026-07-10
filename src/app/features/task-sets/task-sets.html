@@ -78,9 +78,9 @@
           <h4 class="m-0 text-900"><i class="pi pi-list mr-2 text-primary"></i>Map Tasks</h4>
           <span class="text-sm font-bold text-primary"><i class="pi pi-check-circle"></i> {{ targetTasks.length }} Selected</span>
         </div>
-        <div class="border-round border-1 border-300 w-full" style="height: 22rem; display: flex; flex-direction: column;">
+        <div class="border-round border-1 border-300 w-full" style="height: 28rem; display: flex; flex-direction: column;">
           <app-table
-            [data]="allTasks"
+            [data]="allTasks()"
             [columns]="taskColumns"
             [selectable]="true"
             [(selection)]="targetTasks"
@@ -94,20 +94,30 @@
       </section>
 
       <!-- Assign Branches -->
-      <section>
-        <h4 class="mt-0 mb-3 text-900 border-bottom-1 border-300 pb-2"><i class="pi pi-sitemap mr-2 text-primary"></i>Assign Branches <span class="font-normal text-600 text-sm">(Optional)</span></h4>
-        <div class="formgrid grid p-fluid align-items-end">
+      <section class="border-round border-1 border-300 p-3 bg-surface-50">
+        <div class="flex align-items-center justify-content-between cursor-pointer" (click)="showBranchAssignment.set(!showBranchAssignment())">
+          <div class="flex align-items-center gap-2">
+            <i class="pi pi-sitemap text-primary text-xl"></i>
+            <div>
+              <span class="font-semibold text-900">Assign Branches</span>
+              <span class="text-xs text-600 ml-2">(Optional)</span>
+            </div>
+          </div>
+          <i [class]="showBranchAssignment() ? 'pi pi-chevron-up text-600' : 'pi pi-chevron-down text-600'"></i>
+        </div>
+        
+        <div *ngIf="showBranchAssignment()" class="mt-3 formgrid grid p-fluid animate-fadein">
           <div class="field col-12">
-              <label class="font-bold">Select Branches/Departments</label>
-              <p-multiSelect 
-                [options]="branches" 
-                [(ngModel)]="selectedBranches" 
-                optionLabel="name" 
-                placeholder="Choose one or more branches..." 
-                display="chip"
-                styleClass="w-full"
-                appendTo="body">
-              </p-multiSelect>
+            <label class="font-medium text-700 mb-2">Select Branches/Departments</label>
+            <p-multiSelect 
+              [options]="branches()" 
+              [(ngModel)]="selectedBranches" 
+              optionLabel="name" 
+              placeholder="Choose one or more branches..." 
+              display="chip"
+              styleClass="w-full"
+              appendTo="body">
+            </p-multiSelect>
           </div>
         </div>
       </section>

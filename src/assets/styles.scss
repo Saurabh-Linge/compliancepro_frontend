@@ -557,10 +557,16 @@ body {
   display: none !important;
 }
 
-/* Also speed up the actual drawer sliding out so the mask is destroyed instantly */
+/* Also speed up the actual drawer sliding out so it disappears instantly */
 .p-drawer-leave-active,
 .p-drawer-leave-to {
   animation-duration: 0.01s !important;
   transition-duration: 0.01s !important;
   display: none !important;
+}
+
+/* Force a clear vertical separation line between sidebar (shell) and the main content area */
+.layout-sidebar {
+  border-right: 1px solid var(--surface-border, #e2e8f0) !important;
+  box-shadow: 1px 0 0 rgba(0, 0, 0, 0.05) !important;
 }

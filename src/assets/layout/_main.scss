@@ -4,10 +4,10 @@
     height: 100vh;           /* fixed to viewport — no overflow */
     min-height: 0;
     justify-content: space-between;
-    --layout-content-gutter: 0.75rem;
+    --layout-content-gutter: 0.5rem;
     padding: 4rem var(--layout-content-gutter) 0 var(--layout-content-gutter); // topbar + compact page gutter
     transition: margin-left var(--layout-section-transition-duration);
-    background: #eef3f7;
+    background: #ffffff;
     box-sizing: border-box;
 }
 

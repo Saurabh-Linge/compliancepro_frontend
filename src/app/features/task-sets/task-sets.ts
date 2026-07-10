@@ -74,6 +74,7 @@ export class TaskSetsComponent implements OnInit {
   showFormDrawer = signal(false);
   isEditMode = false;
   selectedTaskSet: any = null;
+  showBranchAssignment = signal(false);
 
   // Form states as WritableSignals
   newTaskSetName = signal<string>('');
@@ -93,7 +94,7 @@ export class TaskSetsComponent implements OnInit {
   ];
   
   // Mapping
-  allTasks: any[] = [];
+  allTasks = signal<any[]>([]);
   targetTasks: any[] = [];
   taskColumns: TableColumn[] = [
     { field: 'description', header: 'Description', type: 'text' },
@@ -102,7 +103,7 @@ export class TaskSetsComponent implements OnInit {
   ];
 
   // Assigning
-  branches: any[] = [];
+  branches = signal<any[]>([]);
   selectedBranches: any[] = [];
   proposedDate = signal<Date | null>(null);
 
@@ -111,9 +112,9 @@ export class TaskSetsComponent implements OnInit {
   ngOnInit() {
     this.loadData();
     this.api.getApprovedTasks().subscribe(res => {
-      this.allTasks = res.data;
+      this.allTasks.set(res.data);
     });
-    this.api.getBranches().subscribe(data => this.branches = data);
+    this.api.getBranches().subscribe(data => this.branches.set(data));
   }
 
   loadData() {
@@ -132,10 +133,11 @@ export class TaskSetsComponent implements OnInit {
     this.targetTasks = [];
     this.selectedBranches = [];
     this.proposedDate.set(null);
+    this.showBranchAssignment.set(false);
     
     // Reset tasks
     this.api.getApprovedTasks().subscribe(res => {
-      this.allTasks = res.data;
+      this.allTasks.set(res.data);
       this.showFormDrawer.set(true);
     });
   }
@@ -150,6 +152,7 @@ export class TaskSetsComponent implements OnInit {
     this.newTaskSetFrequency.set(row.frequency || '');
     this.newTaskSetReportingDate.set(row.reporting_date ? new Date(row.reporting_date) : null);
     this.selectedBranches = []; // We don't fetch existing branches for assignments, just allow adding new ones.
+    this.showBranchAssignment.set(false);
     if (row.default_due_date) {
       this.proposedDate.set(new Date(row.default_due_date));
     } else {
@@ -160,7 +163,7 @@ export class TaskSetsComponent implements OnInit {
       const mappedIds = new Set((details.tasks || []).map((t: any) => t.id));
       
       this.api.getApprovedTasks().subscribe(res => {
-        this.allTasks = res.data;
+        this.allTasks.set(res.data);
         this.targetTasks = res.data.filter((t: any) => mappedIds.has(t.id));
         this.showFormDrawer.set(true);
       });

@@ -1,0 +1,152 @@
+﻿<div style="height: calc(100vh - 70px); overflow-y: auto; padding: 1rem; box-sizing: border-box;">
+
+  <!-- Back -->
+  <div style="margin-bottom: 1rem;">
+    <button (click)="goBack()" class="back-btn">
+      <i class="pi pi-arrow-left"></i> Back to CCO Review Queue
+    </button>
+  </div>
+
+  <!-- Assignment Header Card -->
+  <div *ngIf="assignmentMeta()" class="review-header-card">
+    <div class="review-header-grid">
+      <div><div class="review-header-label">Branch</div><div class="review-header-value">{{ assignmentMeta()?.branch_name }}</div></div>
+      <div><div class="review-header-label">Task Set</div><div class="review-header-value">{{ assignmentMeta()?.task_set_name }}</div></div>
+      <div><div class="review-header-label">Authority</div><div class="review-header-value">{{ assignmentMeta()?.authority_name || 'â€”' }}</div></div>
+      <div>
+        <div class="review-header-label">Status</div>
+        <span class="status-badge status-review">REVIEW PENDING</span>
+      </div>
+    </div>
+    <div class="review-progress">
+      <span class="progress-complied">âœ… Complied: {{ compliedCount() }}</span>
+      <span class="progress-not">âŒ Not Complied: {{ notCompliedCount() }}</span>
+      <span class="progress-approved">ðŸŸ¢ CO Approved: {{ approvedCount() }}</span>
+      <span class="progress-redo">ðŸ”„ Needs Redo: {{ needsRedoCount() }}</span>
+      <span class="progress-total">ðŸ“‹ Total: {{ tasks().length }}</span>
+    </div>
+  </div>
+
+  <!-- Bulk Actions Bar -->
+  <div class="bulk-actions-bar">
+    <span class="bulk-label">Quick Actions:</span>
+    <button class="bulk-btn bulk-approve-all" (click)="markAllApproved()" [disabled]="submitting">
+      <i class="pi pi-check-circle"></i> Mark All Approved
+    </button>
+    <button class="bulk-btn bulk-needs-redo" (click)="markAllNeedsRedo()" [disabled]="submitting">
+      <i class="pi pi-refresh"></i> Flag All for Redo
+    </button>
+  </div>
+
+  <!-- Task Groups -->
+  <div *ngFor="let group of taskGroups()" class="task-group-wrapper">
+    <div class="task-group-header">
+      <i class="pi pi-folder-open" style="color: #4f46e5;"></i>
+      {{ group.headerName }}
+      <span class="group-count">{{ group.tasks.length }} tasks</span>
+    </div>
+
+    <div *ngFor="let t of group.tasks; let i = index"
+         class="question-card"
+         [class.card-approved]="t.review_status === 'APPROVED'"
+         [class.card-needs-redo]="t.review_status === 'NEEDS_REDO'"
+         [class.card-complied]="!t.review_status && t.compliance_status === 'COMPLIED'"
+         [class.card-not-complied]="!t.review_status && t.compliance_status === 'NOT_COMPLIED'">
+
+      <!-- Left: Serial + Description -->
+      <div class="question-main">
+        <div class="question-number">{{ i + 1 }}</div>
+        <div>
+          <span class="circular-ref-tag" *ngIf="t.circular_reference_no">{{ t.circular_reference_no }}</span>
+          <p class="task-description">{{ t.description }}</p>
+        </div>
+      </div>
+
+      <!-- Right: Branch Answer + CO Review Controls -->
+      <div class="answer-form">
+        <div class="answer-form-grid">
+
+          <!-- Branch's Answer Column -->
+          <div class="branch-answer-col">
+            <div class="control-label">Branch Declaration</div>
+            <div class="compliance-badge-large"
+                 [class.badge-complied]="t.compliance_status === 'COMPLIED'"
+                 [class.badge-not-complied]="t.compliance_status === 'NOT_COMPLIED'"
+                 [class.badge-pending]="!t.compliance_status || t.compliance_status === 'PENDING'">
+              <i class="pi"
+                 [class.pi-check-circle]="t.compliance_status === 'COMPLIED'"
+                 [class.pi-times-circle]="t.compliance_status === 'NOT_COMPLIED'"
+                 [class.pi-clock]="!t.compliance_status || t.compliance_status === 'PENDING'"></i>
+              {{ t.compliance_status || 'PENDING' }}
+            </div>
+            <a *ngIf="t.has_evidence && t.evidence_url" [href]="t.evidence_url" target="_blank" class="evidence-link">
+              <i class="pi pi-file-pdf" style="color: #ef4444;"></i> View Evidence PDF
+            </a>
+            <span *ngIf="!t.has_evidence" class="no-evidence">No evidence uploaded</span>
+          </div>
+
+          <!-- CO Review Column -->
+          <div class="review-col">
+            <div>
+              <div class="control-label">Branch Remarks</div>
+              <div class="branch-remark-box">{{ t.remarks || 'â€”' }}</div>
+            </div>
+            <div class="review-toggle-row">
+              <button class="toggle-btn toggle-approve"
+                      [class.active]="t.review_status === 'APPROVED'"
+                      (click)="setTaskReviewStatus(t, 'APPROVED')"
+                      [disabled]="savingTaskId() === t.assignment_task_id">
+                <i class="pi pi-check"></i> Approve
+              </button>
+              <button class="toggle-btn toggle-redo"
+                      [class.active]="t.review_status === 'NEEDS_REDO'"
+                      (click)="setTaskReviewStatus(t, 'NEEDS_REDO')"
+                      [disabled]="savingTaskId() === t.assignment_task_id">
+                <i class="pi pi-refresh"></i> Needs Redo
+              </button>
+              <i *ngIf="savingTaskId() === t.assignment_task_id" class="pi pi-spin pi-spinner" style="color: #6b7280;"></i>
+            </div>
+            <div *ngIf="t.review_status === 'NEEDS_REDO'" style="margin-top: 0.5rem;">
+              <textarea [(ngModel)]="t.review_remark"
+                        placeholder="Explain what needs to be redone..."
+                        class="co-remark-input"
+                        rows="2"
+                        (blur)="saveCoRemark(t)"></textarea>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Final Review Decision Panel -->
+  <div class="decision-panel">
+    <div class="decision-panel-header">
+      <i class="pi pi-shield" style="color: #4f46e5; font-size: 1.2rem;"></i>
+      CO Final Decision
+    </div>
+    <div class="decision-summary">
+      <span class="ds-approved">âœ… {{ approvedCount() }} Approved</span>
+      <span class="ds-redo">ðŸ”„ {{ needsRedoCount() }} Needs Redo</span>
+      <span class="ds-unreviewed">â³ {{ unreviewedCount() }} Not Reviewed</span>
+    </div>
+    <div class="decision-remark-row">
+      <label class="control-label">Overall CO Remarks <span style="color:#ef4444;" *ngIf="lastAction === 'REJECT' || lastAction === 'ESCALATE'">*</span></label>
+      <textarea [(ngModel)]="overallRemark" class="overall-remark-input" rows="3"
+                placeholder="Add an overall review note (required for Reject / Escalate)..."></textarea>
+    </div>
+    <div class="decision-buttons">
+      <button class="decision-btn btn-reject" (click)="submitReview('REJECT')" [disabled]="submitting">
+        <i class="pi" [class.pi-spin]="submitting && lastAction === 'REJECT'" [class.pi-spinner]="submitting && lastAction === 'REJECT'" [class.pi-times-circle]="!(submitting && lastAction === 'REJECT')"></i>
+        Reject &amp; Request Re-compliance
+      </button>
+      <button class="decision-btn btn-accept" (click)="submitReview('ACCEPT')" [disabled]="submitting">
+        <i class="pi" [class.pi-spin]="submitting && lastAction === 'ACCEPT'" [class.pi-spinner]="submitting && lastAction === 'ACCEPT'" [class.pi-check-circle]="!(submitting && lastAction === 'ACCEPT')"></i>
+        Accept &amp; Complete
+      </button>
+    </div>
+  </div>
+
+</div>
+

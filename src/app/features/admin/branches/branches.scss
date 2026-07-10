@@ -1,0 +1,104 @@
+:host ::ng-deep .drawer-layout .p-drawer-content {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  background: var(--surface-ground);
+}
+
+:host ::ng-deep .drawer-layout .p-drawer-header {
+  padding: 1.15rem 1.35rem;
+  border-bottom: 1px solid var(--surface-200);
+  background: var(--surface-card);
+}
+
+:host ::ng-deep .drawer-layout .p-drawer-footer {
+  padding: 0;
+  border-top: 1px solid var(--surface-200);
+  background: var(--surface-card);
+  box-shadow: 0 -8px 22px rgba(15, 23, 42, 0.06);
+}
+
+.drawer-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+}
+
+.drawer-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.drawer-title-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.65rem;
+  height: 2.65rem;
+  border-radius: 8px;
+  color: var(--primary-color);
+  background: var(--primary-50, var(--surface-100));
+  border: 1px solid var(--primary-100, var(--surface-border));
+  flex: 0 0 auto;
+}
+
+.drawer-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 1rem 1.35rem;
+}
+
+.drawer-footer-row button {
+  min-width: 9.5rem;
+}
+
+.drawer-content-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1rem 1.35rem 1.25rem;
+}
+
+.drawer-section {
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  padding: 1rem 1rem 0.35rem;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.1rem;
+}
+
+.section-kicker {
+  color: var(--text-color);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.section-line {
+  flex: 1;
+  height: 1px;
+  background: var(--surface-border);
+}
+
+.drawer-form-grid {
+  row-gap: 0.65rem;
+}
+
+.drawer-form-grid .field {
+  margin-bottom: 0.85rem;
+}

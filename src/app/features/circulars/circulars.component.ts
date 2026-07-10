@@ -26,13 +26,13 @@ import { ConfirmationService, MessageService } from 'primeng/api';
   selector: 'app-circulars',
   standalone: true,
   imports: [
-    CommonModule, 
-    FormsModule, 
-    TableComponent, 
+    CommonModule,
+    FormsModule,
+    TableComponent,
     TextFieldComponent,
     TextareaFieldComponent,
-    SelectFieldComponent, 
-    PageComponent, 
+    SelectFieldComponent,
+    PageComponent,
     ButtonModule,
     InputTextModule,
     FloatLabelModule,
@@ -111,7 +111,8 @@ import { ConfirmationService, MessageService } from 'primeng/api';
                   [options]="authorities()"
                   optionLabel="name"
                   optionValue="id"
-                  [required]="true">
+                  [required]="true"
+                  [virtualScroll]="false">
                 </app-select-field>
               </div>
 
@@ -148,7 +149,8 @@ import { ConfirmationService, MessageService } from 'primeng/api';
                   [options]="priorityOptions"
                   optionLabel="label"
                   optionValue="value"
-                  [required]="true">
+                  [required]="true"
+                  [virtualScroll]="false">
                 </app-select-field>
               </div>
             </div>
@@ -210,6 +212,23 @@ import { ConfirmationService, MessageService } from 'primeng/api';
               (onSelect)="onCircularFilesSelected($event)"
               (onRemove)="onCircularFileRemoved($event)"
               (onClear)="clearCircularFiles()">
+              <ng-template pTemplate="file" let-file let-index="index" let-removeFileCallback="removeFileCallback">
+                <div class="flex align-items-center justify-content-between p-3 border-round border-1 border-300 mb-2 bg-surface-card w-full gap-2">
+                  <div class="flex align-items-center gap-3 min-width-0 flex-1">
+                    <span class="inline-flex align-items-center justify-content-center bg-red-100 text-red-500 border-round animate-fadein" style="width: 2.5rem; height: 2.5rem; flex: 0 0 auto;">
+                      <i class="pi pi-file-pdf text-xl"></i>
+                    </span>
+                    <div class="min-width-0 flex-1">
+                      <div class="font-semibold text-900 text-sm" style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 280px;" [title]="file.name">{{ file.name }}</div>
+                      <div class="text-xs text-600 mt-1">{{ (file.size / 1024 / 1024).toFixed(3) }} MB</div>
+                    </div>
+                  </div>
+                  <div class="flex align-items-center gap-3 flex-shrink-0">
+                    <span class="bg-orange-100 text-orange-700 text-xs font-semibold px-2 py-1 border-round">Pending Upload</span>
+                    <button pButton pRipple type="button" icon="pi pi-times" class="p-button-text p-button-rounded p-button-danger p-button-sm" (click)="removeFileCallback($event, index)"></button>
+                  </div>
+                </div>
+              </ng-template>
             </p-fileupload>
 
             <div *ngIf="processingState() !== 'idle'" class="processing-panel" [ngClass]="processingState()">
@@ -598,6 +617,13 @@ import { ConfirmationService, MessageService } from 'primeng/api';
       padding: 1rem;
     }
 
+    :host ::ng-deep .circular-file-upload .p-fileupload-file {
+      width: 100%;
+      display: flex;
+      padding: 0;
+      margin: 0;
+    }
+
     .processing-panel {
       margin-top: 0.9rem;
       padding: 0.85rem;
@@ -739,14 +765,14 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 export class CircularsComponent implements OnInit, OnDestroy {
   circulars = signal<Circular[]>([]);
   authorities = signal<Authority[]>([]);
-  
+
   showCircularDrawer = signal<boolean>(false);
   uploading = signal<boolean>(false);
   selectedCircularFiles = signal<File[]>([]);
   processingState = signal<'idle' | 'uploading' | 'processing' | 'done' | 'error'>('idle');
   processingMessage = signal<string>('');
   lastTaskCount = signal<number>(0);
-  
+
   totalRecords = signal<number>(0);
   page = 1;
   limit = 10;
@@ -787,7 +813,7 @@ export class CircularsComponent implements OnInit, OnDestroy {
 
   showChatDrawer = signal<boolean>(false);
   chatCircular = signal<Circular | null>(null);
-  chatMessages = signal<{role: 'user'|'ai', content: string}[]>([]);
+  chatMessages = signal<{ role: 'user' | 'ai', content: string }[]>([]);
   chatInput = signal<string>('');
   isTyping = signal<boolean>(false);
 
@@ -800,7 +826,7 @@ export class CircularsComponent implements OnInit, OnDestroy {
   streamingThinkingText = signal<string>('');
 
   showAmendmentChainModal = signal<boolean>(false);
-  amendmentChainData = signal<{original: Circular | null, amendments: any[], isOriginal: boolean} | null>(null);
+  amendmentChainData = signal<{ original: Circular | null, amendments: any[], isOriginal: boolean } | null>(null);
 
   private config: any = inject(APP_CONFIG);
 
@@ -855,7 +881,7 @@ export class CircularsComponent implements OnInit, OnDestroy {
     }
   ];
 
-  constructor(private api: ComplianceApiService, private http: HttpClient, private router: Router, private confirmationService: ConfirmationService, private messageService: MessageService) {}
+  constructor(private api: ComplianceApiService, private http: HttpClient, private router: Router, private confirmationService: ConfirmationService, private messageService: MessageService) { }
 
   ngOnInit() {
     this.loadData();
@@ -873,7 +899,7 @@ export class CircularsComponent implements OnInit, OnDestroy {
     if (this.searchQuery) {
       params.search = this.searchQuery;
     }
-    
+
     this.api.getCirculars(params).subscribe({
       next: (res) => {
         this.circulars.set(res.data);
@@ -1107,7 +1133,7 @@ export class CircularsComponent implements OnInit, OnDestroy {
     this.chatInput.set('');
     this.isTyping.set(true);
 
-    this.http.post<{response: string}>(`${this.config.apiUrl}/circulars/${chatCircular.id}/chat`, { question })
+    this.http.post<{ response: string }>(`${this.config.apiUrl}/circulars/${chatCircular.id}/chat`, { question })
       .subscribe({
         next: (res) => {
           this.isTyping.set(false);
@@ -1131,7 +1157,7 @@ export class CircularsComponent implements OnInit, OnDestroy {
     this.streamingLogText.set('');
     this.streamingThinkingText.set('');
     this.fetchLogs();
-    
+
     // Connect to SSE for real-time updates if still processing
     if (row.ai_processing_status === 'QUEUED' || row.ai_processing_status === 'PROCESSING') {
       this.connectToLogStream(row.id);
@@ -1142,9 +1168,9 @@ export class CircularsComponent implements OnInit, OnDestroy {
     if (this.eventSource) {
       this.eventSource.close();
     }
-    
+
     this.eventSource = new EventSource(`${this.config.apiUrl}/circulars/${circularId}/logs/stream`);
-    
+
     this.eventSource.onmessage = (event) => {
       const data = JSON.parse(event.data);
 

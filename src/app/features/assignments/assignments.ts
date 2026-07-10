@@ -1,9 +1,10 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
 import { ComplianceApiService } from '../../core/services/api/compliance-api.service';
+import { AuthService } from '../../core/services/auth/auth.service';
 import { TableComponent, TableColumn, TableAction } from '../../shared/components/table/table.component';
 import { PageComponent } from '../../shared/components/page/page.component';
 import { DateFieldComponent } from '../../shared/components/form/date-field/date-field.component';
@@ -136,6 +137,20 @@ export class AssignmentsComponent implements OnInit {
   selectedBranchIds: number[] = [];
   proposedTimeline = signal<Date | null>(null);
 
+  private auth = inject(AuthService);
+
+  get userRole(): string {
+    return this.auth.currentUser()?.role || '';
+  }
+
+  get isBranchUser(): boolean {
+    return this.userRole === 'BRANCH' || this.userRole === 'BRANCH_USER';
+  }
+
+  get isReviewerUser(): boolean {
+    return this.userRole === 'CCO' || this.userRole === 'CO' || this.userRole === 'ADMIN';
+  }
+
   assignmentColumns: TableColumn[] = [
     { field: 'task_set_name', header: 'Task Set Name', width: '30%' },
     { field: 'proposed_timeline', header: 'Due Date', type: 'date', pipeFormat: 'mediumDate', width: '15%' },
@@ -152,6 +167,7 @@ export class AssignmentsComponent implements OnInit {
     {
       label: 'Propose Timeline',
       icon: 'pi pi-calendar',
+      visible: (row) => row.status === 'Pending_Timeline' && this.isBranchUser,
       command: (row) => {
         if (row.status === 'Pending_Timeline') {
           this.openProposeModal(row);
@@ -162,8 +178,9 @@ export class AssignmentsComponent implements OnInit {
       label: 'Accept Timeline',
       icon: 'pi pi-check',
       styleClass: 'text-green-600',
+      visible: (row) => (row.status === 'Pending_Timeline' && this.isBranchUser) || (row.status === 'Timeline_Review' && this.isReviewerUser),
       command: (row) => {
-        if (row.status === 'Timeline_Review') {
+        if (row.status === 'Pending_Timeline' || row.status === 'Timeline_Review') {
           this.acceptTimeline(row);
         }
       }
@@ -171,10 +188,19 @@ export class AssignmentsComponent implements OnInit {
     {
       label: 'Execute Tasks',
       icon: 'pi pi-list',
+      visible: (row) => (row.status === 'In_Progress' || row.status === 'REJECTED') && this.isBranchUser,
       command: (row) => {
-        if (row.status === 'In_Progress' || row.status === 'REVIEW_PENDING' || row.status === 'COMPLETED' || row.status === 'REJECTED') {
+        if (row.status === 'In_Progress' || row.status === 'REJECTED') {
           this.goToTasks(row.id);
         }
+      }
+    },
+    {
+      label: 'View Tasks',
+      icon: 'pi pi-eye',
+      visible: (row) => (row.status === 'REVIEW_PENDING' || row.status === 'COMPLETED' || row.status === 'ESCALATED_TO_CCO') || (this.isReviewerUser && row.status === 'In_Progress'),
+      command: (row) => {
+        this.goToTasks(row.id);
       }
     }
   ];

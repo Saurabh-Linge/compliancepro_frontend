@@ -1,21 +1,24 @@
-<div class="flex flex-column h-full w-full bg-surface-ground gap-1" style="display: flex; flex-direction: column;">
-  <div class="px-4 py-1 mt-1 flex align-items-center justify-content-between page-header">
-    <!-- DEBUG MARKER: IF YOU SEE THIS, THE COMPONENT IS RENDERING UPDATED HTML -->
+<div class="flex flex-column h-full w-full bg-white p-3" style="display: flex; flex-direction: column; box-sizing: border-box; overflow-y: auto; background: #ffffff;">
+  
+  <!-- Page Header (on gray background, aligned with content) -->
+  <div class="pb-2 flex align-items-center justify-content-between page-header" style="margin-left: 0.5rem; margin-right: 0.5rem;">
     <div class="flex flex-column">
-      <h1>
-        <i *ngIf="icon()" [class]="icon()"></i>
-        {{title()}}
+      <h1 class="m-0 flex align-items-center">
+        <i *ngIf="icon()" [class]="icon()" style="color: var(--primary-color); margin-right: 0.75rem; font-size: 1.35rem;"></i>
+        <span style="font-size: 1.5rem; font-weight: 600; color: var(--text-color);">{{title()}}</span>
       </h1>
-      <span *ngIf="subtitle()" class="subtitle">{{subtitle()}}</span>
+      <span *ngIf="subtitle()" class="subtitle text-sm text-600 mt-1">{{subtitle()}}</span>
     </div>
     <div class="flex align-items-center gap-3">
       <ng-content select="[actions]"></ng-content>
     </div>
   </div>
 
-  <div class="flex-grow-1 overflow-hidden px-4 pb-2 mt-0">
-    <div class="h-full w-full relative flex flex-column gap-2" style="display: flex; flex-direction: column;">
+  <!-- Page Content (retains individual cards) -->
+  <div class="flex-grow-1" style="padding: 0.5rem;">
+    <div class="h-full w-full relative flex flex-column gap-3" style="display: flex; flex-direction: column;">
       <ng-content></ng-content>
     </div>
   </div>
+  
 </div>
