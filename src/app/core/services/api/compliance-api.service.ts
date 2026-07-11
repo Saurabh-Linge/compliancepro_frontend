@@ -128,8 +128,16 @@ export class ComplianceApiService {
     return this.http.post<Circular>(`${this.baseUrl}/circulars`, data);
   }
 
+  updateCircular(id: number, data: any) {
+    return this.http.patch<Circular>(`${this.baseUrl}/circulars/${id}`, data);
+  }
+
   createCircularWithFiles(data: FormData) {
     return this.http.post<Circular & { files?: any[]; task_count?: number; ai_processing_status?: string }>(`${this.baseUrl}/circulars`, data);
+  }
+
+  extractMetadata(data: FormData) {
+    return this.http.post<{ reference_no: string | null; title: string | null; published_date: string | null }>(`${this.baseUrl}/circulars/extract-metadata`, data);
   }
 
   // Branches

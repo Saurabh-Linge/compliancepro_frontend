@@ -32,6 +32,8 @@ export const routes: Routes = [
       { path: 'admin/branches', loadComponent: () => import('./features/admin/branches/branches').then(mod => mod.Branches) },
       { path: 'admin/users', loadComponent: () => import('./features/admin/users/users').then(mod => mod.Users) },
       { path: 'admin/task-headers', loadComponent: () => import('./features/admin/task-headers.component').then(mod => mod.TaskHeadersComponent) },
+      { path: 'reports', loadComponent: () => import('./features/reports/reports.component').then(mod => mod.ReportsComponent) },
+      { path: 'reports/:reportSlug', loadComponent: () => import('./features/reports/report-viewer/report-viewer.component').then(mod => mod.ReportViewerComponent) },
     ]
   },
   { 

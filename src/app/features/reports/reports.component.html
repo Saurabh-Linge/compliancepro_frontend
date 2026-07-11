@@ -1,0 +1,40 @@
+<div class="reports-container card">
+  <div class="reports-header flex align-items-center justify-content-between">
+    <div class="header-left">
+      <h1 class="page-title">Reports</h1>
+    </div>
+    <div class="header-right">
+      <button pButton pRipple icon="pi pi-chevron-left" class="p-button-rounded p-button-outlined p-button-secondary back-btn" (click)="goBack()" title="Back to Dashboard"></button>
+    </div>
+  </div>
+  <div class="table-container">
+    <app-table 
+      [columns]="columns" 
+      [data]="filteredReports" 
+      [showAddButton]="false" 
+      [showRefreshButton]="false" 
+      [showToolbar]="true" 
+      [showSerialNumber]="false" 
+      [paginator]="false" 
+      [globalFilterFields]="['name']" 
+      rowGroupMode="subheader" 
+      groupRowsBy="category" 
+      [bodyTemplate]="rowTemplate" 
+      scrollHeight="calc(100vh - 260px)"
+    >
+      <ng-template #groupHeader let-rowData>
+        <tr class="p-rowgroup-header bg-gray-50 border-bottom-1 border-300">
+          <td style="text-align: center; font-weight: bold; width: 4.5rem">#</td>
+          <td colspan="2" class="category-header-title font-bold text-gray-800 text-base py-2">{{ getCategoryLabel(rowData.category) }}</td>
+        </tr>
+      </ng-template>
+      <ng-template #rowTemplate let-rowData let-rowIndex="rowIndex">
+        <td class="col-sr text-center py-3">{{ rowData.srNo }}</td>
+        <td class="col-report font-medium text-gray-700 py-3">{{ rowData.name }}</td>
+        <td class="col-action text-center py-3">
+          <button pButton pRipple icon="pi pi-external-link" class="reports-action-btn p-button-text p-button-rounded p-button-primary" (click)="runReport(rowData)" title="Open Report"></button>
+        </td>
+      </ng-template>
+    </app-table>
+  </div>
+</div>

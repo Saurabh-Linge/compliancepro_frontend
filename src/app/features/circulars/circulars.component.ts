@@ -9,6 +9,7 @@ import { TableComponent, TableColumn, TableAction } from '../../shared/component
 import { TextFieldComponent } from '../../shared/components/form/text-field/text-field.component';
 import { TextareaFieldComponent } from '../../shared/components/form/textarea-field/textarea-field.component';
 import { SelectFieldComponent } from '../../shared/components/form/select-field/select-field.component';
+import { CheckboxFieldComponent } from '../../shared/components/form/checkbox-field/checkbox-field.component';
 import { PageComponent } from '../../shared/components/page/page.component';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -32,6 +33,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
     TextFieldComponent,
     TextareaFieldComponent,
     SelectFieldComponent,
+    CheckboxFieldComponent,
     PageComponent,
     ButtonModule,
     InputTextModule,
@@ -86,8 +88,8 @@ import { ConfirmationService, MessageService } from 'primeng/api';
               <i class="pi pi-file"></i>
             </span>
             <div>
-              <div class="text-900 font-semibold text-xl">Circular Master</div>
-              <div class="text-600 text-sm mt-1">Create a circular record</div>
+              <div class="text-900 font-semibold text-xl">{{ editingCircularId() ? 'Edit Circular' : 'Circular Master' }}</div>
+              <div class="text-600 text-sm mt-1">{{ editingCircularId() ? 'Update existing circular details' : 'Create a circular record' }}</div>
             </div>
           </div>
           <button pButton pRipple type="button" icon="pi pi-times" class="p-button-text p-button-rounded" (click)="closeCircularDrawer()"></button>
@@ -189,6 +191,20 @@ import { ConfirmationService, MessageService } from 'primeng/api';
                   [rows]="4"
                   [autoResize]="true">
                 </app-textarea-field>
+              </div>
+
+              <div class="field col-12 md:col-6">
+                <app-checkbox-field
+                  label="Is Applicable"
+                  [field]="isApplicable">
+                </app-checkbox-field>
+              </div>
+
+              <div class="field col-12 md:col-6">
+                <app-checkbox-field
+                  label="Is Active"
+                  [field]="isActive">
+                </app-checkbox-field>
               </div>
             </div>
           </section>
@@ -778,7 +794,7 @@ export class CircularsComponent implements OnInit, OnDestroy {
   limit = 10;
   searchQuery = '';
 
-  newAuthorityId = signal<string>('');
+  newAuthorityId = signal<any>(null);
   referenceNo = '';
   referenceNoField = signal<string>('');
   circularTitle = '';
@@ -794,6 +810,10 @@ export class CircularsComponent implements OnInit, OnDestroy {
   penaltyAmount: number | null = null;
   penaltyDescription = '';
   penaltyDescriptionField = signal<string>('');
+
+  isApplicable = signal<boolean>(true);
+  isActive = signal<boolean>(true);
+  editingCircularId = signal<number | null>(null);
 
   priorityOptions = [
     { label: 'Critical', value: 'Critical' },
@@ -837,6 +857,8 @@ export class CircularsComponent implements OnInit, OnDestroy {
     { field: 'published_date', header: 'Circular Date', type: 'date', width: '12%' },
     { field: 'circular_nature', header: 'Nature', type: 'badge', width: '12%' },
     { field: 'circular_type_name', header: 'Type', width: '15%' },
+    { field: 'is_applicable', header: 'Applicable', type: 'boolean', width: '10%' },
+    { field: 'is_active', header: 'Active', type: 'boolean', width: '10%' },
     { field: 'ai_processing_status', header: 'Status', width: '10%' }
   ];
 
@@ -846,6 +868,13 @@ export class CircularsComponent implements OnInit, OnDestroy {
       icon: 'pi pi-file-pdf',
       disabled: (row) => row?.ai_processing_status === 'QUEUED' || row?.ai_processing_status === 'PROCESSING',
       command: (row) => window.open(this.api.getFileUrl(row.pdf_url), '_blank')
+    },
+    {
+      label: 'Edit',
+      icon: 'pi pi-pencil',
+      styleClass: 'text-primary-500',
+      disabled: (row) => row?.ai_processing_status === 'QUEUED' || row?.ai_processing_status === 'PROCESSING',
+      command: (row) => this.openEditModal(row)
     },
     {
       label: 'Tasks',
@@ -927,7 +956,7 @@ export class CircularsComponent implements OnInit, OnDestroy {
 
   openUploadModal() {
     this.showCircularDrawer.set(true);
-    this.newAuthorityId.set('');
+    this.newAuthorityId.set(null);
     this.referenceNo = '';
     this.referenceNoField.set('');
     this.circularTitle = '';
@@ -947,6 +976,32 @@ export class CircularsComponent implements OnInit, OnDestroy {
     this.processingState.set('idle');
     this.processingMessage.set('');
     this.lastTaskCount.set(0);
+    this.editingCircularId.set(null);
+    this.isApplicable.set(true);
+    this.isActive.set(true);
+  }
+
+  openEditModal(row: any) {
+    this.editingCircularId.set(row.id);
+    this.showCircularDrawer.set(true);
+
+    this.newAuthorityId.set(row.authority_id);
+    this.referenceNoField.set(row.reference_no || '');
+    this.circularTitleField.set(row.title || '');
+    this.circularDate.set(row.published_date ? new Date(row.published_date).toISOString().split('T')[0] : '');
+    this.priority.set(row.priority || 'Medium');
+    this.circularType.set(String(row.circular_type || '6'));
+    this.descriptionField.set(row.description || '');
+    this.portalWebsiteField.set(row.portal_website || '');
+    this.isPenaltyApplicable = row.is_penalty_applicable || false;
+    this.penaltyAmount = row.penalty_amount || null;
+    this.penaltyDescriptionField.set(row.penalty_description || '');
+    this.isApplicable.set(row.is_applicable !== false);
+    this.isActive.set(row.is_active !== false);
+
+    this.selectedCircularFiles.set([]);
+    this.processingState.set('idle');
+    this.processingMessage.set('');
   }
 
   closeCircularDrawer() {
@@ -959,9 +1014,74 @@ export class CircularsComponent implements OnInit, OnDestroy {
 
   onCircularFilesSelected(event: any) {
     console.log('onCircularFilesSelected', event);
-    this.selectedCircularFiles.set(event.currentFiles || event.files || []);
-    this.processingState.set('idle');
-    this.processingMessage.set('');
+    const files = event.currentFiles || event.files || [];
+    this.selectedCircularFiles.set(files);
+
+    if (files.length > 0) {
+      const firstFile = files[0];
+      const nameWithoutExt = firstFile.name.replace(/\.[^/.]+$/, ""); // strip extension
+
+      // 1. Auto-populate local placeholders from filename instantly
+      if (!this.circularTitleField().trim()) {
+        const refRegex = /\b((?:rbi|dor|fidd|dos|fmd|idmd|dpss)[a-z0-9._\-/ ]*(?:\d{4}[-\/]\d{2,4}[-\/]\d{1,4}|\d+))\b/i;
+        let titleClean = nameWithoutExt;
+        const matchRef = nameWithoutExt.match(refRegex);
+        if (matchRef) {
+          titleClean = titleClean.replace(matchRef[0], '');
+        }
+        titleClean = titleClean.replace(/[_\-]/g, ' ').replace(/\s+/g, ' ').trim();
+        this.circularTitleField.set(titleClean || nameWithoutExt.replace(/[_\-]/g, ' '));
+      }
+
+      if (!this.referenceNoField().trim()) {
+        const refRegex = /\b((?:rbi|dor|fidd|dos|fmd|idmd|dpss)[a-z0-9._\-/ ]*(?:\d{4}[-\/]\d{2,4}[-\/]\d{1,4}|\d+))\b/i;
+        const matchRef = firstFile.name.match(refRegex);
+        if (matchRef) {
+          let cleanRef = matchRef[1].replace(/_/g, '/').replace(/\s+/g, ' ').trim();
+          cleanRef = cleanRef.replace(/[-\/]+$/, ''); // clean trailing chars
+          this.referenceNoField.set(cleanRef.toUpperCase());
+        }
+      }
+
+      // 2. Call backend to extract precise metadata from PDF contents using AI
+      this.uploading.set(true);
+      this.processingState.set('processing');
+      this.processingMessage.set('Extracting reference number, title and date from PDF contents via AI...');
+
+      const formData = new FormData();
+      formData.append('files', firstFile, firstFile.name);
+
+      this.api.extractMetadata(formData).subscribe({
+        next: (res) => {
+          this.uploading.set(false);
+          this.processingState.set('idle');
+          this.processingMessage.set('');
+
+          if (res.reference_no) {
+            this.referenceNoField.set(res.reference_no);
+          }
+          if (res.title) {
+            this.circularTitleField.set(res.title);
+          }
+          if (res.published_date) {
+            this.circularDate.set(res.published_date);
+          }
+
+          this.messageService.add({
+            severity: 'success',
+            summary: 'AI Extraction Complete',
+            detail: 'Metadata successfully extracted from the circular PDF content.',
+            life: 3000
+          });
+        },
+        error: (err) => {
+          this.uploading.set(false);
+          this.processingState.set('idle');
+          this.processingMessage.set('');
+          console.warn('AI metadata extraction failed, relying on user inputs or file names', err);
+        }
+      });
+    }
   }
 
   onCircularFileRemoved(event: any) {
@@ -1002,7 +1122,37 @@ export class CircularsComponent implements OnInit, OnDestroy {
       is_penalty_applicable: this.isPenaltyApplicable,
       penalty_amount: this.isPenaltyApplicable && this.penaltyAmount !== null ? Number(this.penaltyAmount) : null,
       penalty_description: this.penaltyDescriptionField().trim() || null,
+      is_applicable: this.isApplicable(),
+      is_active: this.isActive(),
     };
+
+    const editingId = this.editingCircularId();
+    if (editingId) {
+      this.api.updateCircular(editingId, payload).subscribe({
+        next: (res) => {
+          this.uploading.set(false);
+          this.processingState.set('done');
+          this.processingMessage.set('Circular updated successfully.');
+          this.loadData();
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Circular Updated',
+            detail: 'Circular details updated successfully.',
+            life: 3000
+          });
+          window.setTimeout(() => {
+            this.closeCircularDrawer();
+          }, 400);
+        },
+        error: (err) => {
+          this.uploading.set(false);
+          this.processingState.set('error');
+          this.processingMessage.set('Failed to update circular details.');
+          console.error(err);
+        }
+      });
+      return;
+    }
 
     const request = hasFiles
       ? this.api.createCircularWithFiles(this.buildCircularFormData(payload))

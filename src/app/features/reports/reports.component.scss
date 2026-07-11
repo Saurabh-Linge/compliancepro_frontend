@@ -1,0 +1,141 @@
+.reports-container {
+  background: var(--surface-card, #ffffff);
+  border: 1px solid var(--surface-border, #e9ecef);
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  min-height: calc(100vh - 5.5rem);
+  display: flex;
+  flex-direction: column;
+
+
+  .reports-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--surface-border, #e9ecef);
+    padding: 0 1.5rem 1rem 1.5rem;
+    margin-bottom: 0.5rem;
+
+    .header-left {
+      .page-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text-color, #1a202c);
+        margin: 0;
+      }
+    }
+
+    .header-right {
+      .back-btn {
+        transition: transform 0.2s ease-in-out !important;
+
+        &:hover {
+          transform: translateX(-2px) !important;
+        }
+      }
+    }
+  }
+
+  .table-container {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+
+    app-table {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    app-table>div.flex-column {
+      gap: 0.5rem !important;
+      flex-grow: 1;
+    }
+
+    /* Remove default shadow/borders of the nested table element so they don't double up */
+    .table-container {
+      border: none !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      flex-grow: 1;
+    }
+  }
+
+  /* PrimeNG Subheader Grouping Custom Styles */
+  .p-rowgroup-header {
+    background-color: var(--surface-hover, #f1f5f9) !important;
+    font-weight: 700 !important;
+
+    td {
+      padding: 0.85rem 1rem !important;
+      border-bottom: 1px solid var(--surface-border, #e2e8f0) !important;
+    }
+
+    .category-header-title {
+      color: var(--primary-color, #3b82f6) !important;
+      font-size: 0.9rem !important;
+      letter-spacing: 0.02em !important;
+      font-weight: 700 !important;
+    }
+  }
+
+  /* Report row style overrides */
+  .p-datatable-tbody>tr:not(.p-rowgroup-header) {
+    &:hover {
+      background-color: var(--surface-hover, rgba(59, 130, 246, 0.04)) !important;
+    }
+
+    td {
+      padding: 0.85rem 1rem !important;
+      border-bottom: 1px solid var(--surface-border, #e2e8f0) !important;
+      color: var(--text-color, #1e293b) !important;
+      font-weight: 500 !important;
+
+      &.col-sr {
+        width: 4.5rem !important;
+        min-width: 4.5rem !important;
+        max-width: 4.5rem !important;
+        text-align: center !important;
+      }
+
+      &.col-action {
+        width: 6rem !important;
+        min-width: 6rem !important;
+        max-width: 6rem !important;
+        text-align: center !important;
+      }
+    }
+  }
+
+  /* Styling action buttons inside p-datatable */
+  .reports-action-btn {
+    background-color: var(--primary-color, #3b82f6) !important;
+    border-color: var(--primary-color, #3b82f6) !important;
+    color: #ffffff !important;
+    border-radius: 6px !important;
+    width: 32px !important;
+    height: 32px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s ease !important;
+
+    span,
+    i {
+      font-size: 0.875rem !important;
+      color: #ffffff !important;
+    }
+
+    &:hover {
+      background-color: #2563eb !important;
+      border-color: #2563eb !important;
+      transform: scale(1.05) !important;
+      box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2) !important;
+    }
+
+    &:active {
+      transform: scale(0.95) !important;
+    }
+  }
+}
