@@ -155,17 +155,8 @@ body.sidebar-resizing * {
 
 @media print {
   @page {
-    size: A4 portrait;
-    margin: 5mm;
-  }
-
-  @page landscape-page {
-    size: A4 landscape;
-    margin: 5mm;
-  }
-
-  body.print-landscape {
-    page: landscape-page;
+    size: A4 portrait !important;
+    margin: 5mm !important;
   }
 
   body.printing-report {
@@ -175,6 +166,7 @@ body.sidebar-resizing * {
   body.printing-report .layout-topbar,
   body.printing-report .layout-sidebar,
   body.printing-report .layout-mask,
+  body.printing-report .page-header,
   body.printing-report .no-print {
     display: none !important;
   }

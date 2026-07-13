@@ -21,6 +21,7 @@ import { ProgressBarModule } from 'primeng/progressbar';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
 import { DialogModule } from 'primeng/dialog';
+import { SelectModule } from 'primeng/select';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 @Component({
@@ -45,6 +46,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
     ConfirmDialogModule,
     ToastModule,
     DialogModule,
+    SelectModule,
   ],
   providers: [ConfirmationService, MessageService],
   template: `
@@ -63,7 +65,21 @@ import { ConfirmationService, MessageService } from 'primeng/api';
             (onLazyLoad)="handleLazyLoad($event)"
             (onSearch)="handleSearch($event)"
             (onRefresh)="loadData()"
-        ></app-table>
+        >
+          <div toolbar-actions class="flex align-items-center ml-2">
+            <p-select
+              [options]="authorities()"
+              [ngModel]="selectedAuthorityFilter()"
+              (ngModelChange)="selectedAuthorityFilter.set($event); handleAuthorityFilterChange()"
+              placeholder="Filter by Authority"
+              [showClear]="true"
+              optionLabel="name"
+              optionValue="id"
+              class="w-16rem"
+              styleClass="h-2.5rem flex align-items-center animate-fadein"
+            ></p-select>
+          </div>
+        </app-table>
       </div>
     </app-page>
 
@@ -814,6 +830,7 @@ export class CircularsComponent implements OnInit, OnDestroy {
   isApplicable = signal<boolean>(true);
   isActive = signal<boolean>(true);
   editingCircularId = signal<number | null>(null);
+  selectedAuthorityFilter = signal<number | null>(null);
 
   priorityOptions = [
     { label: 'Critical', value: 'Critical' },
@@ -928,6 +945,10 @@ export class CircularsComponent implements OnInit, OnDestroy {
     if (this.searchQuery) {
       params.search = this.searchQuery;
     }
+    const authId = this.selectedAuthorityFilter();
+    if (authId !== null && authId !== undefined) {
+      params.authority_id = authId;
+    }
 
     this.api.getCirculars(params).subscribe({
       next: (res) => {
@@ -937,6 +958,11 @@ export class CircularsComponent implements OnInit, OnDestroy {
       error: (err) => console.error(err)
     });
     this.api.getAuthorities().subscribe(data => this.authorities.set(data));
+  }
+
+  handleAuthorityFilterChange() {
+    this.page = 1;
+    this.loadData();
   }
 
   handleLazyLoad(event: any) {

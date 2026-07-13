@@ -7,11 +7,12 @@ import { TagModule } from 'primeng/tag';
 import { RippleModule } from 'primeng/ripple';
 import { ReportsService, ReportDefinition, ReportColumnDefinition } from '../services/reports.service';
 import { ExportService } from '../../../core/services/export/export.service';
+import { PageComponent } from '../../../shared/components/page/page.component';
 
 @Component({
     selector: 'app-report-viewer',
     standalone: true,
-    imports: [CommonModule, FormsModule, ButtonModule, TagModule, RippleModule],
+    imports: [CommonModule, FormsModule, ButtonModule, TagModule, RippleModule, PageComponent],
     templateUrl: './report-viewer.component.html',
     styleUrls: ['./report-viewer.component.scss'],
 })
@@ -28,6 +29,7 @@ export class ReportViewerComponent implements OnInit {
     loading = signal<boolean>(false);
     error = signal<string | null>(null);
     reportRunDate = signal<string>('');
+    initialDataLoaded = signal<boolean>(false);
 
     ngOnInit() {
         this.reportRunDate.set(new Date().toISOString().split('T')[0]);
@@ -41,13 +43,18 @@ export class ReportViewerComponent implements OnInit {
     loadReportDefinition(slug: string) {
         this.loading.set(true);
         this.error.set(null);
+        this.initialDataLoaded.set(false);
         this.reportsService.getReportDefinition(slug).subscribe({
             next: (def) => {
                 this.definition.set(def);
                 // Initialize default filters
                 const initialFilters = { ...def.defaultFilters };
                 this.filters.set(initialFilters);
-                this.loadReportData();
+                if (slug === 'compliance-status-report') {
+                    this.loading.set(false);
+                } else {
+                    this.loadReportData(false);
+                }
             },
             error: (err) => {
                 this.error.set('Failed to load report definition.');
@@ -56,8 +63,22 @@ export class ReportViewerComponent implements OnInit {
         });
     }
 
-    loadReportData() {
+    loadReportData(isApplyFilter = false) {
         const slug = this.reportSlug();
+        
+        // Reset sub-filters if finding data again with new dates
+        if (slug === 'compliance-status-report' && !isApplyFilter) {
+            const def = this.definition();
+            if (def) {
+                const currentFilters = this.filters();
+                this.filters.set({
+                    ...def.defaultFilters,
+                    startDate: currentFilters['startDate'],
+                    endDate: currentFilters['endDate']
+                });
+            }
+        }
+
         const activeFilters = this.filters();
         this.loading.set(true);
         this.error.set(null);
@@ -66,6 +87,9 @@ export class ReportViewerComponent implements OnInit {
             next: (data) => {
                 this.rows.set(data);
                 this.loading.set(false);
+                if (slug === 'compliance-status-report') {
+                    this.initialDataLoaded.set(true);
+                }
             },
             error: (err) => {
                 this.error.set('Failed to retrieve report data.');
@@ -75,29 +99,41 @@ export class ReportViewerComponent implements OnInit {
     }
 
     findReport() {
-        this.loadReportData();
+        this.loadReportData(false);
+    }
+
+    applyFilter() {
+        this.loadReportData(true);
+    }
+
+    showFilter(filter: any): boolean {
+        if (this.reportSlug() !== 'compliance-status-report') {
+            return true;
+        }
+        if (!this.initialDataLoaded()) {
+            return filter.key === 'startDate' || filter.key === 'endDate';
+        }
+        return true;
     }
 
     reset() {
         const def = this.definition();
         if (def) {
             this.filters.set({ ...def.defaultFilters });
-            this.loadReportData();
+            if (this.reportSlug() === 'compliance-status-report') {
+                this.initialDataLoaded.set(false);
+                this.rows.set([]);
+            } else {
+                this.loadReportData(false);
+            }
         }
     }
 
   print() {
-    const isLandscape = this.definition()?.page === 'A4L';
-    if (isLandscape) {
-      document.body.classList.add('print-landscape');
-    }
     document.body.classList.add('printing-report');
     window.print();
     setTimeout(() => {
       document.body.classList.remove('printing-report');
-      if (isLandscape) {
-        document.body.classList.remove('print-landscape');
-      }
     });
   }
 

@@ -235,15 +235,14 @@ import { TooltipModule } from 'primeng/tooltip';
       </ng-container>
 
       <!-- Bulk Submit Compliance Button -->
-      <div class="mt-4 mb-5" *ngIf="canEditAssignment()">
+      <div class="flex justify-content-center mt-4 mb-5" *ngIf="canEditAssignment()" style="display: flex; justify-content: center;">
         <p-button
           label="Submit Compliance"
           icon="pi pi-send"
+          severity="primary"
           [loading]="submitting"
           loadingIcon="pi pi-spinner pi-spin"
-          (click)="submitAllCompliance()"
-          styleClass="w-full submit-compliance-btn"
-          size="large" />
+          (click)="submitAllCompliance()" />
       </div>
 
       <div *ngIf="taskGroups().length === 0" class="glass-panel text-center py-8 text-gray-500 bg-white rounded-xl border border-gray-100">
@@ -256,10 +255,10 @@ import { TooltipModule } from 'primeng/tooltip';
 })
 export class AssignmentDetailsComponent implements OnInit {
   assignmentId: number | null = null;
-  
+
   tasks = signal<any[]>([]);
   taskGroups = signal<{ headerName: string, tasks: any[] }[]>([]);
-  
+
   assignmentStatus = signal<string>('');
   reviewRemark = signal<string>('');
 
@@ -293,7 +292,7 @@ export class AssignmentDetailsComponent implements OnInit {
     private router: Router,
     private api: ComplianceApiService,
     private notification: NotificationService
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
@@ -309,6 +308,14 @@ export class AssignmentDetailsComponent implements OnInit {
   progressPercentage = computed(() => this.tasks().length ? Math.round((this.completedCount() / this.tasks().length) * 100) : 0);
 
   canEditAssignment(): boolean {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const userRole = String(user.role || '').toLowerCase();
+
+    // Only branch users / branch managers are permitted to enter compliance details
+    if (userRole !== 'branch' && userRole !== 'branch_user') {
+      return false;
+    }
+
     const status = this.assignmentStatus();
     return status !== 'REVIEW_PENDING' && status !== 'COMPLETED' && status !== 'ESCALATED_TO_CCO';
   }
@@ -319,7 +326,7 @@ export class AssignmentDetailsComponent implements OnInit {
       this.api.getAssignmentTasks(this.assignmentId).subscribe({
         next: (data) => {
           console.log('API Response data received:', data);
-          
+
           // Map backend tasks to hold temporary form values for clean binding
           const mappedTasks = data.map(t => ({
             ...t,
@@ -328,14 +335,14 @@ export class AssignmentDetailsComponent implements OnInit {
             has_evidence: false,
             evidence_url: ''
           }));
-          
+
           this.tasks.set(mappedTasks);
-          
+
           if (mappedTasks.length > 0) {
             const first = mappedTasks[0];
             this.assignmentStatus.set(first.assignment_status);
             this.reviewRemark.set(first.assignment_review_remark || '');
-            
+
             // Populate rich header metadata
             this.branchName.set(first.branch_name || '');
             this.taskSetName.set(first.task_set_name || '');
@@ -346,7 +353,7 @@ export class AssignmentDetailsComponent implements OnInit {
             this.circularReferenceNo.set(first.circular_reference_no || '');
             this.circularTitle.set(first.circular_title || '');
             this.authorityName.set(first.authority_name || '');
-            
+
             console.log('Assignment status:', this.assignmentStatus(), 'Review remark:', this.reviewRemark());
           } else {
             this.assignmentStatus.set('');
@@ -378,7 +385,7 @@ export class AssignmentDetailsComponent implements OnInit {
 
     this.api.getAssignmentEvidence(this.assignmentId).subscribe(evidenceList => {
       console.log('Evidence documents found:', evidenceList);
-      
+
       const updatedTasks = this.tasks().map(task => {
         // Find evidence linked to this specific assignment task
         const evidence = evidenceList.find(e => e.task_id === task.task_id);
@@ -399,7 +406,7 @@ export class AssignmentDetailsComponent implements OnInit {
 
   groupTasks() {
     const groupsMap = new Map<string, any[]>();
-    
+
     this.tasks().forEach(task => {
       const headerName = task.header_name || 'Uncategorized';
       if (!groupsMap.has(headerName)) {
@@ -412,7 +419,7 @@ export class AssignmentDetailsComponent implements OnInit {
       headerName,
       tasks
     }));
-    
+
     groups.sort((a, b) => {
       if (a.headerName === 'Uncategorized') return 1;
       if (b.headerName === 'Uncategorized') return -1;
@@ -568,7 +575,7 @@ export class AssignmentDetailsComponent implements OnInit {
 
     // 2. Run all save operations in parallel without individual success popups
     const results = await Promise.all(this.tasks().map(t => this.saveSingleTask(t, false)));
-    
+
     const allSuccessful = results.every(res => res === true);
     if (allSuccessful) {
       this.api.updateAssignmentStatus(this.assignmentId, 'REVIEW_PENDING').subscribe({

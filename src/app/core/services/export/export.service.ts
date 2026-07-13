@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 
 @Injectable({
   providedIn: 'root'
@@ -97,6 +97,27 @@ export class ExportService {
       worksheet['!merges'] = merges;
     }
 
+    // Style report headers (row 0 to reportHeaders.length - 1)
+    for (let rowIndex = 0; rowIndex < reportHeaders.length; rowIndex++) {
+      const cellRef = XLSX.utils.encode_cell({ r: rowIndex, c: 0 });
+      const cell = worksheet[cellRef];
+      if (cell) {
+        cell.s = {
+          font: {
+            name: 'Calibri',
+            sz: 14,
+            bold: true,
+            color: { rgb: '1E293B' }
+          },
+          alignment: {
+            horizontal: 'left',
+            vertical: 'center'
+          }
+        };
+      }
+    }
+
+    // Style column headers
     columnHeaderRowIndexes.forEach((rowIndex) => {
       for (let colIndex = 0; colIndex < columns.length; colIndex++) {
         const cellRef = XLSX.utils.encode_cell({ r: rowIndex, c: colIndex });
@@ -107,20 +128,56 @@ export class ExportService {
         }
 
         cell.s = {
-          ...(cell.s || {}),
           font: {
-            ...(cell.s?.font || {}),
+            name: 'Calibri',
+            sz: 11,
             bold: true,
+            color: { rgb: 'FFFFFF' }
+          },
+          fill: {
+            fgColor: { rgb: '3B82F6' } // premium blue background!
           },
           alignment: {
-            ...(cell.s?.alignment || {}),
             horizontal: 'center',
             vertical: 'center',
-            wrapText: true,
+            wrapText: true
           },
+          border: {
+            top: { style: 'thin', color: { rgb: 'CBD5E1' } },
+            bottom: { style: 'thin', color: { rgb: 'CBD5E1' } },
+            left: { style: 'thin', color: { rgb: 'CBD5E1' } },
+            right: { style: 'thin', color: { rgb: 'CBD5E1' } }
+          }
         };
       }
     });
+
+    // Style data rows
+    const startDataRow = reportHeaders.length + (columnHeader?.rows?.length || 1);
+    for (let r = startDataRow; r < currentRowIndex; r++) {
+      for (let c = 0; c < columns.length; c++) {
+        const cellRef = XLSX.utils.encode_cell({ r: r, c: c });
+        const cell = worksheet[cellRef];
+        if (cell) {
+          cell.s = {
+            font: {
+              name: 'Calibri',
+              sz: 10
+            },
+            border: {
+              top: { style: 'thin', color: { rgb: 'E2E8F0' } },
+              bottom: { style: 'thin', color: { rgb: 'E2E8F0' } },
+              left: { style: 'thin', color: { rgb: 'E2E8F0' } },
+              right: { style: 'thin', color: { rgb: 'E2E8F0' } }
+            },
+            alignment: {
+              horizontal: columns[c].field === 'sr_no' || columns[c].field === 'srNo' ? 'center' : 'left',
+              vertical: 'center'
+            }
+          };
+        }
+      }
+    }
 
     // Basic styling/formatting hints for xlsx library (AOA to Sheet doesn't do much style, but we can set widths)
     const colWidths = columns.map((c) => ({

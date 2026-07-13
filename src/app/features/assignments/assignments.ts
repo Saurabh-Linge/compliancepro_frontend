@@ -29,14 +29,6 @@ import { ButtonModule } from 'primeng/button';
   template: `
     <app-page title="Compliances & Task Sets" icon="pi pi-sitemap" description="Manage task sets and branch compliances.">
       
-      <div class="flex border-b border-gray-200 mb-4 mt-2">
-        <button class="px-4 py-2 font-medium" 
-                [ngClass]="activeTab() === 'ASSIGNMENTS' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'"
-                (click)="activeTab.set('ASSIGNMENTS')">
-          Compliances (Assignments)
-        </button>
-      </div>
-
       <div class="card h-full">
         <!-- ASSIGNMENTS TAB -->
         <div *ngIf="activeTab() === 'ASSIGNMENTS'">
@@ -153,6 +145,7 @@ export class AssignmentsComponent implements OnInit {
 
   assignmentColumns: TableColumn[] = [
     { field: 'task_set_name', header: 'Task Set Name', width: '30%' },
+    { field: 'created_at', header: 'Assignment Date', type: 'date', pipeFormat: 'mediumDate', width: '15%' },
     { field: 'proposed_timeline', header: 'Due Date', type: 'date', pipeFormat: 'mediumDate', width: '15%' },
     { field: 'branch_name', header: 'Branch', width: '20%' },
     { field: 'status', header: 'Status', type: 'status', width: '15%' }

@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { TableComponent, TableColumn } from '../../shared/components/table/table.component';
 import { ButtonModule } from 'primeng/button';
 import { RippleModule } from 'primeng/ripple';
+import { PageComponent } from '../../shared/components/page/page.component';
 
 interface ReportItem {
   srNo: number;
@@ -15,7 +16,7 @@ interface ReportItem {
 @Component({
   selector: 'app-reports',
   standalone: true,
-  imports: [CommonModule, TableComponent, ButtonModule, RippleModule],
+  imports: [CommonModule, TableComponent, ButtonModule, RippleModule, PageComponent],
   templateUrl: './reports.component.html',
   styleUrls: ['./reports.component.scss'],
 })
@@ -69,6 +70,12 @@ export class ReportsComponent implements OnInit {
     },
     {
       srNo: 5,
+      name: 'Authority Wise Pending Tasks Report',
+      route: '/reports/authority-pending-tasks-report',
+      category: '1_master',
+    },
+    {
+      srNo: 6,
       name: 'Compliance Status Report',
       route: '/reports/compliance-status-report',
       category: '3_advanced',

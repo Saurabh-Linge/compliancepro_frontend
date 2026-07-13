@@ -33,7 +33,7 @@ export class AppMenu implements OnInit {
       masterItems.push({ label: 'Authority', icon: 'pi pi-fw pi-building', routerLink: ['/admin/authorities'] });
     }
 
-    if (['admin', 'cco'].includes(userRole)) {
+    if (['admin', 'cco', 'co'].includes(userRole)) {
       masterItems.push({
         label: 'Circular Master',
         icon: 'pi pi-fw pi-file-pdf',
@@ -44,9 +44,6 @@ export class AppMenu implements OnInit {
           { label: 'Task Set Master', icon: 'pi pi-fw pi-server', routerLink: ['/task-sets'] }
         ]
       });
-    } else if (userRole === 'co') {
-      masterItems.push({ label: 'Circular Master', icon: 'pi pi-fw pi-file-pdf', routerLink: ['/circulars'] });
-      masterItems.push({ label: 'Task Header Master', icon: 'pi pi-fw pi-tags', routerLink: ['/admin/task-headers'] });
     }
 
     if (userRole === 'admin') {
@@ -61,20 +58,29 @@ export class AppMenu implements OnInit {
       });
     }
 
-    // 2. GENERAL Section
+    // 2. COMPLIANCE Section
+    const complianceItems: MenuItem[] = [];
+    
+    if (userRole === 'cco') {
+      // CCO Review Queue
+      complianceItems.push({ label: 'CCO Review Queue', icon: 'pi pi-fw pi-shield', routerLink: ['/cco-review'] });
+    } else if (userRole === 'co') {
+      // CO Review Queue
+      complianceItems.push({ label: 'CO Review Queue', icon: 'pi pi-fw pi-check-circle', routerLink: ['/co-review'] });
+    } else if (['branch', 'branch_user'].includes(userRole)) {
+      complianceItems.push({ label: 'My Assignments', icon: 'pi pi-fw pi-briefcase', routerLink: ['/assignments'] });
+    }
+
+    if (complianceItems.length > 0) {
+      menu.push({
+        label: 'COMPLIANCE',
+        items: complianceItems
+      });
+    }
+
+    // 3. GENERAL Section
     const generalItems: MenuItem[] = [];
     generalItems.push({ label: 'Dashboard', icon: 'pi pi-fw pi-home', routerLink: ['/home'] });
-
-    if (userRole === 'cco') {
-      // CCO Review Queue labeled as "Circulars"
-      generalItems.push({ label: 'Circulars', icon: 'pi pi-fw pi-shield', routerLink: ['/cco-review'] });
-    } else if (userRole === 'co') {
-      // CO Review Queue labeled as "Circulars"
-      generalItems.push({ label: 'Compliances', icon: 'pi pi-fw pi-briefcase', routerLink: ['/assignments'] });
-      generalItems.push({ label: 'Circulars', icon: 'pi pi-fw pi-check-circle', routerLink: ['/co-review'] });
-    } else if (['branch', 'branch_user'].includes(userRole)) {
-      generalItems.push({ label: 'My Assignments', icon: 'pi pi-fw pi-briefcase', routerLink: ['/assignments'] });
-    }
 
     if (['admin', 'co', 'cco'].includes(userRole)) {
       generalItems.push({
