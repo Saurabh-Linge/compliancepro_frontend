@@ -28,9 +28,9 @@ export class AppMenu implements OnInit {
 
     // 1. MASTERS Section
     const masterItems: MenuItem[] = [];
-    
+
     if (['admin', 'cco', 'co'].includes(userRole)) {
-      masterItems.push({ label: 'Authority', icon: 'pi pi-fw pi-building', routerLink: ['/admin/authorities'] });
+      masterItems.push({ label: 'Authority Master', icon: 'pi pi-fw pi-building', routerLink: ['/admin/authorities'] });
     }
 
     if (['admin', 'cco', 'co'].includes(userRole)) {
@@ -60,7 +60,7 @@ export class AppMenu implements OnInit {
 
     // 2. COMPLIANCE Section
     const complianceItems: MenuItem[] = [];
-    
+
     if (userRole === 'cco') {
       // CCO Review Queue
       complianceItems.push({ label: 'CCO Review Queue', icon: 'pi pi-fw pi-shield', routerLink: ['/cco-review'] });

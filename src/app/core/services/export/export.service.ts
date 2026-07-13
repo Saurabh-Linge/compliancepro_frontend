@@ -43,6 +43,13 @@ export class ExportService {
       currentRowIndex++;
     });
 
+    // Add one empty white row between report headers and actual table
+    if (reportHeaders.length > 0) {
+      const emptyRow = new Array(columns.length).fill('');
+      worksheetData.push(emptyRow);
+      currentRowIndex++;
+    }
+
     // 2. Add Column Headers
     let columnHeaderRowIndexes: number[] = [];
 
@@ -73,8 +80,10 @@ export class ExportService {
       currentRowIndex++;
     }
 
-    // 3. Add Data Rows (with special handling for group headers)
+    // 3. Add Data Rows
+    const dataRowIndexes: number[] = [];
     data.forEach((row) => {
+      dataRowIndexes.push(currentRowIndex);
       if (row._rowType === 'header') {
         const groupHeaderRow = new Array(columns.length).fill('');
         groupHeaderRow[0] = row._headerValue || '';
@@ -107,7 +116,7 @@ export class ExportService {
             name: 'Calibri',
             sz: 14,
             bold: true,
-            color: { rgb: '1E293B' }
+            color: { rgb: '000000' } // simple black text
           },
           alignment: {
             horizontal: 'left',
@@ -132,10 +141,10 @@ export class ExportService {
             name: 'Calibri',
             sz: 11,
             bold: true,
-            color: { rgb: 'FFFFFF' }
+            color: { rgb: '000000' } // black text
           },
           fill: {
-            fgColor: { rgb: '3B82F6' } // premium blue background!
+            fgColor: { rgb: 'F2F2F2' } // soft grey header background (monochrome)
           },
           alignment: {
             horizontal: 'center',
@@ -143,41 +152,60 @@ export class ExportService {
             wrapText: true
           },
           border: {
-            top: { style: 'thin', color: { rgb: 'CBD5E1' } },
-            bottom: { style: 'thin', color: { rgb: 'CBD5E1' } },
-            left: { style: 'thin', color: { rgb: 'CBD5E1' } },
-            right: { style: 'thin', color: { rgb: 'CBD5E1' } }
+            top: { style: 'thin', color: { rgb: '000000' } },
+            bottom: { style: 'medium', color: { rgb: '000000' } },
+            left: { style: 'thin', color: { rgb: 'CCCCCC' } },
+            right: { style: 'thin', color: { rgb: 'CCCCCC' } }
           }
         };
       }
     });
 
     // Style data rows
-    const startDataRow = reportHeaders.length + (columnHeader?.rows?.length || 1);
-    for (let r = startDataRow; r < currentRowIndex; r++) {
+    dataRowIndexes.forEach((r) => {
       for (let c = 0; c < columns.length; c++) {
         const cellRef = XLSX.utils.encode_cell({ r: r, c: c });
         const cell = worksheet[cellRef];
         if (cell) {
-          cell.s = {
-            font: {
-              name: 'Calibri',
-              sz: 10
-            },
-            border: {
-              top: { style: 'thin', color: { rgb: 'E2E8F0' } },
-              bottom: { style: 'thin', color: { rgb: 'E2E8F0' } },
-              left: { style: 'thin', color: { rgb: 'E2E8F0' } },
-              right: { style: 'thin', color: { rgb: 'E2E8F0' } }
-            },
-            alignment: {
-              horizontal: columns[c].field === 'sr_no' || columns[c].field === 'srNo' ? 'center' : 'left',
-              vertical: 'center'
-            }
-          };
+          const isGroupHeader = merges.some(m => m.s.r === r && m.s.c === 0 && m.e.c === columns.length - 1 && m.s.r >= reportHeaders.length + (reportHeaders.length > 0 ? 1 : 0));
+          
+          if (isGroupHeader) {
+            cell.s = {
+              font: {
+                name: 'Calibri',
+                sz: 11,
+                bold: true,
+                color: { rgb: '000000' }
+              },
+              fill: {
+                fgColor: { rgb: 'F9FAFB' }
+              },
+              alignment: {
+                horizontal: 'left',
+                vertical: 'center'
+              }
+            };
+          } else {
+            cell.s = {
+              font: {
+                name: 'Calibri',
+                sz: 10
+              },
+              border: {
+                top: { style: 'thin', color: { rgb: 'E2E8F0' } },
+                bottom: { style: 'thin', color: { rgb: 'E2E8F0' } },
+                left: { style: 'thin', color: { rgb: 'E2E8F0' } },
+                right: { style: 'thin', color: { rgb: 'E2E8F0' } }
+              },
+              alignment: {
+                horizontal: columns[c].field === 'sr_no' || columns[c].field === 'srNo' ? 'center' : 'left',
+                vertical: 'center'
+              }
+            };
+          }
         }
       }
-    }
+    });
 
     // Basic styling/formatting hints for xlsx library (AOA to Sheet doesn't do much style, but we can set widths)
     const colWidths = columns.map((c) => ({

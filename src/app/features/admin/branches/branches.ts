@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
@@ -12,6 +12,7 @@ import { TextFieldComponent } from '../../../shared/components/form/text-field/t
 import { SelectFieldComponent } from '../../../shared/components/form/select-field/select-field.component';
 import { PageComponent } from '../../../shared/components/page/page.component';
 import { DrawerModule } from 'primeng/drawer';
+import { SelectModule } from 'primeng/select';
 
 @Component({
   selector: 'app-branches',
@@ -27,7 +28,8 @@ import { DrawerModule } from 'primeng/drawer';
     TableComponent,
     TextFieldComponent,
     SelectFieldComponent,
-    PageComponent
+    PageComponent,
+    SelectModule
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './branches.html',
@@ -40,6 +42,22 @@ export class Branches implements OnInit {
 
   branches = signal<any[]>([]);
   loading = signal<boolean>(true);
+
+  // Type filter signals
+  selectedTypeFilter = signal<string | null>(null);
+  filterOptions = [
+    { label: 'Branch', value: 'BRANCH' },
+    { label: 'Department', value: 'DEPARTMENT' }
+  ];
+
+  filteredBranches = computed(() => {
+    const list = this.branches();
+    const filter = this.selectedTypeFilter();
+    if (!filter || filter === 'ALL') {
+      return list;
+    }
+    return list.filter(b => b.type === filter);
+  });
 
   branchDialog = signal<boolean>(false);
   

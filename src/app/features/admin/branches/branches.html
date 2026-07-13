@@ -1,16 +1,30 @@
 <app-page title="Branch and Department Master" icon="pi pi-map-marker">
     <div class="card h-full">
-    <app-table
-        [data]="branches()"
-        [columns]="tableColumns"
-        [loading]="loading()"
-        [actions]="tableActions"
-        (onAdd)="openNew()"
-        [showRefreshButton]="true"
-        [paginator]="true"
-        [rows]="10"
-        (onRefresh)="loadBranches()"
-    ></app-table>
+      <app-table
+          [data]="filteredBranches()"
+          [columns]="tableColumns"
+          [loading]="loading()"
+          [actions]="tableActions"
+          (onAdd)="openNew()"
+          [showRefreshButton]="true"
+          [paginator]="true"
+          [rows]="10"
+          (onRefresh)="loadBranches()"
+      >
+        <div toolbar-actions class="flex align-items-center ml-2">
+          <p-select
+            [options]="filterOptions"
+            [ngModel]="selectedTypeFilter()"
+            (ngModelChange)="selectedTypeFilter.set($event)"
+            placeholder="Filter by Type"
+            [showClear]="true"
+            optionLabel="label"
+            optionValue="value"
+            class="w-16rem"
+            styleClass="h-2.5rem flex align-items-center animate-fadein"
+          ></p-select>
+        </div>
+      </app-table>
     </div>
 </app-page>
 
