@@ -651,7 +651,7 @@ export class TasksComponent implements OnInit {
 
   get isCcoOrAdmin(): boolean {
     const role = this.auth.currentUser()?.role;
-    return role === 'CCO' || role === 'ADMIN';
+    return role === 'CCO' || role === 'CO' || role === 'ADMIN';
   }
 
   constructor(private api: ComplianceApiService, private route: ActivatedRoute, private auth: AuthService) { }
