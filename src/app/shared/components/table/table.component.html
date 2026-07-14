@@ -10,20 +10,9 @@
 
   <!-- Detached Toolbar -->
   @if (showToolbar()) {
-  <div
-    style="
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      gap: 0.5rem;
-      padding: 0.25rem;
-      margin-bottom: 0.5rem;
-    "
-  >
-    <div style="display: flex; flex-direction: row; align-items: center; gap: 0.5rem">
-      <p-iconfield iconPosition="left">
+  <div class="flex flex-column md:flex-row justify-content-between align-items-stretch md:align-items-center gap-3 w-full mb-3 p-1">
+    <div class="flex flex-column sm:flex-row align-items-stretch sm:align-items-center gap-2 flex-grow-1">
+      <p-iconfield iconPosition="left" class="w-full sm:w-15rem">
         <p-inputicon styleClass="pi pi-search" />
         <input
           #searchInput
@@ -31,12 +20,13 @@
           type="text"
           (input)="handleSearch($event)"
           placeholder="Search (Ctrl+F)"
-          style="width: auto; height: 2.5rem"
+          class="w-full"
+          style="height: 2.5rem"
         />
       </p-iconfield>
       <ng-content select="[toolbar-actions]"></ng-content>
     </div>
-    <div style="display: flex; flex-direction: row; align-items: center; gap: 0.5rem">
+    <div class="flex flex-row align-items-center justify-content-end gap-2">
       <button
         *ngIf="showRefreshButton()"
         pButton
@@ -334,10 +324,15 @@
               [class]="col.cssClass || ''"
             >
               <ng-container [ngSwitch]="col.type">
-                <!-- Badge Type -->
+                <!-- Badge / Status Type -->
                 <ng-container *ngSwitchCase="'badge'">
-                  <span class="p-badge p-component" 
-                        [class]="getBadgeClass(rowData[col.field])">
+                  <span [class]="getBadgeClass(rowData[col.field])">
+                    {{ formatValue(rowData[col.field], col) }}
+                  </span>
+                </ng-container>
+                
+                <ng-container *ngSwitchCase="'status'">
+                  <span [class]="getBadgeClass(rowData[col.field])">
                     {{ formatValue(rowData[col.field], col) }}
                   </span>
                 </ng-container>

@@ -1,7 +1,7 @@
-<div class="flex flex-column h-full w-full bg-white p-3" style="display: flex; flex-direction: column; box-sizing: border-box; overflow-y: auto; background: #ffffff;">
+<div class="flex flex-column h-full w-full bg-white p-2 sm:p-3" style="display: flex; flex-direction: column; box-sizing: border-box; overflow-y: auto; background: #ffffff;">
   
   <!-- Page Header (on gray background, aligned with content) -->
-  <div class="pb-2 flex align-items-center justify-content-between page-header" style="margin-left: 0.5rem; margin-right: 0.5rem;">
+  <div class="pb-2 flex flex-column sm:flex-row align-items-start sm:align-items-center justify-content-between gap-3 page-header" style="margin-left: 0.5rem; margin-right: 0.5rem;">
     <div class="flex flex-column">
       <h1 class="m-0 flex align-items-center">
         <i *ngIf="icon()" [class]="icon()" style="color: var(--primary-color); margin-right: 0.75rem; font-size: 1.35rem;"></i>
@@ -15,7 +15,7 @@
   </div>
 
   <!-- Page Content (retains individual cards) -->
-  <div class="flex-grow-1" style="padding: 0.5rem;">
+  <div class="flex-grow-1" style="padding: 0.25rem 0.5rem;">
     <div class="h-full w-full relative flex flex-column gap-3" style="display: flex; flex-direction: column;">
       <ng-content></ng-content>
     </div>

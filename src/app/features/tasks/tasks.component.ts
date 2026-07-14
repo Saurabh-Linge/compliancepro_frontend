@@ -582,7 +582,7 @@ import { MessageService } from 'primeng/api';
       </p-drawer>
 
       <!-- Quick Add Header Modal -->
-      <p-dialog header="Add New Task Header" [(visible)]="showAddHeaderModal" [modal]="true" [style]="{ width: '30rem' }">
+      <p-dialog header="Add New Task Header" [(visible)]="showAddHeaderModal" [modal]="true" [style]="{ width: '100%', 'max-width': '30rem', 'margin': '1rem' }">
         <div class="flex flex-column gap-3 mt-4">
           <div class="flex flex-column gap-2">
             <label class="font-medium">Header Name</label>

@@ -367,7 +367,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
     </p-drawer>
 
     <!-- Logs Modal -->
-    <p-dialog header="AI Processing Logs" [(visible)]="showLogsModal" [modal]="true" [style]="{ width: '50rem' }" [dismissableMask]="true" (onHide)="closeLogsModal()">
+    <p-dialog header="AI Processing Logs" [(visible)]="showLogsModal" [modal]="true" [style]="{ width: '100%', 'max-width': '50rem', 'margin': '1rem' }" [dismissableMask]="true" (onHide)="closeLogsModal()">
       <div class="logs-container bg-gray-900 text-green-400 p-4 border-round h-24rem overflow-y-auto font-mono text-sm" #logsScroll>
         <div *ngFor="let log of activeLogs()">
           <span class="text-gray-500">[{{ log.created_at | date:'mediumTime' }}]</span> 

@@ -118,6 +118,7 @@ interface SearchItem {
           optionLabel="label"
           optionValue="value"
           appendTo="body"
+          class="hide-on-small"
         >
           <ng-template pTemplate="selectedItem">
             <div class="flex align-items-center gap-2" *ngIf="selectedLanguage">

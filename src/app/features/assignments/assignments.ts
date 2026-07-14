@@ -69,7 +69,7 @@ import { SelectModule } from 'primeng/select';
     </app-page>
 
     <!-- Propose Timeline Modal -->
-    <p-dialog [visible]="showProposeModal()" (visibleChange)="showProposeModal.set($event)" [style]="{width: '450px'}" header="Propose Timeline" [modal]="true" class="p-fluid">
+    <p-dialog [visible]="showProposeModal()" (visibleChange)="showProposeModal.set($event)" [style]="{ width: '100%', 'max-width': '450px', 'margin': '1rem' }" header="Propose Timeline" [modal]="true" class="p-fluid">
       <ng-template pTemplate="content">
         <div class="flex flex-column gap-4 mt-3" *ngIf="selectedAssignment()">
           <p class="text-gray-700">Set a proposed completion date for <strong>{{ selectedAssignment()?.task_set_name }}</strong>.</p>
@@ -89,7 +89,7 @@ import { SelectModule } from 'primeng/select';
     </p-dialog>
 
     <!-- Assign to Branches Modal -->
-    <p-dialog [visible]="showAssignModal()" (visibleChange)="showAssignModal.set($event)" [style]="{width: '500px'}" header="Assign Task Set" [modal]="true" class="p-fluid">
+    <p-dialog [visible]="showAssignModal()" (visibleChange)="showAssignModal.set($event)" [style]="{ width: '100%', 'max-width': '500px', 'margin': '1rem' }" header="Assign Task Set" [modal]="true" class="p-fluid">
       <ng-template pTemplate="content">
         <div class="flex flex-column gap-4 mt-3" *ngIf="selectedTaskSet()">
           <div class="bg-indigo-50 text-indigo-700 p-3 rounded text-sm">

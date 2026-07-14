@@ -372,6 +372,13 @@
         .topbar-search-wrapper {
             max-width: 200px;
         }
+
+        .bank-name {
+            font-size: 0.8rem !important;
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
     }
 }
 
@@ -386,6 +393,10 @@
 
         .layout-topbar-logo img {
             height: 3.5rem;
+        }
+
+        .bank-name {
+            display: none !important;
         }
     }
 }
