@@ -1,7 +1,17 @@
 <app-page title="Task Sets Master" icon="pi pi-server" description="Manage Task Sets, map tasks, assign branches, and reopen for recompliance.">
+  <!-- Active circular filter banner -->
+  @if (selectedCircularLabel()) {
+    <div actions>
+      <div class="flex align-items-center gap-2 bg-blue-50 border-1 border-blue-200 border-round px-3 py-2">
+        <i class="pi pi-filter text-blue-600 text-sm"></i>
+        <span class="text-blue-800 text-sm font-medium">Filtered: {{ selectedCircularLabel() }}</span>
+        <button pButton pRipple icon="pi pi-times" class="p-button-text p-button-sm p-button-rounded text-blue-600" pTooltip="Clear filter" (click)="selectedCircularFilter.set(null)"></button>
+      </div>
+    </div>
+  }
   <div class="card h-full">
     <app-table
-        [data]="taskSets()"
+        [data]="filteredTaskSets()"
         [columns]="tableColumns"
         [actions]="tableActions"
         (onRefresh)="loadData()"
@@ -10,7 +20,23 @@
         [showRefreshButton]="true"
         [paginator]="true"
         [rows]="10"
-    ></app-table>
+    >
+      <ng-container toolbar-actions>
+        <p-select
+          [options]="circularFilterOptions()"
+          [ngModel]="selectedCircularFilter()"
+          (ngModelChange)="selectedCircularFilter.set($event)"
+          placeholder="Filter by Circular"
+          [showClear]="true"
+          [filter]="true"
+          filterPlaceholder="Search circular..."
+          [virtualScroll]="true"
+          [virtualScrollItemSize]="38"
+          styleClass="w-20rem"
+          panelStyleClass="circular-dropdown-panel"
+        ></p-select>
+      </ng-container>
+    </app-table>
   </div>
 </app-page>
 
@@ -25,6 +51,23 @@
       <section>
         <h4 class="mt-0 mb-3 text-900 border-bottom-1 border-300 pb-2"><i class="pi pi-file-edit mr-2 text-primary"></i>Basic Details</h4>
         <div class="formgrid grid p-fluid">
+          <!-- Circular (full width, first field like PHP) -->
+          <div class="field col-12">
+            <label class="font-medium text-sm text-700 mb-1 block">Circular <span class="text-red-500">*</span></label>
+            <p-select
+              [options]="circularFilterOptions()"
+              [ngModel]="newTaskSetCircularId()"
+              (ngModelChange)="newTaskSetCircularId.set($event); formCircularFilter.set($event)"
+              placeholder="Please select circular"
+              [showClear]="true"
+              [filter]="true"
+              filterPlaceholder="Search circular..."
+              [virtualScroll]="true"
+              [virtualScrollItemSize]="38"
+              styleClass="w-full"
+              panelStyleClass="circular-dropdown-panel"
+            ></p-select>
+          </div>
           <div class="field col-12 md:col-6">
             <app-text-field
               label="Task Set Name"
@@ -93,8 +136,8 @@
             <div toolbar-actions class="flex align-items-center ml-2">
               <p-select
                 [options]="circularFilterOptions()"
-                [ngModel]="selectedCircularFilter()"
-                (ngModelChange)="selectedCircularFilter.set($event)"
+                [ngModel]="formCircularFilter()"
+                (ngModelChange)="formCircularFilter.set($event)"
                 placeholder="Filter by Circular"
                 [showClear]="true"
                 optionLabel="label"
@@ -102,7 +145,7 @@
                 [filter]="true"
                 filterBy="label"
                 [virtualScroll]="true"
-                [virtualScrollItemSize]="52"
+                [virtualScrollItemSize]="38"
                 class="w-20rem"
                 styleClass="h-2.5rem flex align-items-center animate-fadein"
                 panelStyleClass="circular-dropdown-panel"

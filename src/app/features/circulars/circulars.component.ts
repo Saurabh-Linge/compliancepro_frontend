@@ -903,7 +903,7 @@ export class CircularsComponent implements OnInit, OnDestroy {
       label: 'Task Set Master',
       icon: 'pi pi-list-check',
       styleClass: 'text-green-600',
-      command: (_row) => this.router.navigate(['/task-sets'])
+      command: (row) => this.router.navigate(['/task-sets'], { queryParams: { circular_id: row.id } })
     },
     {
       label: 'Ask AI',

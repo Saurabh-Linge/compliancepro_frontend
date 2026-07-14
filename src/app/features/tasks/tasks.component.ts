@@ -98,6 +98,8 @@ import { MessageService } from 'primeng/api';
                   [showClear]="true"
                   [filter]="true"
                   filterPlaceholder="Search circular..."
+                  [virtualScroll]="true"
+                  [virtualScrollItemSize]="38"
                   styleClass="w-20rem"
                 ></p-select>
                 <button
