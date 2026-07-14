@@ -15,7 +15,7 @@
 </app-page>
 
 <!-- Task Set Form Drawer -->
-<p-drawer [(visible)]="showFormDrawer" position="right" [style]="{ width: '50rem' }" [header]="isEditMode ? 'Edit Task Set' : 'New Task Set'">
+<p-drawer [(visible)]="showFormDrawer" position="right" [style]="{ width: '55rem', maxWidth: '95vw' }" [header]="isEditMode ? 'Edit Task Set' : 'New Task Set'">
   <div class="flex flex-column h-full overflow-hidden">
     
     <!-- Main Scrollable Area -->
@@ -89,7 +89,27 @@
             [dataKey]="'id'"
             [showAddButton]="false"
             style="flex: 1; display: flex; flex-direction: column; overflow: hidden;"
-          ></app-table>
+          >
+            <div toolbar-actions class="flex align-items-center ml-2">
+              <p-select
+                [options]="circularFilterOptions()"
+                [ngModel]="selectedCircularFilter()"
+                (ngModelChange)="selectedCircularFilter.set($event)"
+                placeholder="Filter by Circular"
+                [showClear]="true"
+                optionLabel="label"
+                optionValue="value"
+                [filter]="true"
+                filterBy="label"
+                [virtualScroll]="true"
+                [virtualScrollItemSize]="52"
+                class="w-20rem"
+                styleClass="h-2.5rem flex align-items-center animate-fadein"
+                panelStyleClass="circular-dropdown-panel"
+                appendTo="body"
+              ></p-select>
+            </div>
+          </app-table>
         </div>
       </section>
 

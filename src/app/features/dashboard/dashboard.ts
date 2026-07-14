@@ -565,25 +565,7 @@ import { PageComponent } from '../../shared/components/page/page.component';
         <!-- 3. BRANCH DASHBOARD VIEW -->
         <ng-container *ngIf="role !== 'CCO' && role !== 'ADMIN' && role !== 'CO'">
           <!-- Stats Cards Row -->
-          <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-            <!-- Tasks -->
-            <div class="stat-card-custom cursor-pointer" routerLink="/assignments">
-              <div class="flex justify-between items-center w-full">
-                <div class="flex flex-column">
-                  <span class="card-label">Compliance Tasks</span>
-                  <span class="card-value">{{ stats?.tasks || 0 }}</span>
-                  <div class="flex gap-2 mt-1">
-                    <span class="text-xs text-orange-600 font-semibold">{{ stats?.pendingTasks || 0 }} pending</span>
-                    <span class="text-xs text-green-600 font-semibold">{{ stats?.approvedTasks || 0 }} approved</span>
-                  </div>
-                </div>
-                <div class="icon-circle pending-icon">
-                  <i class="pi pi-list text-2xl"></i>
-                </div>
-              </div>
-              <div class="card-progress bg-orange-500"></div>
-            </div>
-
+          <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 360px)); gap: 1.5rem; margin-bottom: 2rem;">
             <!-- Assignments -->
             <div class="stat-card-custom cursor-pointer" routerLink="/assignments">
               <div class="flex justify-between items-center w-full">

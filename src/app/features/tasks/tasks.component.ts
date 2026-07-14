@@ -13,11 +13,15 @@ import { TableComponent, TableColumn, TableAction } from '../../shared/component
 import { TextareaFieldComponent } from '../../shared/components/form/textarea-field/textarea-field.component';
 import { SelectFieldComponent } from '../../shared/components/form/select-field/select-field.component';
 import { SelectModule } from 'primeng/select';
+import { TableModule } from 'primeng/table';
+import { ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
 
 @Component({
   selector: 'app-tasks',
   standalone: true,
-  imports: [CommonModule, FormsModule, DialogModule, DrawerModule, ButtonModule, TabsModule, PageComponent, TableComponent, TextareaFieldComponent, SelectFieldComponent, SelectModule],
+  imports: [CommonModule, FormsModule, DialogModule, DrawerModule, ButtonModule, TabsModule, PageComponent, TableComponent, TextareaFieldComponent, SelectFieldComponent, SelectModule, TableModule, ToastModule],
+  providers: [MessageService],
   template: `
     <app-page title="Task Master" icon="pi pi-list">
       <div class="card h-full flex flex-column gap-3 p-3">
@@ -83,16 +87,27 @@ import { SelectModule } from 'primeng/select';
             (onRefresh)="loadTasks()"
           >
             <ng-container toolbar-actions>
-              <p-select 
-                [options]="circulars()" 
-                optionLabel="title" 
-                optionValue="id" 
-                [(ngModel)]="selectedCircularFilter" 
-                (ngModelChange)="onFilterChange()"
-                placeholder="Filter by Circular" 
-                [showClear]="true"
-                styleClass="w-20rem"
-              ></p-select>
+              <div class="flex gap-2 align-items-center">
+                <p-select 
+                  [options]="circulars()" 
+                  optionLabel="title" 
+                  optionValue="id" 
+                  [(ngModel)]="selectedCircularFilter" 
+                  (ngModelChange)="onFilterChange()"
+                  placeholder="Filter by Circular" 
+                  [showClear]="true"
+                  styleClass="w-20rem"
+                ></p-select>
+                <button
+                  *ngIf="isCcoOrAdmin"
+                  pButton
+                  type="button"
+                  icon="pi pi-upload"
+                  label="Bulk Upload"
+                  class="p-button-outlined p-button-secondary"
+                  (click)="openBulkUploadModal()"
+                ></button>
+              </div>
             </ng-container>
           </app-table>
         </div>
@@ -380,6 +395,192 @@ import { SelectModule } from 'primeng/select';
         </ng-template>
       </p-drawer>
 
+      <!-- Bulk Upload Tasks Drawer -->
+      <p-drawer
+        [visible]="showBulkUploadModal()"
+        (visibleChange)="showBulkUploadModal.set($event)"
+        position="right"
+        [style]="{ width: '920px', maxWidth: '96vw' }"
+        [modal]="true"
+        [dismissible]="true"
+        [showCloseIcon]="false"
+        styleClass="task-drawer"
+      >
+        <ng-template pTemplate="header">
+          <div class="drawer-header-row">
+            <div class="drawer-title-wrap">
+              <span class="drawer-title-icon">
+                <i class="pi pi-upload"></i>
+              </span>
+              <div>
+                <div class="text-900 font-semibold text-xl">Bulk Upload Tasks</div>
+                <div class="text-600 text-sm mt-1">Upload tasks in bulk via a CSV file</div>
+              </div>
+            </div>
+            <button pButton pRipple type="button" icon="pi pi-times" class="p-button-text p-button-rounded" (click)="showBulkUploadModal.set(false)"></button>
+          </div>
+        </ng-template>
+
+        <ng-template pTemplate="content">
+          @if (showBulkUploadModal()) {
+            <div class="drawer-content-shell">
+              <section class="drawer-section">
+                <div class="section-heading">
+                  <span class="section-kicker">Upload Configuration</span>
+                  <span class="section-line"></span>
+                </div>
+
+                <div class="grid formgrid p-fluid drawer-form-grid">
+                  <div class="field col-12">
+                    <app-select-field
+                      label="Select Target Circular"
+                      [field]="bulkUploadCircularId"
+                      [options]="circulars()"
+                      optionLabel="title"
+                      optionValue="id"
+                      [required]="true"
+                      [virtualScroll]="true"
+                      placeholder="Select Circular to associate tasks with">
+                    </app-select-field>
+                  </div>
+                </div>
+
+                <div class="surface-100 border-round p-3 mb-4 text-sm line-height-3 text-700 mt-2">
+                  <div>• Upload only CSV files (.csv)</div>
+                  <div>• Required columns: <strong>Task</strong> (description)</div>
+                  <div>• Optional columns: <strong>Header</strong>, <strong>Priority</strong>, <strong>Risk Category</strong>, <strong>Business Risk</strong>, <strong>Control Risk</strong>, <strong>Broader area</strong></div>
+                  <div>• Priority can be: <em>Critical, High, Medium, Low</em></div>
+                  <div>• Risk Category can be: <em>CREDIT RISK, MARKET RISK, OPERATIONAL RISK, etc.</em></div>
+                </div>
+
+                <div class="border-2 border-dashed border-300 border-round p-4 text-center mt-3 cursor-pointer" (click)="fileInput.click()">
+                  <input
+                    #fileInput
+                    type="file"
+                    accept=".csv"
+                    hidden
+                    (change)="onFileSelect($event)"
+                  />
+                  <i class="pi pi-file-excel text-500 text-3xl block mb-2"></i>
+                  <button
+                    pButton
+                    type="button"
+                    icon="pi pi-upload"
+                    label="Choose CSV File"
+                    class="p-button-outlined p-button-sm mb-2"
+                  ></button>
+                  @if (selectedFileName().length > 0) {
+                    <div class="mt-2 text-sm font-semibold text-primary">
+                      {{ selectedFileName() }}
+                    </div>
+                  } @else {
+                    <div class="text-500 text-sm">Or drag and drop CSV file here</div>
+                  }
+                </div>
+
+                <div class="flex justify-content-between align-items-center mt-4 gap-3 flex-wrap">
+                  <button
+                    pButton
+                    type="button"
+                    icon="pi pi-download"
+                    label="Download Sample CSV"
+                    class="p-button-outlined p-button-secondary"
+                    (click)="downloadSample()"
+                  ></button>
+
+                  <button
+                    pButton
+                    type="button"
+                    icon="pi pi-shield"
+                    label="Validate CSV"
+                    [disabled]="!selectedFile() || !bulkUploadCircularId()"
+                    [loading]="validating()"
+                    (click)="validateCsv()"
+                  ></button>
+                </div>
+              </section>
+
+              @if (previewRows().length > 0) {
+                <section class="drawer-section mt-3">
+                  <div class="section-heading">
+                    <span class="section-kicker">Validation Results</span>
+                    <span class="section-line"></span>
+                  </div>
+
+                  @if (hasErrors()) {
+                    <div class="surface-100 border-left-3 border-red-500 p-3 mb-3 text-sm border-round-right">
+                      <div class="font-semibold text-red-600 mb-2">Validation Errors Found ({{ errorCount() }} errors)</div>
+                      <div class="text-700">Please fix the issues highlighted in red before uploading.</div>
+                    </div>
+                  } @else {
+                    <div class="surface-100 border-left-3 border-green-500 p-3 mb-3 text-sm border-round-right">
+                      <div class="font-semibold text-green-700 mb-1">CSV validated successfully!</div>
+                      <div class="text-700">
+                        {{ validRows().length }} tasks are ready to upload.
+                      </div>
+                    </div>
+                  }
+
+                  <p-table
+                    [value]="previewRows()"
+                    styleClass="p-datatable-sm"
+                    [scrollable]="true"
+                    scrollHeight="350px"
+                  >
+                    <ng-template pTemplate="header">
+                      <tr>
+                        <th style="width: 60px">Row</th>
+                        <th>Header</th>
+                        <th>Task Description</th>
+                        <th>Priority</th>
+                        <th>Risk Category</th>
+                        <th style="width: 100px">Status</th>
+                        <th>Message</th>
+                      </tr>
+                    </ng-template>
+
+                    <ng-template pTemplate="body" let-row>
+                      <tr>
+                        <td>{{ row.rowNumber }}</td>
+                        <td>{{ row.headerName || '-' }}</td>
+                        <td>{{ row.description || '-' }}</td>
+                        <td>{{ row.priority || '-' }}</td>
+                        <td>{{ row.riskCategory || '-' }}</td>
+                        <td>
+                          <span
+                            [class]="
+                              row.status === 'VALID'
+                                ? 'text-green-600 font-semibold'
+                                : 'text-red-500 font-semibold'
+                            "
+                          >
+                            {{ row.status }}
+                          </span>
+                        </td>
+                        <td [class.text-red-500]="row.status === 'ERROR'">{{ row.message }}</td>
+                      </tr>
+                    </ng-template>
+                  </p-table>
+
+                  <div class="flex justify-content-end mt-4">
+                    <button
+                      pButton
+                      type="button"
+                      label="Upload Tasks"
+                      icon="pi pi-check"
+                      class="p-button-success"
+                      [disabled]="hasErrors() || !validRows().length || uploading()"
+                      [loading]="uploading()"
+                      (click)="uploadRows()"
+                    ></button>
+                  </div>
+                </section>
+              }
+            </div>
+          }
+        </ng-template>
+      </p-drawer>
+
       <!-- Quick Add Header Modal -->
       <p-dialog header="Add New Task Header" [(visible)]="showAddHeaderModal" [modal]="true" [style]="{ width: '30rem' }">
         <div class="flex flex-column gap-3 mt-4">
@@ -600,9 +801,16 @@ export class TasksComponent implements OnInit {
   ];
 
   riskCategoryOptions = [
-    { label: 'High', value: 'High' },
-    { label: 'Medium', value: 'Medium' },
-    { label: 'Low', value: 'Low' },
+    { label: 'CREDIT RISK', value: 'CREDIT RISK' },
+    { label: 'MARKET RISK', value: 'MARKET RISK' },
+    { label: 'FINANCIAL RISK', value: 'FINANCIAL RISK' },
+    { label: 'LIQUIDITY RISK', value: 'LIQUIDITY RISK' },
+    { label: 'OPERATIONAL RISK', value: 'OPERATIONAL RISK' },
+    { label: 'REGULATORY AND LEGAL RISK', value: 'REGULATORY AND LEGAL RISK' },
+    { label: 'REPUTATIONAL RISK', value: 'REPUTATIONAL RISK' },
+    { label: 'INFORMATION TECHNOLOGY RISK', value: 'INFORMATION TECHNOLOGY RISK' },
+    { label: 'OTHER RESIDUAL RISK', value: 'OTHER RESIDUAL RISK' },
+    { label: 'NOT APPLICABLE', value: 'NOT APPLICABLE' }
   ];
 
   businessRiskOptions = [
@@ -631,6 +839,19 @@ export class TasksComponent implements OnInit {
   taskHeaders = signal<any[]>([]);
   auditAreas = signal<any[]>([]);
 
+  // Bulk Upload State
+  showBulkUploadModal = signal(false);
+  bulkUploadCircularId = signal<number | null>(null);
+  selectedFile = signal<File | null>(null);
+  selectedFileName = signal('');
+  previewRows = signal<any[]>([]);
+  validRows = signal<any[]>([]);
+  validating = signal(false);
+  uploading = signal(false);
+
+  hasErrors = computed(() => this.previewRows().some((row) => row.status === 'ERROR'));
+  errorCount = computed(() => this.previewRows().filter((row) => row.status === 'ERROR').length);
+
   // Quick Add Header State
   showAddHeaderModal = false;
   newHeaderName = '';
@@ -654,7 +875,7 @@ export class TasksComponent implements OnInit {
     return role === 'CCO' || role === 'CO' || role === 'ADMIN';
   }
 
-  constructor(private api: ComplianceApiService, private route: ActivatedRoute, private auth: AuthService) { }
+  constructor(private api: ComplianceApiService, private route: ActivatedRoute, private auth: AuthService, private messageService: MessageService) { }
 
   ngOnInit() {
     this.api.getTaskHeaders().subscribe(data => this.taskHeaders.set(data));
@@ -802,5 +1023,306 @@ export class TasksComponent implements OnInit {
         this.newHeaderName = '';
       });
     });
+  }
+
+  openBulkUploadModal() {
+    this.showBulkUploadModal.set(true);
+    this.bulkUploadCircularId.set(this.selectedCircularFilter || this.selectedCircularId);
+    this.selectedFile.set(null);
+    this.selectedFileName.set('');
+    this.previewRows.set([]);
+    this.validRows.set([]);
+  }
+
+  onFileSelect(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Invalid File',
+        detail: 'Please select a CSV file only',
+      });
+      return;
+    }
+
+    this.selectedFile.set(file);
+    this.selectedFileName.set(file.name);
+    this.previewRows.set([]);
+    this.validRows.set([]);
+  }
+
+  downloadSample() {
+    window.open('./assets/csv/compliance-pro-task-upload-sample.csv', '_blank');
+  }
+
+  validateCsv() {
+    const file = this.selectedFile();
+    const circularId = this.bulkUploadCircularId();
+    if (!file || !circularId) return;
+
+    this.validating.set(true);
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const text = reader.result as string;
+        const parsed = this.parseCsv(text);
+        
+        // Match headers
+        const requiredHeaders = ['task'];
+        const actualHeaders = parsed.headers.map(h => h.trim().toLowerCase());
+        const missing = requiredHeaders.filter(h => !actualHeaders.includes(h));
+        
+        if (missing.length > 0) {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Validation Failed',
+            detail: `Missing required column: ${missing.join(', ')}`
+          });
+          this.validating.set(false);
+          return;
+        }
+
+        const preview: any[] = [];
+        const valid: any[] = [];
+
+        parsed.rows.forEach((row, idx) => {
+          const rowNumber = idx + 2;
+          const description = (row['task'] || '').trim();
+          const headerName = (row['header'] || '').trim();
+          const priority = (row['priority'] || '').trim();
+          const riskCategory = (row['risk_category'] || '').trim();
+          const businessRisk = (row['business_risk'] || '').trim();
+          const controlRisk = (row['control_risk'] || '').trim();
+          const auditAreaName = (row['broader_area'] || '').trim();
+
+          const errors: string[] = [];
+
+          if (!description) {
+            errors.push('Task description is required');
+          }
+
+          let headerId: number | null = null;
+          if (headerName) {
+            const h = this.taskHeaders().find(
+              x => x.name.trim().toLowerCase() === headerName.toLowerCase()
+            );
+            if (h) {
+              headerId = h.id;
+            } else {
+              errors.push(`Header "${headerName}" does not exist in task headers`);
+            }
+          }
+
+          let auditAreaId: number | null = null;
+          if (auditAreaName) {
+            const a = this.auditAreas().find(
+              x => x.name.trim().toLowerCase() === auditAreaName.toLowerCase()
+            );
+            if (a) {
+              auditAreaId = a.id;
+            } else {
+              errors.push(`Broader area "${auditAreaName}" does not exist`);
+            }
+          }
+
+          // Validate priority value
+          let normalizedPriority: string | null = null;
+          if (priority) {
+            const pOpt = this.priorityOptions.find(
+              opt => opt.label.toLowerCase() === priority.toLowerCase()
+            );
+            if (pOpt) {
+              normalizedPriority = pOpt.value;
+            } else {
+              errors.push(`Priority must be one of: Critical, High, Medium, Low`);
+            }
+          }
+
+          // Validate risk category value
+          let normalizedRiskCategory: string | null = null;
+          if (riskCategory) {
+            const rcOpt = this.riskCategoryOptions.find(
+              opt => opt.label.toLowerCase() === riskCategory.toLowerCase()
+            );
+            if (rcOpt) {
+              normalizedRiskCategory = rcOpt.value;
+            } else {
+              errors.push(`Risk category is invalid`);
+            }
+          }
+
+          // Validate business risk value
+          let normalizedBusinessRisk: string | null = null;
+          if (businessRisk) {
+            const brOpt = this.businessRiskOptions.find(
+              opt => opt.label.toLowerCase() === businessRisk.toLowerCase()
+            );
+            if (brOpt) {
+              normalizedBusinessRisk = brOpt.value;
+            } else {
+              errors.push(`Business risk must be one of: High, Medium, Low`);
+            }
+          }
+
+          // Validate control risk value
+          let normalizedControlRisk: string | null = null;
+          if (controlRisk) {
+            const crOpt = this.controlRiskOptions.find(
+              opt => opt.label.toLowerCase() === controlRisk.toLowerCase()
+            );
+            if (crOpt) {
+              normalizedControlRisk = crOpt.value;
+            } else {
+              errors.push(`Control risk must be one of: High, Medium, Low`);
+            }
+          }
+
+          const previewRow = {
+            rowNumber,
+            description,
+            headerName,
+            priority,
+            riskCategory,
+            status: errors.length > 0 ? 'ERROR' : 'VALID',
+            message: errors.join('; ') || 'Ready'
+          };
+
+          preview.push(previewRow);
+
+          if (errors.length === 0) {
+            valid.push({
+              description,
+              circular_id: circularId,
+              header_id: headerId,
+              priority: normalizedPriority,
+              risk_category: normalizedRiskCategory,
+              business_risk: normalizedBusinessRisk,
+              control_risk: normalizedControlRisk,
+              audit_area_id: auditAreaId
+            });
+          }
+        });
+
+        this.previewRows.set(preview);
+        this.validRows.set(valid);
+        this.validating.set(false);
+
+        this.messageService.add({
+          severity: this.hasErrors() ? 'warn' : 'success',
+          summary: this.hasErrors() ? 'Validation Complete with Errors' : 'Validation Successful',
+          detail: this.hasErrors() ? 'Please correct invalid rows' : `${valid.length} rows ready`
+        });
+
+      } catch (err: any) {
+        this.validating.set(false);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Parser Error',
+          detail: err.message || 'Error parsing CSV file'
+        });
+      }
+    };
+    reader.onerror = () => {
+      this.validating.set(false);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Reader Error',
+        detail: 'Error reading file content'
+      });
+    };
+    reader.readAsText(file);
+  }
+
+  uploadRows() {
+    if (!this.validRows().length || this.hasErrors()) return;
+
+    this.uploading.set(true);
+    this.api.bulkUploadTasks({ rows: this.validRows() }).subscribe({
+      next: () => {
+        this.uploading.set(false);
+        this.showBulkUploadModal.set(false);
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Bulk Upload Successful',
+          detail: `${this.validRows().length} tasks uploaded successfully`
+        });
+        this.loadTasks();
+      },
+      error: (err) => {
+        this.uploading.set(false);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Upload Failed',
+          detail: err?.error?.message || 'Error occurred during bulk upload'
+        });
+      }
+    });
+  }
+
+  private parseCsv(content: string): { headers: string[]; rows: Record<string, string>[] } {
+    const lines: string[][] = [];
+    let current = '';
+    let row: string[] = [];
+    let inQuotes = false;
+
+    for (let i = 0; i < content.length; i += 1) {
+      const char = content[i];
+      const nextChar = content[i + 1];
+
+      if (char === '"') {
+        if (inQuotes && nextChar === '"') {
+          current += '"';
+          i += 1;
+        } else {
+          inQuotes = !inQuotes;
+        }
+        continue;
+      }
+
+      if (char === ',' && !inQuotes) {
+        row.push(current.trim());
+        current = '';
+        continue;
+      }
+
+      if ((char === '\n' || char === '\r') && !inQuotes) {
+        if (char === '\r' && nextChar === '\n') {
+          i += 1;
+        }
+        row.push(current.trim());
+        current = '';
+        if (row.some((item) => item.length > 0)) {
+          lines.push(row);
+        }
+        row = [];
+        continue;
+      }
+
+      current += char;
+    }
+
+    if (current.length || row.length) {
+      row.push(current.trim());
+      if (row.some((item) => item.length > 0)) {
+        lines.push(row);
+      }
+    }
+
+    const [headerRow = [], ...dataRows] = lines;
+    const headers = headerRow.map((header) => header.trim());
+    const mappedRows = dataRows.map((cells) => {
+      const record: Record<string, string> = {};
+      headers.forEach((header, index) => {
+        const key = header.trim().toLowerCase().replace(/\s+/g, '_');
+        record[key] = (cells[index] || '').trim();
+      });
+      return record;
+    });
+
+    return { headers, rows: mappedRows };
   }
 }

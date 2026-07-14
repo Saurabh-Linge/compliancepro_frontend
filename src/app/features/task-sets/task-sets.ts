@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ComplianceApiService } from '../../core/services/api/compliance-api.service';
@@ -12,6 +12,7 @@ import { PickListModule } from 'primeng/picklist';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { FieldsetModule } from 'primeng/fieldset';
+import { SelectModule } from 'primeng/select';
 
 import { TextFieldComponent } from '../../shared/components/form/text-field/text-field.component';
 import { SelectFieldComponent } from '../../shared/components/form/select-field/select-field.component';
@@ -34,10 +35,24 @@ import { DateFieldComponent } from '../../shared/components/form/date-field/date
     TextFieldComponent,
     SelectFieldComponent,
     ToastModule,
-    FieldsetModule
+    FieldsetModule,
+    SelectModule
   ],
   providers: [MessageService],
-  templateUrl: './task-sets.html'
+  templateUrl: './task-sets.html',
+  styles: [`
+    ::ng-deep .circular-dropdown-panel {
+      max-width: 480px !important;
+    }
+    ::ng-deep .circular-dropdown-panel .p-select-option,
+    ::ng-deep .circular-dropdown-panel .p-dropdown-item,
+    ::ng-deep .circular-dropdown-panel .p-select-option-content {
+      white-space: normal !important;
+      word-break: break-word !important;
+      line-height: 1.4 !important;
+      font-size: 0.875rem !important;
+    }
+  `]
 })
 export class TaskSetsComponent implements OnInit {
   taskSets = signal<any[]>([]);
@@ -99,9 +114,35 @@ export class TaskSetsComponent implements OnInit {
     { label: 'YEARLY - Every Year', value: '5' },
     { label: '1 Time Use', value: '6' }
   ];
+
+  readonly frequencyMap: Record<string, string> = {
+    '1': 'Fortnight (Every 15 Days)',
+    '2': 'Monthly',
+    '3': 'Quarterly',
+    '4': 'Semi-Annually',
+    '5': 'Yearly',
+    '6': '1 Time Use'
+  };
   
   // Mapping
-  allTasks = signal<any[]>([]);
+  rawTasks = signal<any[]>([]);
+  selectedCircularFilter = signal<number | null>(null);
+  circulars = signal<any[]>([]);
+
+  allTasks = computed(() => {
+    const tasks = this.rawTasks();
+    const filterId = this.selectedCircularFilter();
+    if (!filterId) return tasks;
+    return tasks.filter(t => t.circular_id === filterId);
+  });
+
+  circularFilterOptions = computed(() => {
+    return this.circulars().map(c => ({
+      label: c.reference_no ? `${c.reference_no} - ${c.title}` : c.title,
+      value: c.id
+    }));
+  });
+
   targetTasks: any[] = [];
   taskColumns: TableColumn[] = [
     { field: 'description', header: 'Description', type: 'text' },
@@ -118,14 +159,27 @@ export class TaskSetsComponent implements OnInit {
 
   ngOnInit() {
     this.loadData();
-    this.api.getApprovedTasks().subscribe(res => {
-      this.allTasks.set(res.data);
+    this.api.getApprovedTasks({ limit: 1000 }).subscribe(res => {
+      this.rawTasks.set(res.data);
     });
     this.api.getBranches().subscribe(data => this.branches.set(data));
+    this.loadCirculars();
   }
 
   loadData() {
-    this.api.getTaskSets().subscribe(data => this.taskSets.set(data));
+    this.api.getTaskSets().subscribe(data => {
+      const mapped = data.map((row: any) => ({
+        ...row,
+        frequency: this.frequencyMap[row.frequency] ?? row.frequency
+      }));
+      this.taskSets.set(mapped);
+    });
+  }
+
+  loadCirculars() {
+    this.api.getCirculars({ limit: 1000 }).subscribe(res => {
+      this.circulars.set(res.data);
+    });
   }
 
   openCreateModal() { // Kept method name since html uses it, but it opens the form drawer
@@ -141,10 +195,11 @@ export class TaskSetsComponent implements OnInit {
     this.selectedBranches = [];
     this.proposedDate.set(null);
     this.showBranchAssignment.set(true);
+    this.selectedCircularFilter.set(null);
     
     // Reset tasks
-    this.api.getApprovedTasks().subscribe(res => {
-      this.allTasks.set(res.data);
+    this.api.getApprovedTasks({ limit: 1000 }).subscribe(res => {
+      this.rawTasks.set(res.data);
       this.showFormDrawer.set(true);
     });
 
@@ -161,6 +216,7 @@ export class TaskSetsComponent implements OnInit {
     this.newTaskSetReportingDate.set(row.reporting_date ? new Date(row.reporting_date) : null);
     this.selectedBranches = [];
     this.showBranchAssignment.set(true);
+    this.selectedCircularFilter.set(null);
     if (row.default_due_date) {
       this.proposedDate.set(new Date(row.default_due_date));
     } else {
@@ -172,8 +228,8 @@ export class TaskSetsComponent implements OnInit {
       const mappedIds = new Set((details.tasks || []).map((t: any) => t.id));
       const mappedBranchIds = new Set((details.branches || []).map((b: any) => b.id));
       
-      this.api.getApprovedTasks().subscribe(res => {
-        this.allTasks.set(res.data);
+      this.api.getApprovedTasks({ limit: 1000 }).subscribe(res => {
+        this.rawTasks.set(res.data);
         this.targetTasks = res.data.filter((t: any) => mappedIds.has(t.id));
         this.selectedBranches = this.branches().filter((b: any) => mappedBranchIds.has(b.id));
         this.showFormDrawer.set(true);

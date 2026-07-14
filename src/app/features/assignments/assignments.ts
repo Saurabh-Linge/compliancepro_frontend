@@ -12,6 +12,7 @@ import { DateFieldComponent } from '../../shared/components/form/date-field/date
 import { DialogModule } from 'primeng/dialog';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { ButtonModule } from 'primeng/button';
+import { SelectModule } from 'primeng/select';
 
 @Component({
   selector: 'app-assignments',
@@ -24,7 +25,8 @@ import { ButtonModule } from 'primeng/button';
     DialogModule, 
     MultiSelectModule, 
     ButtonModule,
-    DateFieldComponent
+    DateFieldComponent,
+    SelectModule
   ],
   template: `
     <app-page title="Compliances & Task Sets" icon="pi pi-sitemap" description="Manage task sets and branch compliances.">
@@ -45,7 +47,21 @@ import { ButtonModule } from 'primeng/button';
               (onLazyLoad)="handleLazyLoad($event)"
               (onSearch)="handleSearch($event)"
               (onRefresh)="loadAssignments()"
-          ></app-table>
+          >
+            <div toolbar-actions class="flex align-items-center ml-2">
+              <p-select
+                [options]="statusFilterOptions"
+                [ngModel]="selectedStatusFilter()"
+                (ngModelChange)="onStatusFilterChange($event)"
+                placeholder="Filter by Status"
+                [showClear]="true"
+                optionLabel="label"
+                optionValue="value"
+                class="w-16rem"
+                styleClass="h-2.5rem flex align-items-center animate-fadein"
+              ></p-select>
+            </div>
+          </app-table>
         </div>
 
         <!-- TASK SETS TAB REMOVED (Moved to Task Sets Master) -->
@@ -115,6 +131,18 @@ export class AssignmentsComponent implements OnInit {
   page = 1;
   limit = 10;
   searchQuery = '';
+
+  // Status filter
+  selectedStatusFilter = signal<string | null>(null);
+  statusFilterOptions = [
+    { label: 'Pending Timeline',  value: 'Pending_Timeline' },
+    { label: 'Timeline Review',   value: 'Timeline_Review' },
+    { label: 'In Progress',       value: 'In_Progress' },
+    { label: 'Review Pending',    value: 'REVIEW_PENDING' },
+    { label: 'Completed',         value: 'COMPLETED' },
+    { label: 'Escalated to CCO',  value: 'ESCALATED_TO_CCO' },
+    { label: 'Rejected',          value: 'REJECTED' },
+  ];
   taskSets = signal<any[]>([]);
   branches = signal<any[]>([]);
 
@@ -225,6 +253,10 @@ export class AssignmentsComponent implements OnInit {
     if (this.searchQuery) {
       params.search = this.searchQuery;
     }
+    const status = this.selectedStatusFilter();
+    if (status) {
+      params.status = status;
+    }
     
     this.api.getAssignments(params).subscribe(res => {
       this.assignments.set(res.data);
@@ -243,6 +275,12 @@ export class AssignmentsComponent implements OnInit {
 
   handleSearch(query: string) {
     this.searchQuery = query;
+    this.page = 1;
+    this.loadAssignments();
+  }
+
+  onStatusFilterChange(value: string | null) {
+    this.selectedStatusFilter.set(value);
     this.page = 1;
     this.loadAssignments();
   }

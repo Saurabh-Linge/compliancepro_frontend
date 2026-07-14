@@ -194,8 +194,16 @@ export class ComplianceApiService {
     return this.http.get<PaginatedResponse<ComplianceTask>>(`${this.baseUrl}/tasks?status=Pending`);
   }
 
-  getApprovedTasks() {
-    return this.http.get<PaginatedResponse<ComplianceTask>>(`${this.baseUrl}/tasks?status=Approved`);
+  getApprovedTasks(params?: any) {
+    let httpParams = new HttpParams();
+    if (params) {
+      Object.keys(params).forEach(key => {
+        if (params[key] !== undefined && params[key] !== null) {
+          httpParams = httpParams.append(key, params[key]);
+        }
+      });
+    }
+    return this.http.get<PaginatedResponse<ComplianceTask>>(`${this.baseUrl}/tasks`, { params: httpParams.set('status', 'Approved') });
   }
 
   approveTask(id: number) {
@@ -328,6 +336,11 @@ export class ComplianceApiService {
   // Dashboard
   getDashboardStats() {
     return this.http.get<any>(`${this.baseUrl}/dashboard/stats?_t=${Date.now()}`);
+  }
+
+  // Bulk Upload Tasks
+  bulkUploadTasks(data: { rows: any[] }) {
+    return this.http.post<any>(`${this.baseUrl}/master-bulk-upload/tasks`, data);
   }
 }
 

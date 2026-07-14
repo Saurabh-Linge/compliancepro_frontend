@@ -900,6 +900,12 @@ export class CircularsComponent implements OnInit, OnDestroy {
       command: (row) => this.viewTasks(row.id)
     },
     {
+      label: 'Task Set Master',
+      icon: 'pi pi-list-check',
+      styleClass: 'text-green-600',
+      command: (_row) => this.router.navigate(['/task-sets'])
+    },
+    {
       label: 'Ask AI',
       icon: 'pi pi-comment',
       styleClass: 'text-purple-700',
