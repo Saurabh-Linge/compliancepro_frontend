@@ -96,6 +96,8 @@ import { MessageService } from 'primeng/api';
                   (ngModelChange)="onFilterChange()"
                   placeholder="Filter by Circular" 
                   [showClear]="true"
+                  [filter]="true"
+                  filterPlaceholder="Search circular..."
                   styleClass="w-20rem"
                 ></p-select>
                 <button
