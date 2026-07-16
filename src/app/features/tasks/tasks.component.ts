@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ComplianceApiService, ComplianceTask } from '../../core/services/api/compliance-api.service';
 import { AuthService } from '../../core/services/auth/auth.service';
 import { DialogModule } from 'primeng/dialog';
@@ -24,6 +24,16 @@ import { MessageService } from 'primeng/api';
   providers: [MessageService],
   template: `
     <app-page title="Task Master" icon="pi pi-list">
+      <div actions>
+        <button
+          pButton
+          type="button"
+          icon="pi pi-arrow-left"
+          label="Back to Circulars"
+          class="p-button-outlined p-button-secondary h-2.5rem flex align-items-center"
+          (click)="goBackToCirculars()">
+        </button>
+      </div>
       <div class="card h-full flex flex-column gap-3 p-3">
         <!-- Summary Stats -->
         <div class="flex gap-3">
@@ -873,13 +883,29 @@ export class TasksComponent implements OnInit {
   manualTaskControlRisk = signal<string | null>(null);
   manualTaskAuditAreaId = signal<number | null>(null);
   circulars = signal<any[]>([]);
+  parentPage: number | null = null;
+  parentLimit: number | null = null;
 
   get isCcoOrAdmin(): boolean {
     const role = this.auth.currentUser()?.role;
     return role === 'CCO' || role === 'CO' || role === 'ADMIN';
   }
 
-  constructor(private api: ComplianceApiService, private route: ActivatedRoute, private auth: AuthService, private messageService: MessageService) { }
+  constructor(private api: ComplianceApiService, private route: ActivatedRoute, private auth: AuthService, private messageService: MessageService, private router: Router) { }
+
+  goBackToCirculars() {
+    const queryParams: any = {};
+    if (this.selectedCircularId) {
+      queryParams.highlight_id = this.selectedCircularId;
+    }
+    if (this.parentPage) {
+      queryParams.page = this.parentPage;
+    }
+    if (this.parentLimit) {
+      queryParams.limit = this.parentLimit;
+    }
+    this.router.navigate(['/circulars'], { queryParams });
+  }
 
   ngOnInit() {
     this.api.getTaskHeaders().subscribe(data => this.taskHeaders.set(data));
@@ -889,6 +915,13 @@ export class TasksComponent implements OnInit {
     this.route.queryParamMap.subscribe(params => {
       const circularId = params.get('circular_id');
       this.selectedCircularId = circularId ? Number(circularId) : null;
+
+      const parentPage = params.get('parent_page');
+      this.parentPage = parentPage ? Number(parentPage) : null;
+
+      const parentLimit = params.get('parent_limit');
+      this.parentLimit = parentLimit ? Number(parentLimit) : null;
+
       this.loadTasks();
     });
   }

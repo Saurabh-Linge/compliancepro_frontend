@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ComplianceApiService } from '../../core/services/api/compliance-api.service';
 import { TableComponent, TableColumn, TableAction } from '../../shared/components/table/table.component';
 import { PageComponent } from '../../shared/components/page/page.component';
@@ -176,8 +176,25 @@ export class TaskSetsComponent implements OnInit {
   branches = signal<any[]>([]);
   selectedBranches: any[] = [];
   proposedDate = signal<Date | null>(null);
+  parentPage: number | null = null;
+  parentLimit: number | null = null;
 
-  constructor(private api: ComplianceApiService, private messageService: MessageService, private route: ActivatedRoute) { }
+  constructor(private api: ComplianceApiService, private messageService: MessageService, private route: ActivatedRoute, private router: Router) { }
+
+  goBackToCirculars() {
+    const queryParams: any = {};
+    const circularId = this.selectedCircularFilter();
+    if (circularId) {
+      queryParams.highlight_id = circularId;
+    }
+    if (this.parentPage) {
+      queryParams.page = this.parentPage;
+    }
+    if (this.parentLimit) {
+      queryParams.limit = this.parentLimit;
+    }
+    this.router.navigate(['/circulars'], { queryParams });
+  }
 
   ngOnInit() {
     this.loadData();
@@ -191,6 +208,14 @@ export class TaskSetsComponent implements OnInit {
     const circularId = this.route.snapshot.queryParamMap.get('circular_id');
     if (circularId) {
       this.selectedCircularFilter.set(+circularId);
+    }
+    const parentPage = this.route.snapshot.queryParamMap.get('parent_page');
+    if (parentPage) {
+      this.parentPage = +parentPage;
+    }
+    const parentLimit = this.route.snapshot.queryParamMap.get('parent_limit');
+    if (parentLimit) {
+      this.parentLimit = +parentLimit;
     }
   }
 

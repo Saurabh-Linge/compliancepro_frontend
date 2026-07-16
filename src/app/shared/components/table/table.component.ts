@@ -159,6 +159,8 @@ export class TableComponent implements OnDestroy {
   // Show serial number column
   showSerialNumber = input<boolean>(true);
 
+  rowClass = input<(rowData: any) => string>();
+
   // Action display mode: 'menu' (default - three dots) or 'buttons' (individual buttons)
   actionDisplayMode = input<'menu' | 'buttons'>('menu');
 
@@ -287,6 +289,13 @@ export class TableComponent implements OnDestroy {
     effect(() => {
       // console.log('TableComponent Data:', this.data().length);
     });
+  }
+
+  getRowClass(rowData: any): string {
+    if (this.rowClass()) {
+      return this.rowClass()!(rowData);
+    }
+    return '';
   }
 
   isRowLoading(row: any, actionName?: string): boolean {

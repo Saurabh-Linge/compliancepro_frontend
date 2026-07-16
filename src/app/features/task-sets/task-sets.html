@@ -1,14 +1,21 @@
 <app-page title="Task Sets Master" icon="pi pi-server" description="Manage Task Sets, map tasks, assign branches, and reopen for recompliance.">
-  <!-- Active circular filter banner -->
-  @if (selectedCircularLabel()) {
-    <div actions>
-      <div class="flex align-items-center gap-2 bg-blue-50 border-1 border-blue-200 border-round px-3 py-2">
+  <div actions class="flex align-items-center gap-2">
+    <button
+      pButton
+      type="button"
+      icon="pi pi-arrow-left"
+      label="Back to Circulars"
+      class="p-button-outlined p-button-secondary h-2.5rem flex align-items-center"
+      (click)="goBackToCirculars()">
+    </button>
+    @if (selectedCircularLabel()) {
+      <div class="flex align-items-center gap-2 bg-blue-50 border-1 border-blue-200 border-round px-3 py-2 h-2.5rem">
         <i class="pi pi-filter text-blue-600 text-sm"></i>
         <span class="text-blue-800 text-sm font-medium">Filtered: {{ selectedCircularLabel() }}</span>
         <button pButton pRipple icon="pi pi-times" class="p-button-text p-button-sm p-button-rounded text-blue-600" pTooltip="Clear filter" (click)="selectedCircularFilter.set(null)"></button>
       </div>
-    </div>
-  }
+    }
+  </div>
   <div class="card h-full">
     <app-table
         [data]="filteredTaskSets()"

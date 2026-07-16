@@ -249,7 +249,7 @@
         let-rowIndex="rowIndex"
         let-expanded="expanded"
       >
-        <tr [style.height.px]="virtualScroll() ? virtualScrollItemSize() : 'auto'">
+        <tr [style.height.px]="virtualScroll() ? virtualScrollItemSize() : 'auto'" [class]="getRowClass(rowData)">
           <!-- Selection Checkbox Cell -->
           <td *ngIf="selectable()" style="text-align: center">
             <p-tableCheckbox [value]="rowData"></p-tableCheckbox>

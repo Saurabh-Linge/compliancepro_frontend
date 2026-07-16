@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ComplianceApiService, Circular, Authority } from '../../core/services/api/compliance-api.service';
 import { HttpClient } from '@angular/common/http';
 import { APP_CONFIG } from '../../core/services/config/config.token';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { TableComponent, TableColumn, TableAction } from '../../shared/components/table/table.component';
 import { TextFieldComponent } from '../../shared/components/form/text-field/text-field.component';
 import { TextareaFieldComponent } from '../../shared/components/form/textarea-field/textarea-field.component';
@@ -56,6 +56,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
             [data]="circulars()"
             [columns]="tableColumns"
             [actions]="tableActions"
+            [rowClass]="getCircularRowClass"
             (onAdd)="openUploadModal()"
             [showRefreshButton]="true"
             [paginator]="true"
@@ -792,6 +793,16 @@ import { ConfirmationService, MessageService } from 'primeng/api';
       margin-bottom: -1rem;
       z-index: 1;
     }
+    ::ng-deep .highlighted-row {
+      background: rgba(59, 130, 246, 0.15) !important;
+      border-left: 4px solid #3b82f6 !important;
+      animation: highlight-pulse 2s infinite ease-in-out;
+    }
+    @keyframes highlight-pulse {
+      0% { background: rgba(59, 130, 246, 0.15); }
+      50% { background: rgba(59, 130, 246, 0.25); }
+      100% { background: rgba(59, 130, 246, 0.15); }
+    }
   `]
 })
 export class CircularsComponent implements OnInit, OnDestroy {
@@ -903,7 +914,7 @@ export class CircularsComponent implements OnInit, OnDestroy {
       label: 'Task Set Master',
       icon: 'pi pi-list-check',
       styleClass: 'text-green-600',
-      command: (row) => this.router.navigate(['/task-sets'], { queryParams: { circular_id: row.id } })
+      command: (row) => this.router.navigate(['/task-sets'], { queryParams: { circular_id: row.id, parent_page: this.page, parent_limit: this.limit } })
     },
     {
       label: 'Ask AI',
@@ -933,10 +944,31 @@ export class CircularsComponent implements OnInit, OnDestroy {
     }
   ];
 
-  constructor(private api: ComplianceApiService, private http: HttpClient, private router: Router, private confirmationService: ConfirmationService, private messageService: MessageService) { }
+  highlightedCircularId = signal<number | null>(null);
+
+  getCircularRowClass = (row: any) => {
+    return this.highlightedCircularId() === row.id ? 'highlighted-row' : '';
+  };
+
+  constructor(private api: ComplianceApiService, private http: HttpClient, private router: Router, private confirmationService: ConfirmationService, private messageService: MessageService, private route: ActivatedRoute) { }
 
   ngOnInit() {
-    this.loadData();
+    this.route.queryParams.subscribe(params => {
+      const highlightId = params['highlight_id'];
+      this.highlightedCircularId.set(highlightId ? Number(highlightId) : null);
+
+      const parentPage = params['page'];
+      if (parentPage) {
+        this.page = Number(parentPage);
+      }
+
+      const parentLimit = params['limit'];
+      if (parentLimit) {
+        this.limit = Number(parentLimit);
+      }
+
+      this.loadData();
+    });
   }
 
   ngOnDestroy() {
@@ -960,6 +992,16 @@ export class CircularsComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.circulars.set(res.data);
         this.totalRecords.set(res.total);
+        
+        // Auto scroll to highlighted row if exists
+        if (this.highlightedCircularId()) {
+          setTimeout(() => {
+            const el = document.querySelector('.highlighted-row');
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }, 300);
+        }
       },
       error: (err) => console.error(err)
     });
@@ -1267,7 +1309,7 @@ export class CircularsComponent implements OnInit, OnDestroy {
   }
 
   viewTasks(id: number) {
-    this.router.navigate(['/tasks'], { queryParams: { circular_id: id } });
+    this.router.navigate(['/tasks'], { queryParams: { circular_id: id, parent_page: this.page, parent_limit: this.limit } });
   }
 
   confirmDelete(row: Circular) {
