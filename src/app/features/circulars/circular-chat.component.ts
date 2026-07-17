@@ -12,6 +12,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { MessageService } from 'primeng/api';
 import { ComplianceApiService, Circular } from '../../core/services/api/compliance-api.service';
 import { APP_CONFIG } from '../../core/services/config/config.token';
 import { ButtonModule } from 'primeng/button';
@@ -31,44 +32,44 @@ interface ChatMessage {
 
 const SUGGESTED_PROMPTS: { label: string; icon: string; text: string }[] = [
   {
-    label: 'Key obligations',
+    label: 'Obligations Matrix',
     icon: 'pi pi-list-check',
-    text: 'What are the key compliance obligations mentioned in this circular?',
+    text: 'Generate a structured Compliance Obligations Matrix from this circular. Provide a clear table containing: 1) Specific Regulatory Mandate, 2) Action Item, 3) Probable Owner Department, and 4) Core Implementation Criteria.',
   },
   {
-    label: 'Penalty details',
+    label: 'Penal Consequences',
     icon: 'pi pi-exclamation-triangle',
-    text: 'Are there any penalties mentioned? What are the conditions?',
+    text: 'What is our regulatory risk exposure here? Detail all penal consequences, financial interest liabilities, personal accountability metrics, or enforcement actions specified for non-compliance or delayed execution.',
   },
   {
-    label: 'Deadline summary',
+    label: 'Implementation Timeline',
     icon: 'pi pi-calendar',
-    text: 'What are the important deadlines or timelines outlined in this circular?',
+    text: 'Extract all timeline milestones. Provide a chronological breakdown of transition periods, phase-wise implementation milestones, and final hard deadlines for compliance as specified in this text.',
   },
   {
-    label: 'Action checklist',
+    label: 'Internal Audit Checklist',
     icon: 'pi pi-check-square',
-    text: 'Give me a step-by-step action checklist for compliance with this circular.',
+    text: 'Draft an internal audit readiness checklist. Provide clear control points, testing methodologies, and verification steps that our internal auditors can use to validate that we are fully compliant with these directions.',
   },
   {
-    label: 'Impact on branches',
+    label: 'Branch Operations Impact',
     icon: 'pi pi-building',
-    text: 'How does this circular impact branch operations?',
+    text: 'Analyze the operational workflow modifications. How exactly do these guidelines impact day-to-day branch execution, customer-facing touchpoints, or localized internal reporting procedures?',
   },
   {
-    label: 'Document requirements',
+    label: 'Record Retention',
     icon: 'pi pi-folder',
-    text: 'What documents or records are required to be maintained as per this circular?',
+    text: 'List the exact record-keeping mandates. What logs, registers, complaint trails, or documents must we archive for future regulatory inspection, and what is the exact legally required retention duration?',
   },
   {
-    label: 'Scope & applicability',
+    label: 'Applicability & Scope',
     icon: 'pi pi-info-circle',
-    text: 'Who does this circular apply to, and what is its scope?',
+    text: 'Act as a Chief Compliance Officer. Analyze this circular and determine exactly which entities, business units, or departments must comply. Highlight any explicit exemptions or exclusions that we can leverage.',
   },
   {
-    label: 'Reporting requirements',
+    label: 'Reporting Mandates',
     icon: 'pi pi-chart-bar',
-    text: 'What reporting or disclosure requirements does this circular mandate?',
+    text: 'Identify all mandatory reporting returns, filings, and notifications required by the regulator. Detail the required format, frequency, recipient authority, and state explicitly if board-level reporting or sign-off is mandated.',
   },
 ];
 
@@ -212,6 +213,89 @@ const SUGGESTED_PROMPTS: { label: string; icon: string; text: string }[] = [
             </div>
           </div>
 
+          <!-- Circular Comparator Card -->
+          <div class="sidebar-card comparator-card">
+            <div class="sidebar-card-header">
+              <i class="pi pi-sync sidebar-card-icon"></i>
+              <span class="sidebar-card-title">Compare Circulars</span>
+            </div>
+            <p class="text-600 text-xs mb-2">Upload a revised version of this circular to identify compliance changes.</p>
+            
+            <div class="flex flex-column gap-2">
+              @if (linkedCirculars().length > 0) {
+                <div class="flex flex-column gap-1 mb-1">
+                  <select
+                    [(ngModel)]="selectedTargetId"
+                    class="w-full text-xs p-2 border-1 border-round surface-border text-color bg-surface-card"
+                    style="border-style: solid; outline: none; max-width: 100%; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;"
+                    [disabled]="isComparing() || isTyping()"
+                  >
+                    <option value="">-- Compare Stored Revision --</option>
+                    @for (lc of linkedCirculars(); track lc.id) {
+                      <option [value]="lc.id">
+                        {{ lc.reference_no || 'No Ref' }} - {{ lc.title }}
+                      </option>
+                    }
+                  </select>
+                  <button
+                    pButton
+                    pRipple
+                    type="button"
+                    icon="pi pi-sync"
+                    label="Compare Stored"
+                    class="p-button-primary p-button-sm w-full mt-1"
+                    (click)="compareStored(selectedTargetId()); selectedTargetId.set('')"
+                    [disabled]="isComparing() || isTyping() || !selectedTargetId()"
+                  ></button>
+                </div>
+                <div class="text-center text-500 text-xs my-1">— OR —</div>
+              }
+              <input
+                #fileInput
+                type="file"
+                accept="application/pdf"
+                style="display: none"
+                (change)="onRevisedFileSelected($event)"
+              />
+              <button
+                pButton
+                pRipple
+                type="button"
+                [icon]="selectedRevisedFile() ? 'pi pi-file-pdf' : 'pi pi-upload'"
+                [label]="selectedRevisedFile() ? selectedRevisedFile()!.name : 'Choose Revised PDF'"
+                class="p-button-outlined p-button-secondary p-button-sm text-left overflow-hidden text-overflow-ellipsis w-full"
+                style="display: block; max-width: 100%; white-space: nowrap;"
+                (click)="fileInput.click()"
+                [disabled]="isComparing() || isTyping()"
+              ></button>
+              
+              @if (selectedRevisedFile()) {
+                <div class="flex gap-2">
+                  <button
+                    pButton
+                    pRipple
+                    type="button"
+                    icon="pi pi-sync"
+                    label="Compare"
+                    class="p-button-primary p-button-sm flex-grow-1"
+                    (click)="compareCirculars()"
+                    [loading]="isComparing()"
+                    [disabled]="isTyping()"
+                  ></button>
+                  <button
+                    pButton
+                    pRipple
+                    type="button"
+                    icon="pi pi-times"
+                    class="p-button-outlined p-button-danger p-button-sm"
+                    (click)="clearSelectedFile()"
+                    [disabled]="isComparing()"
+                  ></button>
+                </div>
+              }
+            </div>
+          </div>
+
           <!-- AI Info -->
           <div class="sidebar-card ai-info-card">
             <div class="flex align-items-center gap-2">
@@ -273,7 +357,7 @@ const SUGGESTED_PROMPTS: { label: string; icon: string; text: string }[] = [
                     [class.bubble-user]="msg.role === 'user'"
                     [class.bubble-ai]="msg.role === 'ai'"
                   >
-                    <span class="message-text">{{ msg.content }}</span>
+                    <span class="message-text" [innerHTML]="renderMarkdown(msg.content)"></span>
                   </div>
                 </div>
                 @if (msg.role === 'user') {
@@ -877,6 +961,51 @@ const SUGGESTED_PROMPTS: { label: string; icon: string; text: string }[] = [
     }
 
     /* ── Responsive ───────────────────────────────────── */
+    .comparator-card {
+      border: 1px dashed var(--primary-color);
+    }
+    .comparator-card ::ng-deep .p-button-icon {
+      margin-right: 0.5rem;
+    }
+    ::ng-deep .markdown-header {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-top: 0.8rem;
+      margin-bottom: 0.4rem;
+      color: var(--text-color);
+      display: block;
+    }
+    ::ng-deep .markdown-li {
+      margin-left: 1.25rem;
+      margin-bottom: 0.25rem;
+      list-style-type: disc;
+      display: list-item;
+    }
+    ::ng-deep .markdown-table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      margin: 0.8rem 0;
+      border: 1px solid var(--surface-border);
+      border-radius: 6px;
+    }
+    ::ng-deep .markdown-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.825rem;
+      text-align: left;
+    }
+    ::ng-deep .markdown-table th, ::ng-deep .markdown-table td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--surface-border);
+    }
+    ::ng-deep .markdown-table th {
+      background: var(--surface-100);
+      font-weight: 600;
+      color: var(--text-color-secondary);
+    }
+    ::ng-deep .markdown-table tr:last-child td {
+      border-bottom: none;
+    }
     @media (max-width: 900px) {
       .chat-page-layout {
         flex-direction: column;
@@ -908,6 +1037,7 @@ export class CircularChatComponent implements OnInit, OnDestroy, AfterViewChecke
   private api = inject(ComplianceApiService);
   private http = inject(HttpClient);
   private config: any = inject(APP_CONFIG);
+  private messageService = inject(MessageService);
 
   circular = signal<Circular | null>(null);
   loadingCircular = signal<boolean>(true);
@@ -916,6 +1046,11 @@ export class CircularChatComponent implements OnInit, OnDestroy, AfterViewChecke
   inputText = '';
   elapsedSeconds = signal<number>(0);
   thinkingText = signal<string>('');
+
+  selectedRevisedFile = signal<File | null>(null);
+  isComparing = signal<boolean>(false);
+  linkedCirculars = signal<any[]>([]);
+  selectedTargetId = signal<string>('');
 
   readonly suggestedPrompts = SUGGESTED_PROMPTS;
 
@@ -963,10 +1098,51 @@ export class CircularChatComponent implements OnInit, OnDestroy, AfterViewChecke
           },
         ]);
         this.shouldScrollToBottom = true;
+        this.loadLinkedCirculars();
       },
       error: () => {
         this.loadingCircular.set(false);
       },
+    });
+  }
+
+  private loadLinkedCirculars(): void {
+    this.http.get<{ original: any; amendments: any[]; isOriginal: boolean }>(
+      `${this.config.apiUrl}/circulars/${this.circularId}/amendment-chain`
+    ).subscribe({
+      next: (res) => {
+        const list: any[] = [];
+        if (res.isOriginal) {
+          if (res.amendments && res.amendments.length > 0) {
+            list.push(...res.amendments);
+          }
+        } else {
+          if (res.original) {
+            list.push({ ...res.original, depth: 0, title: `[Original] ${res.original.title}` });
+          }
+          if (res.amendments && res.amendments.length > 0) {
+            res.amendments.forEach(am => {
+              if (am.id !== this.circularId) {
+                list.push(am);
+              }
+            });
+          }
+        }
+
+        // Filter out duplicate IDs
+        const uniqueList: any[] = [];
+        const seen = new Set<number>();
+        for (const item of list) {
+          if (item && item.id && !seen.has(item.id)) {
+            seen.add(item.id);
+            uniqueList.push(item);
+          }
+        }
+        this.linkedCirculars.set(uniqueList);
+      },
+      error: (err) => {
+        console.error('Failed to load amendment chain for comparison:', err);
+      }
     });
   }
 
@@ -1069,17 +1245,262 @@ export class CircularChatComponent implements OnInit, OnDestroy, AfterViewChecke
   prioritySeverity(priority: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {
     switch (priority?.toLowerCase()) {
       case 'critical': return 'danger';
-      case 'high':     return 'warn';
-      case 'medium':   return 'info';
-      case 'low':      return 'success';
-      default:         return 'secondary';
+      case 'high': return 'warn';
+      case 'medium': return 'info';
+      case 'low': return 'success';
+      default: return 'secondary';
     }
+  }
+
+  onRevisedFileSelected(event: any): void {
+    const file = event.target?.files?.[0];
+    if (file) {
+      if (file.type === 'application/pdf') {
+        this.selectedRevisedFile.set(file);
+      } else {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Invalid File Type',
+          detail: 'Please upload a PDF file only.',
+        });
+      }
+    }
+  }
+
+  clearSelectedFile(): void {
+    this.selectedRevisedFile.set(null);
+  }
+
+  compareStored(targetIdStr: string): void {
+    const targetId = parseInt(targetIdStr, 10);
+    if (isNaN(targetId) || this.isComparing() || this.isTyping()) return;
+
+    this.isComparing.set(true);
+    this.isTyping.set(true);
+    this.elapsedSeconds.set(0);
+    this.thinkingText.set('Retrieving and comparing stored circulars...');
+    this.shouldScrollToBottom = true;
+
+    const selected = this.linkedCirculars().find(lc => lc.id === targetId);
+    const targetLabel = selected ? (selected.reference_no || selected.title) : `#${targetId}`;
+
+    this.messages.update((msgs) => [
+      ...msgs,
+      {
+        role: 'user',
+        content: `Compare with stored circular: "${targetLabel}"`,
+        timestamp: new Date(),
+      },
+    ]);
+
+    const startTime = Date.now();
+    this.elapsedTimer = setInterval(() => {
+      this.elapsedSeconds.set(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+
+    this.http
+      .post<{ thoughts: string; response: string }>(
+        `${this.config.apiUrl}/circulars/${this.circularId}/compare-stored`,
+        { targetCircularId: targetId }
+      )
+      .subscribe({
+        next: (res) => {
+          const elapsed = Math.floor((Date.now() - startTime) / 1000);
+          this.stopTimers();
+          this.isComparing.set(false);
+          this.isTyping.set(false);
+          this.messages.update((msgs) => [
+            ...msgs,
+            {
+              role: 'ai',
+              content: res.response,
+              thoughts: res.thoughts || '',
+              showThoughts: false,
+              elapsed,
+              timestamp: new Date(),
+            },
+          ]);
+          this.shouldScrollToBottom = true;
+        },
+        error: (err) => {
+          const elapsed = Math.floor((Date.now() - startTime) / 1000);
+          this.stopTimers();
+          this.isComparing.set(false);
+          this.isTyping.set(false);
+          
+          let errMsg = 'Error: Failed to perform comparison with the selected circular. Please verify that the target circular has a valid PDF file.';
+          if (err?.error?.message) {
+            errMsg = `Error: ${err.error.message}`;
+          }
+
+          this.messages.update((msgs) => [
+            ...msgs,
+            {
+              role: 'ai',
+              content: errMsg,
+              elapsed,
+              timestamp: new Date(),
+            },
+          ]);
+          this.shouldScrollToBottom = true;
+        },
+      });
+  }
+
+  compareCirculars(): void {
+    const file = this.selectedRevisedFile();
+    if (!file || this.isComparing() || this.isTyping()) return;
+
+    this.isComparing.set(true);
+    this.isTyping.set(true);
+    this.elapsedSeconds.set(0);
+    this.thinkingText.set('Analyzing PDFs and extracting comparative compliance changes...');
+    this.shouldScrollToBottom = true;
+
+    // Push system/user action message to chat stream
+    this.messages.update((msgs) => [
+      ...msgs,
+      {
+        role: 'user',
+        content: `Compare with revised circular: "${file.name}"`,
+        timestamp: new Date(),
+      },
+    ]);
+
+    const startTime = Date.now();
+    this.elapsedTimer = setInterval(() => {
+      this.elapsedSeconds.set(Math.floor((Date.now() - startTime) / 1000));
+    }, 1000);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    this.http
+      .post<{ thoughts: string; response: string }>(
+        `${this.config.apiUrl}/circulars/${this.circularId}/compare`,
+        formData
+      )
+      .subscribe({
+        next: (res) => {
+          const elapsed = Math.floor((Date.now() - startTime) / 1000);
+          this.stopTimers();
+          this.isComparing.set(false);
+          this.isTyping.set(false);
+          this.messages.update((msgs) => [
+            ...msgs,
+            {
+              role: 'ai',
+              content: res.response,
+              thoughts: res.thoughts || '',
+              showThoughts: false,
+              elapsed,
+              timestamp: new Date(),
+            },
+          ]);
+          this.clearSelectedFile();
+          this.shouldScrollToBottom = true;
+        },
+        error: (err) => {
+          const elapsed = Math.floor((Date.now() - startTime) / 1000);
+          this.stopTimers();
+          this.isComparing.set(false);
+          this.isTyping.set(false);
+
+          let errMsg = 'Error: Failed to perform circular comparison. Please verify that the PDF is valid and the backend is running.';
+          if (err?.error?.message) {
+            errMsg = `Error: ${err.error.message}`;
+          }
+
+          this.messages.update((msgs) => [
+            ...msgs,
+            {
+              role: 'ai',
+              content: errMsg,
+              elapsed,
+              timestamp: new Date(),
+            },
+          ]);
+          this.shouldScrollToBottom = true;
+        },
+      });
+  }
+
+  renderMarkdown(text: string | null | undefined): string {
+    if (!text) return '';
+    let html = text;
+
+    // Normalize carriage returns: \r\n -> \n
+    html = html.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+    // Escape basic HTML characters to avoid security risks
+    html = html
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    // Parse Bold text: **text** -> <strong>text</strong>
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+    // Parse headers: ### text or ## text -> <h4>text</h4>
+    html = html.replace(/^(?:###|##)\s+(.*?)$/gm, '<span class="markdown-header">$1</span>');
+
+    // Parse list items: - text or * text -> <li class="markdown-li">text</li>
+    html = html.replace(/^-\s+(.*?)$/gm, '<li class="markdown-li">$1</li>');
+
+    // Parse tables
+    const lines = html.split('\n');
+    let inTable = false;
+    let tableHtml = '';
+    const outputLines: string[] = [];
+    let isHeaderRow = true;
+
+    for (let line of lines) {
+      const trimmed = line.trim();
+      const isTableRow = trimmed.startsWith('|') && trimmed.endsWith('|');
+
+      if (isTableRow) {
+        if (trimmed.includes('---')) {
+          isHeaderRow = false;
+          continue;
+        }
+        if (!inTable) {
+          inTable = true;
+          tableHtml = '<div class="markdown-table-wrapper"><table class="markdown-table">';
+          isHeaderRow = true;
+        }
+        const cells = trimmed
+          .split('|')
+          .slice(1, -1)
+          .map(cell => cell.trim());
+
+        tableHtml += '<tr>';
+        for (const cell of cells) {
+          const tag = isHeaderRow ? 'th' : 'td';
+          tableHtml += `<${tag}>${cell}</${tag}>`;
+        }
+        tableHtml += '</tr>';
+      } else {
+        if (inTable) {
+          inTable = false;
+          tableHtml += '</table></div>';
+          outputLines.push(tableHtml);
+          tableHtml = '';
+        }
+        outputLines.push(line);
+      }
+    }
+    if (inTable) {
+      tableHtml += '</table></div>';
+      outputLines.push(tableHtml);
+    }
+
+    return outputLines.join('\n');
   }
 
   private scrollToBottom(): void {
     try {
       const el = this.chatContainer?.nativeElement;
       if (el) el.scrollTop = el.scrollHeight;
-    } catch {}
+    } catch { }
   }
 }
