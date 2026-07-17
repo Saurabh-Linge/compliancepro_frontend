@@ -401,6 +401,20 @@
     }
 }
 
+@media (max-width: 576px) {
+    .layout-topbar {
+        .topbar-search-wrapper {
+            max-width: 110px !important;
+        }
+        .layout-topbar-left {
+            gap: 0.25rem !important;
+        }
+        .layout-topbar-actions {
+            gap: 0.25rem !important;
+        }
+    }
+}
+
 .chip-online {
   height: 2.25rem;
   padding: 0 0.75rem;

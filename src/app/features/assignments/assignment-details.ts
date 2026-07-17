@@ -308,7 +308,12 @@ export class AssignmentDetailsComponent implements OnInit {
   progressPercentage = computed(() => this.tasks().length ? Math.round((this.completedCount() / this.tasks().length) * 100) : 0);
 
   canEditAssignment(): boolean {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    let user: any = {};
+    try {
+      user = JSON.parse(localStorage.getItem('user') || '{}');
+    } catch (e) {
+      console.warn('Invalid user JSON in assignment details:', e);
+    }
     const userRole = String(user.role || '').toLowerCase();
 
     // Only branch users / branch managers are permitted to enter compliance details

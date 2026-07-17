@@ -131,13 +131,11 @@
         <!-- Recent Ingestions -->
         <div class="dashboard-panel">
           <div class="panel-header">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <h3>Recent Circular Ingestions</h3>
-                <span class="panel-subtitle">Latest regulatory updates pushed to platform</span>
-              </div>
-              <a routerLink="/circulars" class="text-primary hover:underline text-sm font-medium">View All →</a>
+            <div>
+              <h3>Recent Circular Ingestions</h3>
+              <span class="panel-subtitle">Latest regulatory updates pushed to platform</span>
             </div>
+            <a routerLink="/circulars" class="text-primary hover:underline text-sm font-medium">View All →</a>
           </div>
           <div class="panel-body">
             <div class="progress-list" *ngIf="stats?.recentCirculars?.length > 0; else noRecentCirculars">
@@ -340,15 +338,13 @@
         <!-- Awaiting Action Queue -->
         <div class="dashboard-panel table-panel">
           <div class="panel-header">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <h3>Awaiting Action Queue</h3>
-                <span class="panel-subtitle">Submissions waiting for review or timeline validation</span>
-              </div>
-              <span class="text-xs text-orange-600 font-bold bg-orange-50 border border-orange-200 px-3 py-1 rounded-full flex items-center gap-1" *ngIf="stats?.coMetrics?.awaitingActionQueue?.length > 0">
-                <i class="pi pi-exclamation-circle"></i> {{ stats?.coMetrics?.awaitingActionQueue?.length }} Pending
-              </span>
+            <div>
+              <h3>Awaiting Action Queue</h3>
+              <span class="panel-subtitle">Submissions waiting for review or timeline validation</span>
             </div>
+            <span class="text-xs text-orange-600 font-bold bg-orange-50 border border-orange-200 px-3 py-1 rounded-full flex items-center gap-1" *ngIf="stats?.coMetrics?.awaitingActionQueue?.length > 0">
+              <i class="pi pi-exclamation-circle"></i> {{ stats?.coMetrics?.awaitingActionQueue?.length }} Pending
+            </span>
           </div>
           <div class="panel-body">
             <div class="overflow-x-auto w-full" *ngIf="stats?.coMetrics?.awaitingActionQueue?.length > 0; else noActionQueue">
@@ -385,13 +381,11 @@
         <!-- Recent Regulatory Circulars -->
         <div class="dashboard-panel">
           <div class="panel-header">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <h3>Recent Regulatory Circulars</h3>
-                <span class="panel-subtitle">Latest incoming guidelines to map/assign</span>
-              </div>
-              <a routerLink="/circulars" class="text-primary hover:underline text-sm font-medium">View All →</a>
+            <div>
+              <h3>Recent Regulatory Circulars</h3>
+              <span class="panel-subtitle">Latest incoming guidelines to map/assign</span>
             </div>
+            <a routerLink="/circulars" class="text-primary hover:underline text-sm font-medium">View All →</a>
           </div>
           <div class="panel-body">
             <div class="progress-list" *ngIf="stats?.recentCirculars?.length > 0; else noCircularsCO">
@@ -540,13 +534,11 @@
         <!-- Recent Assignments List -->
         <div class="dashboard-panel">
           <div class="panel-header">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <h3>Recent Assigned Packages</h3>
-                <span class="panel-subtitle">Latest compliance task sets dispatched to your branch</span>
-              </div>
-              <a routerLink="/assignments" class="text-primary hover:underline text-sm font-medium">View All →</a>
+            <div>
+              <h3>Recent Assigned Packages</h3>
+              <span class="panel-subtitle">Latest compliance task sets dispatched to your branch</span>
             </div>
+            <a routerLink="/assignments" class="text-primary hover:underline text-sm font-medium">View All →</a>
           </div>
           <div class="panel-body">
             <div class="progress-list" *ngIf="stats?.recentAssignments?.length > 0; else noAssignments">

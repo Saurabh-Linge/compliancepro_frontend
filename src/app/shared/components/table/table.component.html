@@ -10,20 +10,9 @@
 
   <!-- Detached Toolbar -->
   @if (showToolbar()) {
-  <div
-    style="
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      gap: 0.5rem;
-      padding: 0.25rem;
-      margin-bottom: 0.5rem;
-    "
-  >
-    <div style="display: flex; flex-direction: row; align-items: center; gap: 0.5rem">
-      <p-iconfield iconPosition="left">
+  <div class="table-toolbar">
+    <div class="table-toolbar-left">
+      <p-iconfield iconPosition="left" styleClass="w-full">
         <p-inputicon styleClass="pi pi-search" />
         <input
           #searchInput
@@ -31,12 +20,13 @@
           type="text"
           (input)="handleSearch($event)"
           placeholder="Search (Ctrl+F)"
-          style="width: auto; height: 2.5rem"
+          class="w-full"
+          style="height: 2.5rem"
         />
       </p-iconfield>
       <ng-content select="[toolbar-actions]"></ng-content>
     </div>
-    <div style="display: flex; flex-direction: row; align-items: center; gap: 0.5rem">
+    <div class="table-toolbar-right">
       <button
         *ngIf="showRefreshButton()"
         pButton

@@ -119,3 +119,76 @@ html, body {
     font-size: 0.875rem !important;
   }
 }
+
+// Detached Toolbar Responsive layout styling
+.table-toolbar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 0.75rem;
+  padding: 0.25rem;
+  margin-bottom: 0.5rem;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+}
+
+.table-toolbar-left {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  
+  @media (max-width: 768px) {
+    width: 100%;
+    
+    p-iconfield, input {
+      width: 100% !important;
+    }
+  }
+}
+
+.table-toolbar-right {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: flex-end;
+    
+    button {
+      flex: 1;
+    }
+  }
+}
+
+// Enable horizontal scroll inside the table wrapper container
+::ng-deep .p-datatable-table-container {
+  overflow-x: auto !important;
+  scrollbar-width: thin;
+}
+
+// Restrict default page scroll blocks and set safe column widths on mobile
+@media (max-width: 768px) {
+  ::ng-deep .p-datatable {
+    table {
+      table-layout: auto !important;
+    }
+    
+    th, td {
+      // Force safe minimum width for standard data cells on mobile viewports so typography is clear
+      &:not([style*="width: 3rem"]):not([style*="width: 4rem"]):not([style*="width: 2.25rem"]):not(.p-selection-column) {
+        min-width: 140px !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+      }
+    }
+  }
+}

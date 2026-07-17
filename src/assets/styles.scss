@@ -626,3 +626,73 @@ body {
   }
 }
 
+/* ==========================================================================
+   Global Responsive Layout & Reset Styles
+   ========================================================================== */
+
+// 1. PrimeNG Drawer/Sidebar responsive scaling
+@media (max-width: 767px) {
+  .p-drawer, .p-sidebar {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .p-drawer, .p-sidebar {
+    max-width: 80vw !important;
+  }
+}
+
+// 2. PrimeNG Dialog/Modal responsive overrides
+@media (max-width: 576px) {
+  .p-dialog {
+    width: 100% !important;
+    max-width: 95vw !important;
+    margin: 0.5rem !important;
+  }
+}
+
+// 3. Card & Panel compact margins/paddings on mobile
+@media (max-width: 768px) {
+  .card, .glass-panel {
+    padding: 1rem !important;
+    margin-bottom: 1rem !important;
+    border-radius: 8px !important;
+    width: 100% !important;
+    overflow-x: hidden !important;
+  }
+  
+  // Realign borders on stacked child containers
+  .glass-panel > div {
+    border-left: none !important;
+    padding-left: 0 !important;
+    border-top: 1px solid var(--surface-border, #f3f4f6);
+    padding-top: 1rem;
+    width: 100% !important;
+  }
+  
+  .glass-panel > div:first-child {
+    border-top: none !important;
+    padding-top: 0 !important;
+  }
+}
+
+// 4. Force browser page-level scrolls (instead of nested scroll locks) on mobile/tablet screens
+@media (max-width: 991px) {
+  .flex-grow-1.overflow-hidden {
+    overflow: visible !important;
+  }
+  .h-full {
+    height: auto !important;
+  }
+  div[style*="height: calc(100vh"] {
+    height: auto !important;
+    overflow-y: visible !important;
+  }
+  .layout-main-container {
+    padding-top: 5rem !important; // accommodate smaller topbar space
+  }
+}
+
+

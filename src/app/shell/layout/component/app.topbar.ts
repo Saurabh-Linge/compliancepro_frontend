@@ -435,7 +435,12 @@ export class AppTopbar implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit() {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    let user: any = {};
+    try {
+      user = JSON.parse(localStorage.getItem('user') || '{}');
+    } catch (e) {
+      console.warn('Invalid user JSON in topbar:', e);
+    }
     this.userName = user.full_name || user.fullName || user.name || 'User';
     this.userDesignation = user.role || user.designation || this.getUserRoleName(user.user_type_id);
     this.branchId = Number(user.branch_id || user.branchId || 0) || 1;

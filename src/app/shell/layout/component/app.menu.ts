@@ -21,7 +21,12 @@ export class AppMenu implements OnInit {
   model: MenuItem[] = [];
 
   ngOnInit(): void {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    let user: any = {};
+    try {
+      user = JSON.parse(localStorage.getItem('user') || '{}');
+    } catch (e) {
+      console.warn('Invalid user JSON in menu:', e);
+    }
     const userRole = String(user.role || '').toLowerCase();
 
     const menu: MenuItem[] = [];
