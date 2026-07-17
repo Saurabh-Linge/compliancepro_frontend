@@ -10,9 +10,20 @@
 
   <!-- Detached Toolbar -->
   @if (showToolbar()) {
-  <div class="flex flex-column md:flex-row justify-content-between align-items-stretch md:align-items-center gap-3 w-full mb-3 p-1">
-    <div class="flex flex-column sm:flex-row align-items-stretch sm:align-items-center gap-2 flex-grow-1">
-      <p-iconfield iconPosition="left" class="w-full sm:w-15rem">
+  <div
+    style="
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      gap: 0.5rem;
+      padding: 0.25rem;
+      margin-bottom: 0.5rem;
+    "
+  >
+    <div style="display: flex; flex-direction: row; align-items: center; gap: 0.5rem">
+      <p-iconfield iconPosition="left">
         <p-inputicon styleClass="pi pi-search" />
         <input
           #searchInput
@@ -20,13 +31,12 @@
           type="text"
           (input)="handleSearch($event)"
           placeholder="Search (Ctrl+F)"
-          class="w-full"
-          style="height: 2.5rem"
+          style="width: auto; height: 2.5rem"
         />
       </p-iconfield>
       <ng-content select="[toolbar-actions]"></ng-content>
     </div>
-    <div class="flex flex-row align-items-center justify-content-end gap-2">
+    <div style="display: flex; flex-direction: row; align-items: center; gap: 0.5rem">
       <button
         *ngIf="showRefreshButton()"
         pButton
@@ -125,6 +135,17 @@
           <!-- Expansion Toggler Header -->
           <th *ngIf="rowExpansionTemplate" style="width: 3rem"></th>
 
+          <!-- Actions Column Header -->
+          <th
+            [style.width]="
+              actionDisplayMode() === 'buttons' ? actions().length * 2.5 + 'rem' : '4rem'
+            "
+            style="text-align: center"
+            *ngIf="actions().length"
+          >
+            Action
+          </th>
+
           <!-- Action Columns (Left Side) -->
           <th
             *ngFor="let col of actionColumns()"
@@ -201,15 +222,6 @@
               ></p-columnFilter>
             </div>
           </th>
-          <th
-            [style.width]="
-              actionDisplayMode() === 'buttons' ? actions().length * 2.5 + 'rem' : '4rem'
-            "
-            style="text-align: center"
-            *ngIf="actions().length"
-          >
-            Action
-          </th>
         </tr>
       </ng-template>
 
@@ -278,6 +290,41 @@
           </ng-container>
 
           <ng-template #defaultBody>
+            <!-- Actions Cell -->
+            <td style="text-align: center" *ngIf="actions().length">
+              @if (actionDisplayMode() === 'buttons') {
+              <!-- Button mode: Show individual buttons (icon-only by default) -->
+              <div class="flex gap-1 justify-content-center align-items-center">
+                @for (action of actions(); track action.label) {
+                  @if (action.visible === undefined || action.visible(rowData)) {
+                  <button
+                    pButton
+                    pRipple
+                    [icon]="action.icon"
+                    [label]="showActionLabels() ? action.label : ''"
+                    [class]="
+                      'p-button-text p-button-rounded ' + (action.styleClass || 'p-button-success')
+                    "
+                    [disabled]="action.disabled ? action.disabled(rowData) : false"
+                    (click)="action.command(rowData); $event.stopPropagation()"
+                    [pTooltip]="action.label"
+                    tooltipPosition="top"
+                  ></button>
+                  }
+                }
+              </div>
+              } @else {
+              <!-- Menu mode: Show three dots menu (default) -->
+              <button
+                pButton
+                pRipple
+                icon="pi pi-ellipsis-v"
+                class="p-button-text p-button-secondary p-button-rounded"
+                (click)="showMenu($event, rowData, menu)"
+              ></button>
+              }
+            </td>
+
             <!-- Action Columns (Left Side) -->
             <td *ngFor="let col of actionColumns()" [style.text-align]="getAlignment(col, false)">
               <!-- ✅ CUSTOM PRINT COLUMN -->
@@ -343,39 +390,7 @@
                 </ng-container>
               </ng-container>
             </td>
-            <td style="text-align: center" *ngIf="actions().length">
-              @if (actionDisplayMode() === 'buttons') {
-              <!-- Button mode: Show individual buttons (icon-only by default) -->
-              <div class="flex gap-1 justify-content-center align-items-center">
-                @for (action of actions(); track action.label) {
-                  @if (action.visible === undefined || action.visible(rowData)) {
-                  <button
-                    pButton
-                    pRipple
-                    [icon]="action.icon"
-                    [label]="showActionLabels() ? action.label : ''"
-                    [class]="
-                      'p-button-text p-button-rounded ' + (action.styleClass || 'p-button-primary')
-                    "
-                    [disabled]="action.disabled ? action.disabled(rowData) : false"
-                    (click)="action.command(rowData); $event.stopPropagation()"
-                    [pTooltip]="action.label"
-                    tooltipPosition="top"
-                  ></button>
-                  }
-                }
-              </div>
-              } @else {
-              <!-- Menu mode: Show three dots menu (default) -->
-              <button
-                pButton
-                pRipple
-                icon="pi pi-ellipsis-v"
-                class="p-button-text p-button-secondary p-button-rounded"
-                (click)="showMenu($event, rowData, menu)"
-              ></button>
-              }
-            </td>
+            <!-- </td> -->
           </ng-template>
         </tr>
       </ng-template>

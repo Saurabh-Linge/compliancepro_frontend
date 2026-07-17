@@ -1,14 +1,12 @@
 .layout-main-container {
     display: flex;
     flex-direction: column;
-    height: 100vh;           /* fixed to viewport — no overflow */
-    min-height: 0;
+    min-height: 100vh;
     justify-content: space-between;
-    --layout-content-gutter: 0.5rem;
+    --layout-content-gutter: 0.75rem;
     padding: 4rem var(--layout-content-gutter) 0 var(--layout-content-gutter); // topbar + compact page gutter
     transition: margin-left var(--layout-section-transition-duration);
-    background: #ffffff;
-    box-sizing: border-box;
+    background: #eef3f7;
 }
 
 .layout-main-container.no-transition {
@@ -16,9 +14,7 @@
 }
 
 .layout-main {
-    flex: 1 1 0;             /* take remaining height, don't grow beyond it */
-    min-height: 0;           /* allow children to shrink below content size */
-    overflow: hidden;        /* clip — children manage their own scroll */
+    flex: 1 1 auto;
     padding-bottom: 0.5rem;
 }
 

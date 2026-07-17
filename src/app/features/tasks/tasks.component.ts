@@ -23,18 +23,21 @@ import { MessageService } from 'primeng/api';
   imports: [CommonModule, FormsModule, DialogModule, DrawerModule, ButtonModule, TabsModule, PageComponent, TableComponent, TextareaFieldComponent, SelectFieldComponent, SelectModule, TableModule, ToastModule],
   providers: [MessageService],
   template: `
-    <app-page title="Task Master" icon="pi pi-list">
-      <div actions>
-        <button
-          pButton
-          type="button"
-          icon="pi pi-arrow-left"
-          label="Back to Circulars"
-          class="p-button-outlined p-button-secondary h-2.5rem flex align-items-center"
-          (click)="goBackToCirculars()">
-        </button>
+    <div class="card">
+      <div class="flex align-items-center justify-content-between mb-4">
+        <h5 class="m-0 text-xl font-semibold">Task Master</h5>
+        <div>
+          <button
+            pButton
+            type="button"
+            icon="pi pi-arrow-left"
+            label="Back to Circulars"
+            class="p-button-outlined p-button-secondary h-2.5rem flex align-items-center"
+            (click)="goBackToCirculars()">
+          </button>
+        </div>
       </div>
-      <div class="card h-full flex flex-column gap-3 p-3">
+      <div class="flex flex-column gap-3 p-3">
         <!-- Summary Stats -->
         <div class="flex gap-3">
           <div 
@@ -608,7 +611,7 @@ import { MessageService } from 'primeng/api';
           <button class="btn-dynamic px-4 py-2" [disabled]="!newHeaderName.trim()" (click)="quickAddHeader()">Save Header</button>
         </ng-template>
     </p-dialog>
-  </app-page>
+    </div>
   `,
   styles: [`
     :host ::ng-deep .task-drawer .p-drawer-content {

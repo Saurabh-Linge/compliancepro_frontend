@@ -1,5 +1,7 @@
-<app-page title="Branch and Department Master" icon="pi pi-map-marker">
-    <div class="card h-full">
+<div class="card">
+  <div class="flex align-items-center justify-content-between mb-4">
+    <h5 class="m-0 text-xl font-semibold">Branch and Department Master</h5>
+  </div>
       <app-table
           [data]="filteredBranches()"
           [columns]="tableColumns"
@@ -26,7 +28,6 @@
         </div>
       </app-table>
     </div>
-</app-page>
 
 <p-drawer
     [visible]="branchDialog()"

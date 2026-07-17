@@ -162,7 +162,7 @@ export class TableComponent implements OnDestroy {
   rowClass = input<(rowData: any) => string>();
 
   // Action display mode: 'menu' (default - three dots) or 'buttons' (individual buttons)
-  actionDisplayMode = input<'menu' | 'buttons'>('menu');
+  actionDisplayMode = input<'menu' | 'buttons'>('buttons');
 
   // Whether to show labels in buttons mode (default false for icon-only)
   showActionLabels = input<boolean>(false);

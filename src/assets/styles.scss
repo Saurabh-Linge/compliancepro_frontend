@@ -562,3 +562,67 @@ body {
   border-right: 1px solid var(--surface-border, #e2e8f0) !important;
   box-shadow: 1px 0 0 rgba(0, 0, 0, 0.05) !important;
 }
+
+/* ==========================================================================
+   Programmatic & Master Form Drawer Style Unification (AuditPro Refactor)
+   ========================================================================== */
+.p-drawer, .p-sidebar, .form-drawer-host, .drawer-layout, .circular-drawer, .chat-drawer, .task-drawer {
+  background: var(--surface-card) !important;
+  
+  .p-drawer-header, .p-sidebar-header {
+    padding: 1rem 1.25rem 0.75rem !important;
+    border-bottom: 1px solid var(--surface-border, #e2e8f0) !important;
+    background: var(--surface-card) !important;
+    
+    .p-drawer-title, .p-sidebar-title {
+      font-weight: 700 !important;
+      font-size: 1.15rem !important;
+      color: var(--text-color) !important;
+    }
+  }
+
+  .p-drawer-content, .p-sidebar-content {
+    background: var(--surface-card) !important; // Clean white background to match AuditPro
+    padding: 0 !important;
+  }
+
+  .p-drawer-footer, .p-sidebar-footer {
+    border-top: 1px solid var(--surface-border, #e2e8f0) !important;
+    background: var(--surface-card) !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+}
+
+// Adjust inner drawer form spacing and paddings
+.drawer-content-shell, .drawer-content {
+  padding: 1.5rem !important; // Spacing matching AuditPro's 1.5rem padding
+  background: var(--surface-card) !important;
+}
+
+.drawer-footer-row {
+  padding: 1rem 1.5rem !important; // Spacing matching AuditPro's 1rem 1.5rem padding
+  background: var(--surface-card) !important;
+  border-top: none !important;
+  box-shadow: none !important;
+}
+
+// Overwrite the local :host ::ng-deep component overrides
+.drawer-layout, .circular-drawer, .chat-drawer, .task-drawer {
+  &.p-drawer {
+    background: var(--surface-card) !important;
+    
+    .p-drawer-content {
+      background: var(--surface-card) !important;
+    }
+    
+    .p-drawer-header {
+      background: var(--surface-card) !important;
+    }
+
+    .p-drawer-footer {
+      background: var(--surface-card) !important;
+    }
+  }
+}
+

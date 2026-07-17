@@ -1,5 +1,7 @@
-<app-page title="Users Master" icon="pi pi-users">
-    <div class="card h-full">
+<div class="card">
+  <div class="flex align-items-center justify-content-between mb-4">
+     <h5 class="m-0 text-xl font-semibold">Users Master</h5>
+  </div>
     <app-table
         [data]="users()"
         [columns]="tableColumns"
@@ -12,7 +14,6 @@
         (onRefresh)="loadData()"
     ></app-table>
     </div>
-</app-page>
 
 <p-drawer
     [visible]="userDialog()"

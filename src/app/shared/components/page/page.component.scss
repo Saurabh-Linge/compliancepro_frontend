@@ -10,20 +10,29 @@ app-page {
     z-index: 1;
 
     h1 {
-        margin: 0;
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-color);
+        margin: 0.75rem 0 0.75rem 0;
         display: flex;
         align-items: center;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        position: relative;
         line-height: 1.2;
 
         i {
             color: var(--primary-color);
+            margin-right: 0.75rem;
+            font-size: 1.75rem; 
         }
     }
 
     .subtitle {
         color: var(--text-color-secondary);
-        font-size: 0.875rem;
+        font-size: 1.1rem;
         font-weight: 400;
+        letter-spacing: 0.3px;
+        max-width: 600px;
         display: block;
     }
 }

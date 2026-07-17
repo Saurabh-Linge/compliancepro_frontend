@@ -50,8 +50,10 @@ import { ConfirmationService, MessageService } from 'primeng/api';
   ],
   providers: [ConfirmationService, MessageService],
   template: `
-    <app-page title="Circular Master" icon="pi pi-file">
-      <div class="card h-full">
+    <div class="card">
+      <div class="flex align-items-center justify-content-between mb-4">
+        <h5 class="m-0 text-xl font-semibold">Circular Master</h5>
+      </div>
         <app-table
             [data]="circulars()"
             [columns]="tableColumns"
@@ -82,7 +84,6 @@ import { ConfirmationService, MessageService } from 'primeng/api';
           </div>
         </app-table>
       </div>
-    </app-page>
 
     <p-confirmDialog></p-confirmDialog>
     <p-toast position="top-right"></p-toast>

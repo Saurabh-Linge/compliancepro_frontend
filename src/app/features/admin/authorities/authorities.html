@@ -1,5 +1,7 @@
-<app-page title="Authority Master" icon="pi pi-building">
-    <div class="card h-full">
+<div class="card">
+  <div class="flex align-items-center justify-content-between mb-4">
+    <h5 class="m-0 text-xl font-semibold">Authority Master</h5>
+  </div>
     <app-table
         [data]="authorities()"
         [columns]="tableColumns"
@@ -12,7 +14,6 @@
         (onRefresh)="loadAuthorities()"
     ></app-table>
     </div>
-</app-page>
 
 <p-drawer
     [visible]="authorityDialog()"

@@ -14,8 +14,10 @@ import { ButtonModule } from 'primeng/button';
   standalone: true,
   imports: [CommonModule, FormsModule, TableComponent, TextFieldComponent, PageComponent, DialogModule, DrawerModule, ButtonModule],
   template: `
-    <app-page title="Task Headers Master" icon="pi pi-tags" description="Manage categories for grouping tasks in branch assignments.">
-      <div class="card h-full">
+    <div class="card">
+      <div class="flex align-items-center justify-content-between mb-4">
+        <h5 class="m-0 text-xl font-semibold">Task Headers Master</h5>
+      </div>
         <app-table
           [data]="headers()"
           [columns]="columns"
@@ -24,7 +26,6 @@ import { ButtonModule } from 'primeng/button';
           (onRefresh)="loadHeaders()"
         ></app-table>
       </div>
-    </app-page>
 
     <p-drawer
         [visible]="showModal()"

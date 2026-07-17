@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, signal } from "@angular/core";
+import { Component, OnInit, signal } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
 import { Router } from "@angular/router";
@@ -13,20 +13,21 @@ import { PageComponent } from "../../shared/components/page/page.component";
   standalone: true,
   imports: [CommonModule, TableComponent, PageComponent],
   template: `
-    <app-page title="CCO Review Queue" icon="pi pi-shield" description="Review escalated compliance submissions for final CCO approval.">
-      <div class="card h-full mt-4">
-        <app-table
-          [data]="assignments()"
-          [columns]="tableColumns"
-          [actions]="tableActions"
-          [showAddButton]="false"
-          [showRefreshButton]="true"
-          [paginator]="true"
-          [rows]="10"
-          (onRefresh)="loadAssignments()">
-        </app-table>
+    <div class="card">
+      <div class="flex align-items-center justify-content-between mb-4">
+        <h5 class="m-0 text-xl font-semibold">CCO Review Queue</h5>
       </div>
-    </app-page>
+      <app-table
+        [data]="assignments()"
+        [columns]="tableColumns"
+        [actions]="tableActions"
+        [showAddButton]="false"
+        [showRefreshButton]="true"
+        [paginator]="true"
+        [rows]="10"
+        (onRefresh)="loadAssignments()">
+      </app-table>
+    </div>
   `
 })
 export class CcoReviewComponent implements OnInit {

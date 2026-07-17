@@ -29,9 +29,10 @@ import { SelectModule } from 'primeng/select';
     SelectModule
   ],
   template: `
-    <app-page title="Compliances & Task Sets" icon="pi pi-sitemap" description="Manage task sets and branch compliances.">
-      
-      <div class="card h-full">
+    <div class="card">
+      <div class="flex align-items-center justify-content-between mb-4">
+        <h5 class="m-0 text-xl font-semibold">Compliances & Task Sets</h5>
+      </div>
         <!-- ASSIGNMENTS TAB -->
         <div *ngIf="activeTab() === 'ASSIGNMENTS'">
           <app-table
@@ -66,7 +67,6 @@ import { SelectModule } from 'primeng/select';
 
         <!-- TASK SETS TAB REMOVED (Moved to Task Sets Master) -->
       </div>
-    </app-page>
 
     <!-- Propose Timeline Modal -->
     <p-dialog [visible]="showProposeModal()" (visibleChange)="showProposeModal.set($event)" [style]="{ width: '100%', 'max-width': '450px', 'margin': '1rem' }" header="Propose Timeline" [modal]="true" class="p-fluid">
