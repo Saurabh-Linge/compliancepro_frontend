@@ -191,7 +191,9 @@ export class TableComponent implements OnDestroy {
   totalColumns = computed(() => {
     let count = this.columns().length;
     if (this.showSerialNumber()) count++;
-    if (this.actions().length) count++;
+    if (this.actions().length) {
+      count += this.actionDisplayMode() === 'buttons' ? this.actions().length : 1;
+    }
     if (this.rowExpansionTemplate) count++;
     return count;
   });

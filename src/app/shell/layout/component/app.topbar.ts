@@ -8,6 +8,7 @@ import {
   ElementRef,
   OnInit,
   OnDestroy,
+  ChangeDetectorRef,
 } from '@angular/core';
 import { MenuItem } from 'primeng/api';
 import { Router, RouterModule } from '@angular/router';
@@ -417,6 +418,8 @@ export class AppTopbar implements OnInit, OnDestroy {
   private notificationInterval: any;
   http = inject(HttpClient);
 
+  cdr = inject(ChangeDetectorRef);
+
   // Role and Language Data
   languages = [{ label: 'English', value: 'en' }];
 
@@ -437,7 +440,9 @@ export class AppTopbar implements OnInit, OnDestroy {
     this.userDesignation = user.role || user.designation || this.getUserRoleName(user.user_type_id);
     this.branchId = Number(user.branch_id || user.branchId || 0) || 1;
 
-    this.loadNotifications();
+    setTimeout(() => {
+      this.loadNotifications();
+    }, 0);
     // Poll every 30 seconds
     this.notificationInterval = setInterval(() => this.loadNotifications(), 30000);
 
@@ -468,6 +473,7 @@ export class AppTopbar implements OnInit, OnDestroy {
       next: (data) => {
         this.notifications = data;
         this.unreadCount.set(data.filter(n => !n.is_read).length);
+        this.cdr.detectChanges();
       },
       error: () => {} // silently ignore — topbar should not break on notification errors
     });

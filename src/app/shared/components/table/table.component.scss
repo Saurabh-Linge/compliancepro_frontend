@@ -97,3 +97,25 @@ html, body {
   justify-content: center;
   gap: 10px;   /* 👈 SPACE BETWEEN ICONS */
 }
+
+::ng-deep .table-action-btn {
+  width: 1.85rem !important;
+  height: 1.85rem !important;
+  min-width: 1.85rem !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #475569 !important;
+  border: none !important;
+  background: transparent !important;
+  
+  &:hover {
+    background: rgba(15, 23, 42, 0.06) !important;
+    color: #0f172a !important;
+  }
+  
+  .p-button-icon {
+    font-size: 0.875rem !important;
+  }
+}
