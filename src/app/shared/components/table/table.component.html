@@ -295,12 +295,12 @@
                   <button
                     pButton
                     pRipple
-                    [icon]="action.icon"
-                    [label]="showActionLabels() ? action.label : ''"
+                    [icon]="isRowLoading(rowData, action.name) ? 'pi pi-spin pi-spinner' : getActionIcon(action, rowData)"
+                    [label]="showActionLabels() ? getActionLabel(action, rowData) : ''"
                     class="p-button-text p-button-secondary p-button-rounded table-action-btn"
-                    [disabled]="action.disabled ? action.disabled(rowData) : false"
+                    [disabled]="isRowLoading(rowData, action.name) || (action.disabled ? action.disabled(rowData) : false)"
                     (click)="action.command(rowData); $event.stopPropagation()"
-                    [pTooltip]="action.label"
+                    [pTooltip]="getActionLabel(action, rowData)"
                     tooltipPosition="top"
                   ></button>
                   }

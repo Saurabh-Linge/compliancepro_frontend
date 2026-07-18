@@ -56,10 +56,85 @@ import { DateFieldComponent } from '../../shared/components/form/date-field/date
       font-size: 0.875rem !important;
       display: block !important;
     }
+
+    /* ── Drawer Layout (mirrors Circular Master) ── */
+    .drawer-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+    .drawer-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .drawer-title-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.65rem;
+      height: 2.65rem;
+      border-radius: 8px;
+      color: var(--primary-color);
+      background: var(--primary-50, var(--surface-100));
+      border: 1px solid var(--primary-100, var(--surface-border));
+      flex: 0 0 auto;
+    }
+    .drawer-content-shell {
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+      padding: 1rem 1.35rem 1.25rem;
+    }
+    .drawer-section {
+      background: var(--surface-card);
+      border: 1px solid var(--surface-border);
+      border-radius: 8px;
+      padding: 1rem 1rem 0.35rem;
+    }
+    .section-heading {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.1rem;
+    }
+    .section-kicker {
+      color: var(--text-color);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .section-line {
+      flex: 1;
+      height: 1px;
+      background: var(--surface-border);
+    }
+    .drawer-form-grid {
+      row-gap: 0.65rem;
+    }
+    .drawer-form-grid .field {
+      margin-bottom: 0.85rem;
+    }
+    .drawer-footer-row {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      width: 100%;
+      padding: 1rem 1.35rem;
+    }
+    .drawer-footer-row button {
+      min-width: 9.5rem;
+    }
   `]
 })
 export class TaskSetsComponent implements OnInit {
   taskSets = signal<any[]>([]);
+  loadingRowIds = signal<Set<string>>(new Set());
+  generatedTaskSetIds = new Set<number>();
 
   tableColumns: TableColumn[] = [
     { field: 'circular_title', header: 'Circular Title', type: 'text', width: '25%' },
@@ -77,6 +152,7 @@ export class TaskSetsComponent implements OnInit {
       command: (row) => this.openFormDrawer(row)
     },
     {
+      name: 'generate',
       label: 'Auto-Generate Assignments',
       icon: 'pi pi-cog',
       command: (row) => this.triggerAssignmentGeneration(row),
@@ -178,6 +254,7 @@ export class TaskSetsComponent implements OnInit {
   proposedDate = signal<Date | null>(null);
   parentPage: number | null = null;
   parentLimit: number | null = null;
+  cameFromCirculars = signal<boolean>(false);
 
   constructor(private api: ComplianceApiService, private messageService: MessageService, private route: ActivatedRoute, private router: Router) { }
 
@@ -208,6 +285,7 @@ export class TaskSetsComponent implements OnInit {
     const circularId = this.route.snapshot.queryParamMap.get('circular_id');
     if (circularId) {
       this.selectedCircularFilter.set(+circularId);
+      this.cameFromCirculars.set(true);
     }
     const parentPage = this.route.snapshot.queryParamMap.get('parent_page');
     if (parentPage) {
@@ -359,16 +437,55 @@ export class TaskSetsComponent implements OnInit {
   }
 
   triggerAssignmentGeneration(row: any) {
-    this.messageService.add({ severity: 'info', summary: 'Processing', detail: `Auto-generating assignments for "${row.name}"...` });
+    if (this.generatedTaskSetIds.has(row.id)) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Already Generated',
+        detail: `Assignments for "${row.name}" have already been generated.`,
+        life: 4000
+      });
+      return;
+    }
+
+    const loadingKey = `${row.id}:generate`;
+    this.loadingRowIds.update(set => {
+      const newSet = new Set(set);
+      newSet.add(loadingKey);
+      return newSet;
+    });
+
     this.api.generateAssignments(row.id).subscribe({
       next: (res) => {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Success',
-          detail: `Generated ${res.generated} new assignments, skipped ${res.skipped} existing.`
+        this.loadingRowIds.update(set => {
+          const newSet = new Set(set);
+          newSet.delete(loadingKey);
+          return newSet;
         });
+
+        this.messageService.clear();
+        if (res.generated === 0) {
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'Already Created',
+            detail: `Assignments for "${row.name}" have already been created for this period. No new assignments generated.`,
+            life: 5000
+          });
+        } else {
+          this.generatedTaskSetIds.add(row.id);
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: `Generated ${res.generated} new assignments, skipped ${res.skipped} existing.`
+          });
+        }
       },
       error: (err) => {
+        this.loadingRowIds.update(set => {
+          const newSet = new Set(set);
+          newSet.delete(loadingKey);
+          return newSet;
+        });
+        this.messageService.clear();
         this.messageService.add({
           severity: 'error',
           summary: 'Error',

@@ -49,12 +49,13 @@ export interface TableColumn {
 }
 
 export interface TableAction {
-  label: string;
-  icon: string;
+  label: string | ((row: any) => string);
+  icon: string | ((row: any) => string);
   command: (row: any) => void;
   styleClass?: string;
   disabled?: (row: any) => boolean;
   visible?: (row: any) => boolean;
+  name?: string;
 }
 
 /**
@@ -231,10 +232,10 @@ export class TableComponent implements OnDestroy {
     return this.actions()
       .filter(action => action.visible === undefined || action.visible(row))
       .map(action => ({
-        label: action.label,
-        icon: action.icon,
+        label: typeof action.label === 'function' ? action.label(row) : action.label,
+        icon: this.isRowLoading(row, action.name) ? 'pi pi-spin pi-spinner' : (typeof action.icon === 'function' ? action.icon(row) : action.icon),
         styleClass: action.styleClass,
-        disabled: action.disabled ? action.disabled(row) : false,
+        disabled: this.isRowLoading(row, action.name) || (action.disabled ? action.disabled(row) : false),
         visible: action.visible ? action.visible(row) : true,
         command: (event: any) => {
           if (this._activeMenu) {
@@ -298,6 +299,14 @@ export class TableComponent implements OnDestroy {
       return this.rowClass()!(rowData);
     }
     return '';
+  }
+
+  getActionLabel(action: TableAction, row: any): string {
+    return typeof action.label === 'function' ? action.label(row) : action.label;
+  }
+
+  getActionIcon(action: TableAction, row: any): string {
+    return typeof action.icon === 'function' ? action.icon(row) : action.icon;
   }
 
   isRowLoading(row: any, actionName?: string): boolean {
@@ -547,7 +556,8 @@ export class TableComponent implements OnDestroy {
           'REVIEW_PENDING': 'Review Pending',
           'COMPLETED': 'Completed',
           'ESCALATED_TO_CCO': 'Escalated to CCO',
-          'REJECTED': 'Rejected'
+          'REJECTED': 'Rejected',
+          'PENDING_RECOMPLIANCE': 'Pending Recompliance'
         };
         return assignmentStatusMap[value] ?? value;
 

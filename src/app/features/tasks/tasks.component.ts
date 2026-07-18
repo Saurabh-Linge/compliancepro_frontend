@@ -26,15 +26,25 @@ import { MessageService } from 'primeng/api';
     <div class="card">
       <div class="flex align-items-center justify-content-between mb-4">
         <h5 class="m-0 text-xl font-semibold">Task Master</h5>
-        <div>
-          <button
-            pButton
-            type="button"
-            icon="pi pi-arrow-left"
-            label="Back to Circulars"
-            class="p-button-outlined p-button-secondary h-2.5rem flex align-items-center"
-            (click)="goBackToCirculars()">
-          </button>
+        <div class="flex align-items-center gap-2">
+          @if (cameFromCirculars()) {
+            <button
+              pButton
+              type="button"
+              icon="pi pi-arrow-left"
+              label="Back to Circulars"
+              class="p-button-outlined p-button-secondary h-2.5rem flex align-items-center"
+              (click)="goBackToCirculars()">
+            </button>
+            <button
+              pButton
+              type="button"
+              icon="pi pi-list-check"
+              label="Go to Task Set Master"
+              class="p-button-outlined p-button-success h-2.5rem flex align-items-center"
+              (click)="goToTaskSets()">
+            </button>
+          }
         </div>
       </div>
       <div class="flex flex-column gap-3 p-3">
@@ -113,7 +123,7 @@ import { MessageService } from 'primeng/api';
                   filterPlaceholder="Search circular..."
                   [virtualScroll]="true"
                   [virtualScrollItemSize]="38"
-                  styleClass="w-20rem"
+                  styleClass="w-20rem h-2.5rem flex align-items-center"
                 ></p-select>
                 <button
                   *ngIf="isCcoOrAdmin"
@@ -121,7 +131,8 @@ import { MessageService } from 'primeng/api';
                   type="button"
                   icon="pi pi-upload"
                   label="Bulk Upload"
-                  class="p-button-outlined p-button-secondary"
+                  class="p-button-outlined p-button-secondary h-2.5rem flex align-items-center"
+                  style="white-space: nowrap;"
                   (click)="openBulkUploadModal()"
                 ></button>
               </div>
@@ -891,6 +902,7 @@ export class TasksComponent implements OnInit {
   circulars = signal<any[]>([]);
   parentPage: number | null = null;
   parentLimit: number | null = null;
+  cameFromCirculars = signal<boolean>(false);
 
   get isCcoOrAdmin(): boolean {
     const role = this.auth.currentUser()?.role;
@@ -913,6 +925,20 @@ export class TasksComponent implements OnInit {
     this.router.navigate(['/circulars'], { queryParams });
   }
 
+  goToTaskSets() {
+    const queryParams: any = {};
+    if (this.selectedCircularId) {
+      queryParams.circular_id = this.selectedCircularId;
+    }
+    if (this.parentPage) {
+      queryParams.parent_page = this.parentPage;
+    }
+    if (this.parentLimit) {
+      queryParams.parent_limit = this.parentLimit;
+    }
+    this.router.navigate(['/task-sets'], { queryParams });
+  }
+
   ngOnInit() {
     this.api.getTaskHeaders().subscribe(data => this.taskHeaders.set(data));
     this.api.getCirculars({ limit: 1000, has_tasks: true }).subscribe(res => this.circulars.set(res.data));
@@ -921,6 +947,8 @@ export class TasksComponent implements OnInit {
     this.route.queryParamMap.subscribe(params => {
       const circularId = params.get('circular_id');
       this.selectedCircularId = circularId ? Number(circularId) : null;
+      // Only show back/navigate buttons when explicitly navigated from circular master
+      this.cameFromCirculars.set(!!circularId);
 
       const parentPage = params.get('parent_page');
       this.parentPage = parentPage ? Number(parentPage) : null;

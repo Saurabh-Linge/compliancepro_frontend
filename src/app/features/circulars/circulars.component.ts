@@ -940,6 +940,18 @@ export class CircularsComponent implements OnInit, OnDestroy {
       command: (row) => this.openLogsModal(row)
     },
     {
+      label: (row: any) => row?.is_applicable ? 'Mark Not Applicable' : 'Mark Applicable',
+      icon: (row: any) => row?.is_applicable ? 'pi pi-times-circle' : 'pi pi-check-circle',
+      styleClass: 'text-orange-500',
+      command: (row) => this.toggleCircularFlag(row, 'is_applicable')
+    },
+    {
+      label: (row: any) => row?.is_active ? 'Deactivate' : 'Activate',
+      icon: (row: any) => row?.is_active ? 'pi pi-ban' : 'pi pi-play-circle',
+      styleClass: 'text-indigo-500',
+      command: (row) => this.toggleCircularFlag(row, 'is_active')
+    },
+    {
       label: 'Delete',
       icon: 'pi pi-trash',
       styleClass: 'text-red-500',
@@ -955,6 +967,44 @@ export class CircularsComponent implements OnInit, OnDestroy {
   };
 
   constructor(private api: ComplianceApiService, private http: HttpClient, private router: Router, private confirmationService: ConfirmationService, private messageService: MessageService, private route: ActivatedRoute) { }
+
+  toggleCircularFlag(row: any, field: 'is_applicable' | 'is_active') {
+    const newValue = !row[field];
+    const fieldLabel = field === 'is_applicable' ? 'Applicable' : 'Active';
+    const action = newValue ? 'enabled' : 'disabled';
+    const icon = field === 'is_applicable'
+      ? (newValue ? 'pi-check-circle' : 'pi-times-circle')
+      : (newValue ? 'pi-play-circle' : 'pi-ban');
+
+    // Optimistically update the row in local state
+    this.circulars.update(list =>
+      list.map(c => c.id === row.id ? { ...c, [field]: newValue } : c)
+    );
+
+    this.api.updateCircular(row.id, { [field]: newValue }).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: newValue ? 'success' : 'warn',
+          summary: `Circular ${fieldLabel} ${newValue ? 'Enabled' : 'Disabled'}`,
+          detail: `"${row.title}" is now marked as ${fieldLabel} = ${newValue ? 'Yes' : 'No'}.`,
+          life: 3500
+        });
+      },
+      error: (err) => {
+        // Revert on failure
+        this.circulars.update(list =>
+          list.map(c => c.id === row.id ? { ...c, [field]: !newValue } : c)
+        );
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Update Failed',
+          detail: `Could not update ${fieldLabel} status. Please try again.`,
+          life: 4000
+        });
+        console.error(err);
+      }
+    });
+  }
 
   ngOnInit() {
     this.route.queryParams.subscribe(params => {

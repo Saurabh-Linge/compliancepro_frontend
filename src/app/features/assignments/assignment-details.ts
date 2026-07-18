@@ -63,7 +63,7 @@ import { TooltipModule } from 'primeng/tooltip';
             <span class="px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider"
                   [ngClass]="{
                     'bg-yellow-100 text-yellow-800': assignmentStatus() === 'Pending_Timeline' || assignmentStatus() === 'Timeline_Review',
-                    'bg-indigo-100 text-indigo-800': assignmentStatus() === 'In_Progress',
+                    'bg-indigo-100 text-indigo-800': assignmentStatus() === 'In_Progress' || assignmentStatus() === 'PENDING_RECOMPLIANCE',
                     'bg-orange-100 text-orange-800': assignmentStatus() === 'REVIEW_PENDING' || assignmentStatus() === 'ESCALATED_TO_CCO',
                     'bg-green-100 text-green-800': assignmentStatus() === 'COMPLETED',
                     'bg-red-100 text-red-800': assignmentStatus() === 'REJECTED'

@@ -58,6 +58,7 @@ export class CardListComponent {
     { label: 'Completed',         value: 'COMPLETED' },
     { label: 'Escalated to CCO',  value: 'ESCALATED_TO_CCO' },
     { label: 'Rejected',          value: 'REJECTED' },
+    { label: 'Pending Recompliance', value: 'PENDING_RECOMPLIANCE' },
   ];
 
   trackById(index: number, item: any): any {
