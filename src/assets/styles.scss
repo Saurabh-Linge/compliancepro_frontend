@@ -535,27 +535,7 @@ body {
   animation: fadeIn 0.4s ease-out forwards;
 }
 
-/* Fix for PrimeNG overlay mask blocking clicks during exit animation */
-.p-component-overlay-leave, 
-.p-component-overlay-leave-active,
-.p-dialog-mask-leave, 
-.p-drawer-mask-leave, 
-.p-drawer-mask-leave-active,
-.p-sidebar-mask-leave {
-  pointer-events: none !important;
-  animation-duration: 0.01s !important;
-  transition-duration: 0.01s !important;
-  opacity: 0 !important;
-  display: none !important;
-}
 
-/* Also speed up the actual drawer sliding out so it disappears instantly */
-.p-drawer-leave-active,
-.p-drawer-leave-to {
-  animation-duration: 0.01s !important;
-  transition-duration: 0.01s !important;
-  display: none !important;
-}
 
 /* Force a clear vertical separation line between sidebar (shell) and the main content area */
 .layout-sidebar {

@@ -140,6 +140,7 @@ import { MessageService } from 'primeng/api';
         [dismissible]="true"
         [showCloseIcon]="false"
         styleClass="task-drawer"
+        appendTo="body"
       >
         <ng-template pTemplate="header">
           <div class="drawer-header-row">
@@ -273,6 +274,7 @@ import { MessageService } from 'primeng/api';
         [dismissible]="true"
         [showCloseIcon]="false"
         styleClass="task-drawer"
+        appendTo="body"
       >
         <ng-template pTemplate="header">
           <div class="drawer-header-row">
@@ -422,6 +424,7 @@ import { MessageService } from 'primeng/api';
         [dismissible]="true"
         [showCloseIcon]="false"
         styleClass="task-drawer"
+        appendTo="body"
       >
         <ng-template pTemplate="header">
           <div class="drawer-header-row">

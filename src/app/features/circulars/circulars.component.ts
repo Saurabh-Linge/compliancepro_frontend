@@ -98,6 +98,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
       [dismissible]="true"
       [showCloseIcon]="false"
       styleClass="circular-drawer"
+      appendTo="body"
     >
       <ng-template pTemplate="header">
         <div class="drawer-header-row">
@@ -332,6 +333,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
       [dismissible]="true"
       [showCloseIcon]="false"
       styleClass="chat-drawer"
+      appendTo="body"
     >
       <ng-template pTemplate="header">
         <div class="drawer-header-row">
@@ -399,6 +401,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
       [dismissible]="true"
       [showCloseIcon]="false"
       styleClass="circular-drawer"
+      appendTo="body"
     >
       <ng-template pTemplate="header">
         <div class="drawer-header-row">

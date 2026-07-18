@@ -36,6 +36,7 @@ import { ButtonModule } from 'primeng/button';
         [dismissible]="true"
         [showCloseIcon]="false"
         styleClass="drawer-layout"
+        appendTo="body"
       >
         <ng-template pTemplate="header">
           <div class="drawer-header-row">

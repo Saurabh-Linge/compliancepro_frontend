@@ -49,7 +49,7 @@
   </div>
 
 <!-- Task Set Form Drawer -->
-<p-drawer [(visible)]="showFormDrawer" position="right" [style]="{ width: '55rem', maxWidth: '95vw' }" [header]="isEditMode ? 'Edit Task Set' : 'New Task Set'">
+<p-drawer [(visible)]="showFormDrawer" position="right" [style]="{ width: '55rem', maxWidth: '95vw' }" [header]="isEditMode ? 'Edit Task Set' : 'New Task Set'" appendTo="body" [modal]="true">
   <div class="flex flex-column h-full overflow-hidden">
     
     <!-- Main Scrollable Area -->

@@ -1,6 +1,6 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter, withEnabledBlockingInitialNavigation, withInMemoryScrolling, withPreloading, PreloadAllModules, withHashLocation } from '@angular/router';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async'
+import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import Aura from '@primeuix/themes/aura';
 import { routes } from './app.routes';
@@ -40,7 +40,7 @@ export const appConfig: ApplicationConfig = {
       withEnabledBlockingInitialNavigation(),
       withPreloading(PreloadAllModules)
     ),
-    provideAnimationsAsync(),
+    provideAnimations(),
     providePrimeNG({ theme: { preset: Aura, options: { darkModeSelector: '.app-dark' } } }),
     { provide: APP_CONFIG, useValue: config },
     MessageService,       // Global MessageService for toast notifications
