@@ -1,122 +1,124 @@
-<app-page [title]="definition()?.title || 'Report'" [subtitle]="definition()?.category || 'Reports'" icon="pi pi-file">
-  <div actions class="header-right no-print">
-    <button pButton type="button" icon="pi pi-arrow-left" label="Back to Reports" severity="secondary" outlined (click)="goBack()"></button>
-  </div>
-
-  <div class="report-viewer h-full">
-    <!-- Filter Panel (Hidden on Print) -->
-    <div class="filter-panel no-print bg-gray-50 border-round p-3 mb-4 flex flex-wrap align-items-end gap-3" *ngIf="definition() && definition()!.filters.length > 0">
-      <ng-container *ngFor="let filter of definition()?.filters">
-        <div class="field flex flex-column gap-1" *ngIf="showFilter(filter)">
-          <label class="font-semibold text-sm text-gray-700">{{ filter.label }}</label>
-          
-          <!-- Select Dropdown -->
-          <select *ngIf="filter.type === 'select'" [(ngModel)]="filters()[filter.key]" class="p-2 border-1 border-300 border-round bg-white text-sm" style="min-width: 14rem;">
-            <option *ngFor="let option of filter.options" [value]="option.value">
-              {{ option.label }}
-            </option>
-          </select>
-
-          <!-- Date Input -->
-          <input *ngIf="filter.type === 'date'" type="date" [(ngModel)]="filters()[filter.key]" class="p-2 border-1 border-300 border-round text-sm" />
-
-          <!-- Text Input -->
-          <input *ngIf="filter.type === 'text'" type="text" [(ngModel)]="filters()[filter.key]" class="p-2 border-1 border-300 border-round text-sm" />
-        </div>
-      </ng-container>
-
-      <!-- Filter Actions -->
-      <div class="filter-actions flex gap-2">
-        <button pButton type="button" icon="pi pi-search" label="Find Data" [loading]="loading()" (click)="findReport()"></button>
-        <button pButton type="button" icon="pi pi-filter" label="Apply Filter" severity="success" *ngIf="reportSlug() === 'compliance-status-report' && initialDataLoaded()" [loading]="loading()" (click)="applyFilter()"></button>
-        <button pButton type="button" icon="pi pi-refresh" label="Reset" severity="secondary" outlined (click)="reset()"></button>
-        <button pButton type="button" icon="pi pi-print" label="Print" severity="secondary" outlined [disabled]="rows().length === 0" (click)="print()"></button>
-        <button pButton type="button" icon="pi pi-file-excel" label="Excel" severity="success" outlined [disabled]="rows().length === 0" (click)="exportExcel()"></button>
-      </div>
+<div class="report-viewer">
+  <!-- Title, Category and Actions Header (Hidden on Print) -->
+  <header class="report-titlebar no-print">
+    <div>
+      <span>{{ definition()?.category || 'Reports' }}</span>
+      <h1>{{ definition()?.title || 'Report' }}</h1>
     </div>
+    <button pButton type="button" icon="pi pi-arrow-left" label="Reports" severity="secondary" outlined (click)="goBack()"></button>
+  </header>
 
-    <!-- Table Empty / Loading Actions (Hidden on Print) -->
-    <div class="no-print mb-4 flex gap-2" *ngIf="definition() && definition()!.filters.length === 0">
+  <!-- Filter Panel (Hidden on Print) -->
+  <div class="filter-panel no-print" *ngIf="definition() && definition()!.filters.length > 0">
+    <ng-container *ngFor="let filter of definition()?.filters">
+      <div class="field" *ngIf="showFilter(filter)">
+        <label>{{ filter.label }}</label>
+        
+        <!-- Select Dropdown -->
+        <select *ngIf="filter.type === 'select'" [(ngModel)]="filters()[filter.key]">
+          <option *ngFor="let option of filter.options" [value]="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+
+        <!-- Date Input -->
+        <input *ngIf="filter.type === 'date'" type="date" [(ngModel)]="filters()[filter.key]" />
+
+        <!-- Text Input -->
+        <input *ngIf="filter.type === 'text'" type="text" [(ngModel)]="filters()[filter.key]" />
+      </div>
+    </ng-container>
+
+    <!-- Filter Actions -->
+    <div class="filter-actions">
+      <button pButton type="button" icon="pi pi-search" label="Find" [loading]="loading()" (click)="findReport()"></button>
+      <button pButton type="button" icon="pi pi-filter" label="Apply Filter" severity="success" *ngIf="reportSlug() === 'compliance-status-report' && initialDataLoaded()" [loading]="loading()" (click)="applyFilter()"></button>
+      <button pButton type="button" icon="pi pi-refresh" label="Reset" severity="secondary" outlined (click)="reset()"></button>
       <button pButton type="button" icon="pi pi-print" label="Print" severity="secondary" outlined [disabled]="rows().length === 0" (click)="print()"></button>
       <button pButton type="button" icon="pi pi-file-excel" label="Excel" severity="success" outlined [disabled]="rows().length === 0" (click)="exportExcel()"></button>
     </div>
+  </div>
 
-    <!-- Error / Alert Message -->
-    <div *ngIf="error()" class="p-message p-message-error mb-4">
-      <div class="p-message-wrapper p-3 bg-red-50 border-round text-red-700 border-left-3 border-red-500">
-        <span class="p-message-icon pi pi-times-circle mr-2"></span>
-        <span class="p-message-text">{{ error() }}</span>
-      </div>
-    </div>
-
-    <!-- Official Print layout wrapper -->
-    <div class="official-report-sheet" *ngIf="definition() && rows().length > 0">
-      
-      <!-- Official Print Header (Visible only when printing) -->
-      <div class="official-report-header print-only">
-        <div class="official-report-brand-row">
-          <div class="official-report-logo">
-            <span style="color: #ffffff; font-weight: 800; font-size: 1.15rem; line-height: 12mm; padding-left: 10px; display: block; text-transform: uppercase; letter-spacing: 0.5px;">CompliancePro</span>
-          </div>
-          <div class="official-report-bank">
-            <p><strong>Report Date:</strong> {{ reportRunDate() }}</p>
-            <p><strong>Bank:</strong> {{ definition()?.brand?.bankName || 'Kredpool Solutions Pvt Ltd.' }}</p>
-          </div>
-        </div>
-        <div class="official-report-meta">
-          <p><strong>Report:</strong> {{ definition()?.title }}</p>
-          <p><strong>Report Run Date:</strong> {{ reportRunDate() }}</p>
-        </div>
-      </div>
-
-      <!-- Official Report Data Table -->
-      <div class="official-report-table-wrap">
-        <table class="official-report-table">
-          <thead>
-            <tr>
-              <th *ngFor="let col of definition()?.columns" 
-                  [style.width]="col.width || null"
-                  [class.text-center]="col.align === 'center'"
-                  [class.text-right]="col.align === 'right'">
-                {{ col.label }}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let row of rows(); let idx = index">
-              <td *ngFor="let col of definition()?.columns"
-                  [class.text-center]="col.align === 'center'"
-                  [class.text-right]="col.align === 'right'">
-                
-                <ng-container [ngSwitch]="col.type">
-                  <!-- Status Badge -->
-                  <ng-container *ngSwitchCase="'status'">
-                    <p-tag [value]="row[col.key]" [severity]="statusSeverity(row, col)" styleClass="text-xs font-bold px-2 py-1"></p-tag>
-                  </ng-container>
-                  
-                  <!-- Default Column -->
-                  <ng-container *ngSwitchDefault>
-                    {{ row[col.key] ?? '-' }}
-                  </ng-container>
-                </ng-container>
-
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-    </div>
-
-    <!-- Empty State -->
-    <div class="flex flex-column align-items-center justify-content-center py-6 text-gray-500" *ngIf="!loading() && rows().length === 0">
-      <i class="pi pi-filter-slash text-4xl mb-3 text-400"></i>
-      <span class="font-medium text-lg">No records found. Adjust filters and try again.</span>
-    </div>
-
-    <!-- Loading State -->
-    <div class="flex align-items-center justify-content-center py-8 text-primary font-semibold text-lg" *ngIf="loading()">
-      <i class="pi pi-spin pi-spinner mr-2 text-2xl"></i> Retrieving report dataset...
+  <!-- Table Empty / Loading Actions (Hidden on Print) -->
+  <div class="filter-panel no-print" *ngIf="definition() && definition()!.filters.length === 0">
+    <div class="filter-actions">
+      <button pButton type="button" icon="pi pi-print" label="Print" severity="secondary" outlined [disabled]="rows().length === 0" (click)="print()"></button>
+      <button pButton type="button" icon="pi pi-file-excel" label="Excel" severity="success" outlined [disabled]="rows().length === 0" (click)="exportExcel()"></button>
     </div>
   </div>
-</app-page>
+
+  <!-- Error / Alert Message -->
+  <div *ngIf="error()" class="report-alert no-print">
+    {{ error() }}
+  </div>
+
+  <!-- Official Print layout wrapper -->
+  <div class="official-report-sheet" *ngIf="definition() && rows().length > 0">
+    
+    <!-- Official Print Header (Visible only when printing) -->
+    <div class="official-report-header print-only">
+      <div class="official-report-brand-row">
+        <div class="official-report-logo">
+          <span style="color: #ffffff; font-weight: 800; font-size: 1.15rem; line-height: 12mm; padding-left: 10px; display: block; text-transform: uppercase; letter-spacing: 0.5px;">CompliancePro</span>
+        </div>
+        <div class="official-report-bank">
+          <p><strong>Report Date:</strong> {{ reportRunDate() }}</p>
+          <p><strong>Bank:</strong> {{ definition()?.brand?.bankName || 'Kredpool Solutions Pvt Ltd.' }}</p>
+        </div>
+      </div>
+      <div class="official-report-meta">
+        <p><strong>Report:</strong> {{ definition()?.title }}</p>
+        <p><strong>Report Run Date:</strong> {{ reportRunDate() }}</p>
+      </div>
+    </div>
+
+    <!-- Official Report Data Table -->
+    <div class="official-report-table-wrap">
+      <table class="official-report-table">
+        <thead>
+          <tr>
+            <th *ngFor="let col of definition()?.columns" 
+                [style.width]="col.width || null"
+                [class.text-center]="col.align === 'center'"
+                [class.text-right]="col.align === 'right'">
+              {{ col.label }}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of rows(); let idx = index">
+            <td *ngFor="let col of definition()?.columns"
+                [class.text-center]="col.align === 'center'"
+                [class.text-right]="col.align === 'right'">
+              
+              <ng-container [ngSwitch]="col.type">
+                <!-- Status Badge -->
+                <ng-container *ngSwitchCase="'status'">
+                  <p-tag [value]="row[col.key]" [severity]="statusSeverity(row, col)" styleClass="text-xs font-bold px-2 py-1"></p-tag>
+                </ng-container>
+                
+                <!-- Default Column -->
+                <ng-container *ngSwitchDefault>
+                  {{ row[col.key] ?? '-' }}
+                </ng-container>
+              </ng-container>
+
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state no-print" *ngIf="!loading() && rows().length === 0">
+    <i class="pi pi-filter-slash text-4xl mb-3 text-400 block" style="margin: 0 auto; text-align: center;"></i>
+    <span class="font-medium text-lg block" style="text-align: center;">No records found. Adjust filters and try again.</span>
+  </div>
+
+  <!-- Loading State -->
+  <div class="empty-state no-print" *ngIf="loading()">
+    <i class="pi pi-spin pi-spinner mr-2 text-2xl"></i> Retrieving report dataset...
+  </div>
+</div>

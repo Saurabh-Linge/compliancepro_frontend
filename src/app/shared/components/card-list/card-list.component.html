@@ -1,0 +1,116 @@
+<!-- Search & Filter Controls (Hidden on Print) -->
+<div class="flex flex-wrap align-items-center justify-content-between gap-3 mb-4 no-print" *ngIf="showSearch() || showStatusFilter() || showRefreshButton()">
+  <div class="flex flex-wrap align-items-center gap-3 flex-grow-1 sm:flex-grow-0">
+    <!-- Search Box -->
+    <p-iconfield iconPosition="left" class="w-full sm:w-20rem" *ngIf="showSearch()">
+      <p-inputicon styleClass="pi pi-search" />
+      <input
+        pInputText
+        type="text"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="onSearchChange($event)"
+        placeholder="Search..."
+        class="w-full h-2.5rem"
+      />
+    </p-iconfield>
+
+    <!-- Status Dropdown -->
+    <p-select
+      *ngIf="showStatusFilter()"
+      [options]="statusFilterOptions"
+      [ngModel]="selectedStatusFilter()"
+      (ngModelChange)="onStatusFilterChange($event)"
+      placeholder="Filter by Status"
+      [showClear]="true"
+      optionLabel="label"
+      optionValue="value"
+      class="w-full sm:w-16rem"
+      styleClass="h-2.5rem flex align-items-center"
+    ></p-select>
+  </div>
+  
+  <!-- Refresh Button -->
+  <button
+    *ngIf="showRefreshButton()"
+    pButton
+    pRipple
+    icon="pi pi-refresh"
+    class="p-button-secondary p-button-outlined h-2.5rem ml-auto sm:ml-0"
+    (click)="onRefreshClick()"
+    pTooltip="Refresh Data"
+    tooltipPosition="bottom"
+  ></button>
+</div>
+
+<!-- Cards Grid -->
+<div class="workflow-grid mb-4" *ngIf="data().length > 0; else emptyState">
+  <div class="workflow-card" *ngFor="let item of data(); trackBy: trackById">
+    <!-- Card Header -->
+    <div class="workflow-card-header">
+      <span class="workflow-card-title">{{ item.task_set_name || item.name }}</span>
+      <span [class]="getBadgeClass(item.status)">{{ getStatusLabel(item.status) }}</span>
+    </div>
+
+    <!-- Card Body -->
+    <div class="workflow-card-body">
+      <div class="metadata-grid">
+        <div class="metadata-item" *ngIf="item.branch_name">
+          <span class="metadata-label">Branch</span>
+          <div class="meta-value-wrap">
+            <i class="pi pi-building"></i>
+            <span class="metadata-value">{{ item.branch_name }}</span>
+          </div>
+        </div>
+        <div class="metadata-item" *ngIf="item.created_at">
+          <span class="metadata-label">Assigned On</span>
+          <div class="meta-value-wrap">
+            <i class="pi pi-calendar-plus"></i>
+            <span class="metadata-value">{{ item.created_at | date:'mediumDate' }}</span>
+          </div>
+        </div>
+        <div class="metadata-item">
+          <span class="metadata-label">Due Date</span>
+          <div class="meta-value-wrap">
+            <i class="pi pi-clock"></i>
+            <span class="metadata-value">{{ item.proposed_timeline ? (item.proposed_timeline | date:'mediumDate') : (item.default_due_date ? (item.default_due_date | date:'mediumDate') : 'Pending') }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card Footer (Actions) -->
+    <div class="workflow-card-footer" *ngIf="hasVisibleActions(item)">
+      <ng-container *ngFor="let action of actions()">
+        <button
+          *ngIf="action.visible === undefined || action.visible(item)"
+          pButton
+          pRipple
+          [icon]="action.icon"
+          [label]="action.label"
+          [class]="'p-button-sm ' + (action.styleClass || 'p-button-outlined')"
+          [disabled]="action.disabled ? action.disabled(item) : false"
+          (click)="action.command(item); $event.stopPropagation()"
+        ></button>
+      </ng-container>
+    </div>
+  </div>
+</div>
+
+<!-- Empty State Template -->
+<ng-template #emptyState>
+  <div class="flex flex-column align-items-center justify-content-center py-6 text-gray-500 card border-1 border-300">
+    <i class="pi pi-filter-slash text-4xl mb-3 text-400"></i>
+    <span class="font-medium text-lg">No records found.</span>
+  </div>
+</ng-template>
+
+<!-- Paginator -->
+<p-paginator
+  *ngIf="paginator() && data().length > 0"
+  [first]="first()"
+  [rows]="rows()"
+  [totalRecords]="totalRecords()"
+  [rowsPerPageOptions]="[10, 20, 50]"
+  (onPageChange)="onPageChangeClick($event)"
+  styleClass="border-none bg-transparent mt-3"
+></p-paginator>

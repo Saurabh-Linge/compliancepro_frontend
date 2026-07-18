@@ -16,78 +16,71 @@ import { TooltipModule } from 'primeng/tooltip';
   imports: [CommonModule, FormsModule, ButtonModule, SelectModule, Textarea, TagModule, TooltipModule],
   styleUrls: ['../../shared/styles/checklist-shared.css'],
   template: `
-    <!-- Scrollable Page Wrapper -->
-    <div style="height: calc(100vh - 70px); overflow-y: auto; padding: 1rem; box-sizing: border-box;">
+    <!-- Compact Premium Dashboard Header -->
+    <div class="glass-panel mb-4 p-3 bg-white border border-gray-100 rounded-xl shadow-sm flex flex-wrap justify-between items-center gap-4" 
+         style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem;">
       
-      <!-- Back navigation link -->
-      <div class="mb-2">
-        <p-button (click)="goBack()" label="Back to Assignments" icon="pi pi-arrow-left"
-                  [text]="true" severity="secondary" size="small" />
-      </div>
-      
-      <!-- Compact Premium Dashboard Header -->
-      <div class="glass-panel mb-4 p-3 bg-white border border-gray-100 rounded-xl shadow-sm flex flex-wrap justify-between items-center gap-4" 
-           style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem;">
-        
-        <!-- Left: Scope & Period -->
-        <div class="flex-column gap-1" style="flex: 1.2; min-width: 250px;">
-          <div class="flex items-center gap-2" style="display: flex; align-items: center; gap: 0.5rem;">
-            <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded uppercase tracking-wider">
-              {{ branchName() }}
-            </span>
-            <span class="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded uppercase">
-              Freq: {{ frequency() || 'ONCE' }}
-            </span>
-          </div>
-          <h1 class="text-lg font-bold text-gray-900 m-0 mt-1" style="margin-top: 0.15rem;">{{ taskSetName() }}</h1>
-          <span class="text-xs text-gray-500 font-medium" *ngIf="startDate() && endDate()">
-            Period: {{ startDate() | date:'dd-MM-yyyy' }} to {{ endDate() | date:'dd-MM-yyyy' }}
+      <!-- Left: Scope & Period -->
+      <div class="flex-column gap-1" style="flex: 1.2; min-width: 250px;">
+        <div class="flex items-center gap-2" style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded uppercase tracking-wider">
+            {{ branchName() }}
+          </span>
+          <span class="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded uppercase">
+            Freq: {{ frequency() || 'ONCE' }}
           </span>
         </div>
-
-        <!-- Middle: Circular Ref & Due Date -->
-        <div class="flex-column gap-1" style="flex: 1.5; min-width: 280px; border-left: 1px solid #f3f4f6; padding-left: 1rem;">
-          <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block" style="font-size: 0.65rem;">Circular Details</span>
-          <p class="text-xs font-bold text-gray-700 m-0 truncate max-w-md" [title]="circularTitle()">
-            {{ circularTitle() }}
-          </p>
-          <div class="flex items-center gap-2 mt-1" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.15rem;">
-            <span class="text-xs font-semibold text-gray-600 bg-gray-50 border px-2 py-0.5 rounded" style="font-size: 0.7rem;">
-              Ref: {{ circularReferenceNo() || 'N/A' }}
-            </span>
-            <span class="text-xs font-semibold text-gray-600 bg-gray-50 border px-2 py-0.5 rounded" style="font-size: 0.7rem;">
-              Auth: {{ authorityName() || 'N/A' }}
-            </span>
-            <span class="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded flex items-center gap-1" style="font-size: 0.7rem;">
-              <i class="pi pi-calendar-times"></i> Due: {{ proposedTimeline() | date:'dd-MM-yyyy' }}
-            </span>
-          </div>
-        </div>
-
-        <!-- Right: Progress & Status -->
-        <div class="flex items-center gap-4" style="display: flex; align-items: center; gap: 1rem; min-width: 250px; border-left: 1px solid #f3f4f6; padding-left: 1rem;">
-          <div class="flex-column items-end" style="display: flex; flex-direction: column; align-items: flex-end; flex: 1;">
-            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-0.5" style="font-size: 0.65rem;">Status & Progress</span>
-            <div class="flex items-center gap-2" style="display: flex; align-items: center; gap: 0.5rem;">
-              <span class="px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider"
-                    [ngClass]="{
-                      'bg-yellow-100 text-yellow-800': assignmentStatus() === 'Pending_Timeline' || assignmentStatus() === 'Timeline_Review',
-                      'bg-indigo-100 text-indigo-800': assignmentStatus() === 'In_Progress',
-                      'bg-orange-100 text-orange-800': assignmentStatus() === 'REVIEW_PENDING' || assignmentStatus() === 'ESCALATED_TO_CCO',
-                      'bg-green-100 text-green-800': assignmentStatus() === 'COMPLETED',
-                      'bg-red-100 text-red-800': assignmentStatus() === 'REJECTED'
-                    }" style="font-size: 0.7rem; padding: 0.15rem 0.5rem;">
-                {{ assignmentStatus() }}
-              </span>
-              <span class="text-xs font-bold text-indigo-600">{{ completedCount() }}/{{ tasks().length }} Done</span>
-            </div>
-            <div class="w-24 bg-gray-100 rounded-full h-1 overflow-hidden mt-1" style="width: 5rem; margin-top: 0.25rem;">
-              <div class="bg-indigo-600 h-1 rounded-full transition-all duration-300" [style.width.%]="progressPercentage()"></div>
-            </div>
-          </div>
-        </div>
-
+        <h1 class="text-lg font-bold text-gray-900 m-0 mt-1" style="margin-top: 0.15rem;">{{ taskSetName() }}</h1>
+        <span class="text-xs text-gray-500 font-medium" *ngIf="startDate() && endDate()">
+          Period: {{ startDate() | date:'dd-MM-yyyy' }} to {{ endDate() | date:'dd-MM-yyyy' }}
+        </span>
       </div>
+
+      <!-- Middle: Circular Ref & Due Date -->
+      <div class="flex-column gap-1" style="flex: 1.5; min-width: 280px; border-left: 1px solid #f3f4f6; padding-left: 1rem;">
+        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block" style="font-size: 0.65rem;">Circular Details</span>
+        <p class="text-xs font-bold text-gray-700 m-0 truncate max-w-md" [title]="circularTitle()">
+          {{ circularTitle() }}
+        </p>
+        <div class="flex items-center gap-2 mt-1" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.15rem;">
+          <span class="text-xs font-semibold text-gray-600 bg-gray-50 border px-2 py-0.5 rounded" style="font-size: 0.7rem;">
+            Ref: {{ circularReferenceNo() || 'N/A' }}
+          </span>
+          <span class="text-xs font-semibold text-gray-600 bg-gray-50 border px-2 py-0.5 rounded" style="font-size: 0.7rem;">
+            Auth: {{ authorityName() || 'N/A' }}
+          </span>
+          <span class="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded flex items-center gap-1" style="font-size: 0.7rem;">
+            <i class="pi pi-calendar-times"></i> Due: {{ proposedTimeline() | date:'dd-MM-yyyy' }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Right: Progress, Status & Back Button -->
+      <div class="flex items-center justify-content-between gap-4" style="display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; min-width: 320px; border-left: 1px solid #f3f4f6; padding-left: 1.5rem; flex: 1.2;">
+        <div class="flex-column items-start" style="display: flex; flex-direction: column; align-items: flex-start; flex: 1;">
+          <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-0.5" style="font-size: 0.65rem;">Status & Progress</span>
+          <div class="flex items-center gap-2" style="display: flex; align-items: center; gap: 0.5rem;">
+            <span class="px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider"
+                  [ngClass]="{
+                    'bg-yellow-100 text-yellow-800': assignmentStatus() === 'Pending_Timeline' || assignmentStatus() === 'Timeline_Review',
+                    'bg-indigo-100 text-indigo-800': assignmentStatus() === 'In_Progress',
+                    'bg-orange-100 text-orange-800': assignmentStatus() === 'REVIEW_PENDING' || assignmentStatus() === 'ESCALATED_TO_CCO',
+                    'bg-green-100 text-green-800': assignmentStatus() === 'COMPLETED',
+                    'bg-red-100 text-red-800': assignmentStatus() === 'REJECTED'
+                  }" style="font-size: 0.7rem; padding: 0.15rem 0.5rem;">
+              {{ assignmentStatus() }}
+            </span>
+            <span class="text-xs font-bold text-indigo-600">{{ completedCount() }}/{{ tasks().length }} Done</span>
+          </div>
+          <div class="w-24 bg-gray-100 rounded-full h-1 overflow-hidden mt-1" style="width: 5rem; margin-top: 0.25rem;">
+            <div class="bg-indigo-600 h-1 rounded-full transition-all duration-300" [style.width.%]="progressPercentage()"></div>
+          </div>
+        </div>
+        
+        <button pButton type="button" icon="pi pi-arrow-left" label="Back" severity="secondary" outlined size="small" class="p-button-sm no-print" (click)="goBack()"></button>
+      </div>
+
+    </div>
 
       <!-- Rejection Alert Banner -->
       <div *ngIf="assignmentStatus() === 'REJECTED'" class="p-3 mb-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg shadow-sm">
@@ -222,7 +215,7 @@ import { TooltipModule } from 'primeng/tooltip';
                               [(ngModel)]="t.temp_remarks"
                               [disabled]="!canEditAssignment()"
                               class="answer-control"
-                              style="flex: 1; resize: none; min-height: 6rem;"
+                              style="flex: 1; resize: none; min-height: 3.8rem; height: 3.8rem;"
                               placeholder="Add compliance remarks or explanation..."></textarea>
                   </div>
 
@@ -250,7 +243,6 @@ import { TooltipModule } from 'primeng/tooltip';
       </div>
       
       <div style="height: 4rem;"></div> <!-- bottom padding spacing -->
-    </div>
   `,
 })
 export class AssignmentDetailsComponent implements OnInit {

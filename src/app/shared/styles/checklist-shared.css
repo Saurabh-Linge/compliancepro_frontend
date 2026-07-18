@@ -100,17 +100,24 @@
   padding: 0.1rem 0.5rem; border-radius: 999px;
 }
 
-/* ── Question Card (the main checklist row) ── */
+/* ── Question Card (the main checklist card) ── */
 .question-card {
   display: grid;
-  grid-template-columns: minmax(18rem, 1.1fr) minmax(22rem, 0.9fr);
+  grid-template-columns: minmax(18rem, 1.25fr) minmax(22rem, 0.75fr);
   background: white;
-  border: 1px solid #e5e7eb;
-  border-left: 4px solid #d1d5db;
-  margin-bottom: 2px;
-  transition: border-left-color 0.2s, background 0.2s;
+  border: 1px solid #e2e8f0;
+  border-left: 5px solid #d1d5db;
+  border-radius: 12px !important;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.question-card:last-child { border-radius: 0 0 8px 8px; }
+
+.question-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+  border-color: #cbd5e1;
+}
 
 /* Left border status colours — shared by branch + review */
 .border-left-green,
@@ -123,36 +130,71 @@
 
 /* ── Left Column: Serial number + task description ── */
 .question-main {
-  display: flex; align-items: flex-start; gap: 0.75rem;
-  padding: 0.85rem 1rem; border-right: 1px solid #e5e7eb;
+  display: flex; 
+  align-items: flex-start; 
+  gap: 1rem;
+  padding: 1.25rem; 
+  border-right: 1px solid #f1f5f9;
 }
+
 .question-number {
-  min-width: 2rem; min-height: 2rem;
-  background: #4f46e5; color: white;
-  display: flex; align-items: center; justify-content: center;
-  border-radius: 6px; font-size: 0.8rem; font-weight: 800; flex-shrink: 0;
+  min-width: 1.85rem; 
+  min-height: 1.85rem;
+  width: 1.85rem;
+  height: 1.85rem;
+  background: #eef2ff; 
+  color: #4f46e5;
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  border-radius: 50%; 
+  font-size: 0.78rem; 
+  font-weight: 700; 
+  flex-shrink: 0;
+  border: 1px solid #e0e7ff;
 }
+
 .circular-ref-tag {
-  display: block; font-size: 0.65rem; font-weight: 800;
-  color: #9ca3af; text-transform: uppercase;
-  letter-spacing: 0.04em; margin-bottom: 0.2rem;
+  display: block; 
+  font-size: 0.65rem; 
+  font-weight: 850;
+  color: #94a3b8; 
+  text-transform: uppercase;
+  letter-spacing: 0.05em; 
+  margin-bottom: 0.3rem;
 }
+
 .task-description {
-  font-size: 0.88rem; font-weight: 600;
-  color: #1f2937; margin: 0; line-height: 1.45;
+  font-size: 0.92rem; 
+  font-weight: 600;
+  color: #0f172a; // slate-900
+  margin: 0; 
+  line-height: 1.5;
 }
 
 /* ── Right Column: Controls ── */
-.answer-form { padding: 0.85rem 1rem; min-width: 0; }
+.answer-form { 
+  padding: 1.25rem; 
+  min-width: 0; 
+  display: flex;
+  align-items: center;
+}
+
 .answer-form-grid {
   display: grid;
   grid-template-columns: minmax(10rem, 1fr) minmax(11rem, 1.2fr);
-  gap: 0.75rem; align-items: stretch;
+  gap: 1rem; 
+  width: 100%;
+  align-items: stretch;
 }
+
 .answer-field {
-  min-width: 0; display: flex;
-  flex-direction: column; gap: 0.4rem;
+  min-width: 0; 
+  display: flex;
+  flex-direction: column; 
+  gap: 0.5rem;
 }
+
 /* Review-specific column aliases (used in review pages) */
 .branch-answer-col { display: flex; flex-direction: column; gap: 0.4rem; }
 .review-col        { display: flex; flex-direction: column; gap: 0.5rem; }

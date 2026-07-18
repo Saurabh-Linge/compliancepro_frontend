@@ -7,12 +7,11 @@ import { TagModule } from 'primeng/tag';
 import { RippleModule } from 'primeng/ripple';
 import { ReportsService, ReportDefinition, ReportColumnDefinition } from '../services/reports.service';
 import { ExportService } from '../../../core/services/export/export.service';
-import { PageComponent } from '../../../shared/components/page/page.component';
 
 @Component({
     selector: 'app-report-viewer',
     standalone: true,
-    imports: [CommonModule, FormsModule, ButtonModule, TagModule, RippleModule, PageComponent],
+    imports: [CommonModule, FormsModule, ButtonModule, TagModule, RippleModule],
     templateUrl: './report-viewer.component.html',
     styleUrls: ['./report-viewer.component.scss'],
 })

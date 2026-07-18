@@ -5,14 +5,13 @@ import { Router } from '@angular/router';
 
 import { ComplianceApiService } from '../../core/services/api/compliance-api.service';
 import { AuthService } from '../../core/services/auth/auth.service';
-import { TableComponent, TableColumn, TableAction } from '../../shared/components/table/table.component';
-import { PageComponent } from '../../shared/components/page/page.component';
 import { DateFieldComponent } from '../../shared/components/form/date-field/date-field.component';
+import { CardListComponent } from '../../shared/components/card-list/card-list.component';
+import { TableColumn, TableAction } from '../../shared/components/table/table.component';
 
 import { DialogModule } from 'primeng/dialog';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { ButtonModule } from 'primeng/button';
-import { SelectModule } from 'primeng/select';
 
 @Component({
   selector: 'app-assignments',
@@ -20,13 +19,11 @@ import { SelectModule } from 'primeng/select';
   imports: [
     CommonModule, 
     FormsModule, 
-    TableComponent, 
-    PageComponent, 
+    CardListComponent, 
     DialogModule, 
     MultiSelectModule, 
     ButtonModule,
-    DateFieldComponent,
-    SelectModule
+    DateFieldComponent
   ],
   template: `
     <div class="card">
@@ -35,34 +32,21 @@ import { SelectModule } from 'primeng/select';
       </div>
         <!-- ASSIGNMENTS TAB -->
         <div *ngIf="activeTab() === 'ASSIGNMENTS'">
-          <app-table
+          <app-card-list
               [data]="assignments()"
-              [columns]="assignmentColumns"
               [actions]="assignmentActions"
-              [showAddButton]="false"
+              [showSearch]="true"
+              [showStatusFilter]="true"
               [showRefreshButton]="true"
               [paginator]="true"
               [rows]="limit"
-              [lazy]="true"
               [totalRecords]="totalRecords()"
-              (onLazyLoad)="handleLazyLoad($event)"
+              [first]="(page - 1) * limit"
+              (onPageChange)="handlePageChange($event)"
               (onSearch)="handleSearch($event)"
+              (onStatusChange)="onStatusFilterChange($event)"
               (onRefresh)="loadAssignments()"
-          >
-            <div toolbar-actions class="flex align-items-center ml-2">
-              <p-select
-                [options]="statusFilterOptions"
-                [ngModel]="selectedStatusFilter()"
-                (ngModelChange)="onStatusFilterChange($event)"
-                placeholder="Filter by Status"
-                [showClear]="true"
-                optionLabel="label"
-                optionValue="value"
-                class="w-16rem"
-                styleClass="h-2.5rem flex align-items-center animate-fadein"
-              ></p-select>
-            </div>
-          </app-table>
+          ></app-card-list>
         </div>
 
         <!-- TASK SETS TAB REMOVED (Moved to Task Sets Master) -->
@@ -270,6 +254,12 @@ export class AssignmentsComponent implements OnInit {
     if (event.globalFilter !== undefined) {
       this.searchQuery = event.globalFilter;
     }
+    this.loadAssignments();
+  }
+
+  handlePageChange(event: any) {
+    this.page = Math.floor(event.first / event.rows) + 1;
+    this.limit = event.rows;
     this.loadAssignments();
   }
 
