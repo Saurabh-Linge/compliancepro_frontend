@@ -10,8 +10,9 @@ import { DrawerModule } from 'primeng/drawer';
 import { ButtonModule } from 'primeng/button';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { PickListModule } from 'primeng/picklist';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { FieldsetModule } from 'primeng/fieldset';
 import { SelectModule } from 'primeng/select';
 
@@ -36,10 +37,11 @@ import { DateFieldComponent } from '../../shared/components/form/date-field/date
     TextFieldComponent,
     SelectFieldComponent,
     ToastModule,
+    ConfirmDialogModule,
     FieldsetModule,
     SelectModule
   ],
-  providers: [MessageService],
+  providers: [MessageService, ConfirmationService],
   templateUrl: './task-sets.html',
   styles: [`
     ::ng-deep .circular-dropdown-panel {
@@ -256,7 +258,7 @@ export class TaskSetsComponent implements OnInit {
   parentLimit: number | null = null;
   cameFromCirculars = signal<boolean>(false);
 
-  constructor(private api: ComplianceApiService, private messageService: MessageService, private route: ActivatedRoute, private router: Router) { }
+  constructor(private api: ComplianceApiService, private messageService: MessageService, private confirmationService: ConfirmationService, private route: ActivatedRoute, private router: Router) { }
 
   goBackToCirculars() {
     const queryParams: any = {};
@@ -420,20 +422,34 @@ export class TaskSetsComponent implements OnInit {
 
 
   reopenTaskSet(row: any) {
-    if (confirm(`Are you sure you want to reopen "${row.name}" for recompliance? All associated branch assignments will be set back to Pending.`)) {
-      this.api.reopenTaskSet(row.id).subscribe(() => {
-        this.messageService.add({ severity: 'success', summary: 'Success', detail: `Reopened ${row.name} for recompliance` });
-      });
-    }
+    this.confirmationService.confirm({
+      message: `Are you sure you want to reopen "${row.name}" for recompliance? All associated branch assignments will be set back to Pending.`,
+      header: 'Confirm Reopen',
+      icon: 'pi pi-exclamation-triangle',
+      acceptButtonProps: { severity: 'warning', label: 'Reopen' },
+      rejectButtonProps: { severity: 'secondary', label: 'Cancel' },
+      accept: () => {
+        this.api.reopenTaskSet(row.id).subscribe(() => {
+          this.messageService.add({ severity: 'success', summary: 'Success', detail: `Reopened ${row.name} for recompliance` });
+        });
+      }
+    });
   }
 
   deleteTaskSet(row: any) {
-    if (confirm('Are you sure you want to delete this Task Set?')) {
-      this.api.deleteTaskSet(row.id).subscribe(() => {
-        this.loadData();
-        this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Task set deleted' });
-      });
-    }
+    this.confirmationService.confirm({
+      message: `Are you sure you want to delete "${row.name}" Task Set?`,
+      header: 'Confirm Delete',
+      icon: 'pi pi-trash',
+      acceptButtonProps: { severity: 'danger', label: 'Delete' },
+      rejectButtonProps: { severity: 'secondary', label: 'Cancel' },
+      accept: () => {
+        this.api.deleteTaskSet(row.id).subscribe(() => {
+          this.loadData();
+          this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Task set deleted' });
+        });
+      }
+    });
   }
 
   triggerAssignmentGeneration(row: any) {
