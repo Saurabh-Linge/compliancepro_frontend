@@ -145,20 +145,79 @@ interface SearchItem {
 
 
 
-        <p-popover #op [style]="{ width: '400px' }">
-          <div class="p-3">
-            <h3 class="font-bold mb-3 border-b pb-2">Notifications</h3>
-            <div *ngIf="notifications.length === 0" class="text-gray-500 text-sm">No new notifications.</div>
-            <div class="max-h-64 overflow-y-auto">
-              <div *ngFor="let n of notifications" 
-                   class="mb-2 p-2 rounded cursor-pointer transition-colors"
-                   [ngClass]="n.is_read ? 'bg-gray-50 opacity-75' : 'bg-blue-50 border-l-2 border-blue-500'"
-                   (click)="markAsRead(n)">
-                <div class="font-semibold text-sm">{{n.title}}</div>
-                <div class="text-xs text-gray-700 mt-1">{{n.message}}</div>
-                <div class="text-[0.65rem] text-gray-500 mt-1">{{n.created_at | date:'short'}}</div>
+        <p-popover #op [style]="{ width: '380px', padding: '0' }" styleClass="notification-popover-panel">
+          <div class="notification-dropdown-card">
+            
+            <!-- Sticky Header -->
+            <div class="notification-dropdown-header">
+              <div class="flex align-items-center gap-2" style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="font-bold text-base text-900" style="font-weight: 700; font-size: 1rem; color: #111827;">Notifications</span>
+                <span *ngIf="unreadCount() > 0" class="unread-badge">
+                  {{ unreadCount() }} new
+                </span>
               </div>
+              <button 
+                *ngIf="unreadCount() > 0"
+                pButton 
+                type="button" 
+                label="Mark all as read" 
+                class="p-button-text p-button-sm mark-all-btn"
+                (click)="markAllAsRead($event)"
+              ></button>
             </div>
+
+            <!-- Scrollable Content -->
+            <div class="notification-list-container">
+              
+              <!-- Empty State -->
+              <div *ngIf="notifications.length === 0" class="notification-empty-state">
+                <i class="pi pi-bell muted-bell-icon"></i>
+                <p class="empty-title">You're all caught up!</p>
+                <p class="empty-subtitle">No notifications to display at this time.</p>
+              </div>
+
+              <!-- Notifications Loop -->
+              <div 
+                *ngFor="let n of notifications" 
+                class="notification-item-row"
+                [ngClass]="{'unread-item': !n.is_read}"
+                (click)="markAsRead(n)"
+              >
+                <!-- Left Icon Indicator -->
+                <div class="item-icon-wrapper" [class]="getNotificationSeverityClass(n)">
+                  <i [class]="getNotificationIcon(n)"></i>
+                </div>
+
+                <!-- Main Content -->
+                <div class="item-content-body" style="display: flex; flex-direction: column; gap: 0.15rem;">
+                  <div class="item-title-text" [class.text-semibold]="!n.is_read" style="font-size: 0.85rem; color: #111827; font-weight: 700;">
+                    {{ n.title || 'Notification' }}
+                  </div>
+                  <div class="item-message-text" style="font-size: 0.78rem; color: #4b5563; line-height: 1.35;">
+                    {{ n.message }}
+                  </div>
+                  <div class="item-meta-row" style="margin-top: 0.15rem;">
+                    <span class="item-time">{{ getRelativeTime(n.created_at) }}</span>
+                  </div>
+                </div>
+
+                <!-- Unread Indicator Dot -->
+                <div *ngIf="!n.is_read" class="unread-indicator-dot"></div>
+              </div>
+
+            </div>
+
+            <!-- Sticky Footer -->
+            <div class="notification-dropdown-footer">
+              <a 
+                routerLink="/notifications" 
+                (click)="op.hide()" 
+                class="view-all-link"
+              >
+                View All Notifications <i class="pi pi-arrow-right ml-1"></i>
+              </a>
+            </div>
+
           </div>
         </p-popover>
 
@@ -275,6 +334,8 @@ interface SearchItem {
           pointer-events: none;
           z-index: 10;
         }
+
+        /* Old notification styles removed to place globally below */
 
         .layout-topbar-actions .p-button {
           width: 2.25rem;
@@ -396,6 +457,212 @@ interface SearchItem {
         margin: 0 8px;
         align-self: center;
       }
+
+      /* ── Premium Notification Overlay Card Styles (Global overrides for body appends) ── */
+      ::ng-deep .notification-popover-panel {
+        width: 380px !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+        border: 1px solid var(--surface-border) !important;
+        background: var(--surface-card) !important;
+      }
+
+      ::ng-deep .notification-popover-panel .p-popover-content {
+        padding: 0 !important;
+      }
+
+      ::ng-deep .notification-dropdown-card {
+        display: flex;
+        flex-direction: column;
+        background: var(--surface-card);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      ::ng-deep .notification-dropdown-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.85rem 1.25rem;
+        border-bottom: 1px solid var(--surface-border);
+        background: var(--surface-card);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      ::ng-deep .unread-badge {
+        background: rgba(59, 130, 246, 0.1);
+        color: var(--primary-color);
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 0.15rem 0.5rem;
+        border-radius: 9999px;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+      }
+
+      ::ng-deep .mark-all-btn {
+        font-size: 0.78rem !important;
+        font-weight: 600 !important;
+        padding: 0 !important;
+        color: var(--primary-color) !important;
+        height: auto !important;
+        width: auto !important;
+      }
+      ::ng-deep .mark-all-btn:hover {
+        background: transparent !important;
+        text-decoration: underline !important;
+      }
+
+      ::ng-deep .notification-list-container {
+        overflow-y: auto;
+        overflow-x: hidden;
+        max-height: 380px;
+        background: var(--surface-card);
+      }
+
+      /* Modern Custom Scrollbar */
+      ::ng-deep .notification-list-container::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::ng-deep .notification-list-container::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::ng-deep .notification-list-container::-webkit-scrollbar-thumb {
+        background: var(--surface-300);
+        border-radius: 99px;
+      }
+      ::ng-deep .notification-list-container::-webkit-scrollbar-thumb:hover {
+        background: var(--surface-400);
+      }
+
+      ::ng-deep .notification-item-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.85rem;
+        padding: 0.9rem 1.25rem;
+        border-bottom: 1px solid var(--surface-border);
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out;
+        position: relative;
+      }
+      ::ng-deep .notification-item-row:last-child {
+        border-bottom: none;
+      }
+      ::ng-deep .notification-item-row:hover {
+        background-color: var(--surface-hover);
+      }
+      ::ng-deep .notification-item-row.unread-item {
+        background-color: rgba(59, 130, 246, 0.02);
+      }
+
+      ::ng-deep .item-icon-wrapper {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.15rem;
+        height: 2.15rem;
+        border-radius: 8px;
+        flex-shrink: 0;
+      }
+      ::ng-deep .item-icon-wrapper i {
+        font-size: 0.95rem;
+      }
+
+      ::ng-deep .item-content-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        min-width: 0;
+      }
+
+      ::ng-deep .item-message-text {
+        font-size: 0.85rem;
+        color: var(--text-color);
+        line-height: 1.4;
+        word-wrap: break-word;
+      }
+      ::ng-deep .item-message-text.text-semibold {
+        font-weight: 600;
+        color: var(--text-color-900);
+      }
+
+      ::ng-deep .item-meta-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      ::ng-deep .item-time {
+        font-size: 0.72rem;
+        color: var(--text-color-secondary);
+      }
+
+      ::ng-deep .unread-indicator-dot {
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 50%;
+        background-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+        align-self: center;
+        flex-shrink: 0;
+      }
+
+      ::ng-deep .notification-dropdown-footer {
+        border-top: 1px solid var(--surface-border);
+        background: var(--surface-card);
+        padding: 0.75rem 1.25rem;
+        text-align: center;
+        position: sticky;
+        bottom: 0;
+        z-index: 10;
+      }
+
+      ::ng-deep .view-all-link {
+        font-size: 0.825rem;
+        font-weight: 600;
+        color: var(--primary-color);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 0.25rem 0;
+        transition: color 0.2s;
+      }
+      ::ng-deep .view-all-link:hover {
+        color: var(--primary-dark-color);
+        text-decoration: underline;
+      }
+
+      /* Empty State */
+      ::ng-deep .notification-empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem 1.5rem;
+        text-align: center;
+      }
+      ::ng-deep .muted-bell-icon {
+        font-size: 2.25rem;
+        color: var(--text-color-secondary);
+        opacity: 0.5;
+        margin-bottom: 0.75rem;
+      }
+      ::ng-deep .empty-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-color);
+        margin: 0 0 0.25rem 0;
+      }
+      ::ng-deep .empty-subtitle {
+        font-size: 0.78rem;
+        color: var(--text-color-secondary);
+        margin: 0;
+      }
     `,
   ],
 })
@@ -490,7 +757,74 @@ export class AppTopbar implements OnInit, OnDestroy {
     this.http.put(`${this.config.apiUrl}/notifications/${n.id}/read`, {}).subscribe(() => {
       n.is_read = true;
       this.unreadCount.set(this.notifications.filter(x => !x.is_read).length);
+      this.cdr.detectChanges();
     });
+  }
+
+  markAllAsRead(event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.http.put(`${this.config.apiUrl}/notifications/read-all`, {}).subscribe({
+      next: () => {
+        this.notifications.forEach(n => n.is_read = true);
+        this.unreadCount.set(0);
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to mark all as read:', err);
+      }
+    });
+  }
+
+  getNotificationIcon(n: any): string {
+    const title = String(n.title || '').toLowerCase();
+    const msg = String(n.message || '').toLowerCase();
+    if (title.includes('reject') || msg.includes('reject')) {
+      return 'pi pi-times-circle';
+    }
+    if (title.includes('escalat') || msg.includes('escalat')) {
+      return 'pi pi-exclamation-triangle';
+    }
+    if (title.includes('submit') || msg.includes('submit')) {
+      return 'pi pi-check-circle';
+    }
+    return 'pi pi-bell';
+  }
+
+  getNotificationSeverityClass(n: any): string {
+    const title = String(n.title || '').toLowerCase();
+    const msg = String(n.message || '').toLowerCase();
+    if (title.includes('reject') || msg.includes('reject')) {
+      return 'bg-red-50 text-red-600 border border-red-100';
+    }
+    if (title.includes('escalat') || msg.includes('escalat')) {
+      return 'bg-amber-50 text-amber-600 border border-amber-100';
+    }
+    if (title.includes('submit') || msg.includes('submit')) {
+      return 'bg-green-50 text-green-600 border border-green-100';
+    }
+    return 'bg-blue-50 text-blue-600 border border-blue-100';
+  }
+
+  getRelativeTime(dateStr: string): string {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    
+    const diffHours = Math.floor(diffMs / 3600000);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays}d ago`;
+    
+    return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(date);
   }
 
   // Search Methods

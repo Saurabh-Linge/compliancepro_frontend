@@ -28,6 +28,7 @@ export const routes: Routes = [
       { path: 'cco-review', loadComponent: () => import('./features/review/cco-review.component').then(mod => mod.CcoReviewComponent) },
       { path: 'cco-review/:id', loadComponent: () => import('./features/review/cco-review-details.component').then(mod => mod.CcoReviewDetailsComponent) },
       { path: 'task-sets', loadComponent: () => import('./features/task-sets/task-sets').then(mod => mod.TaskSetsComponent) },
+      { path: 'notifications', loadComponent: () => import('./features/notifications/notifications').then(mod => mod.NotificationsComponent) },
       { path: 'admin/authorities', loadComponent: () => import('./features/admin/authorities/authorities').then(mod => mod.Authorities) },
       { path: 'admin/branches', loadComponent: () => import('./features/admin/branches/branches').then(mod => mod.Branches) },
       { path: 'admin/users', loadComponent: () => import('./features/admin/users/users').then(mod => mod.Users) },
