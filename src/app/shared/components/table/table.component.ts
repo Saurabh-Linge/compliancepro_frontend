@@ -21,7 +21,7 @@ export interface TableColumn {
   /** Header label */
   header: string;
   /** Data type for formatting */
-  type?: 'text' | 'number' | 'date' | 'boolean' | 'currency' | 'status' | 'status_inv' | 'badge' | 'action';
+  type?: 'text' | 'number' | 'date' | 'boolean' | 'currency' | 'status' | 'status_inv' | 'badge' | 'action' | 'boolean_action';
   /** Action icon (for action type only) */
   actionIcon?: string;
   /** Action name (default is field name) */
@@ -46,6 +46,13 @@ export interface TableColumn {
   tooltip?: string;
   /** Custom CSS class for the column */
   cssClass?: string;
+  /** Properties for boolean_action type */
+  booleanActionTrueIcon?: string;
+  booleanActionFalseIcon?: string;
+  booleanActionTrueLabel?: string;
+  booleanActionFalseLabel?: string;
+  booleanActionTrueClass?: string;
+  booleanActionFalseClass?: string;
 }
 
 export interface TableAction {
@@ -193,7 +200,7 @@ export class TableComponent implements OnDestroy {
     let count = this.columns().length;
     if (this.showSerialNumber()) count++;
     if (this.actions().length) {
-      count += this.actionDisplayMode() === 'buttons' ? this.actions().length : 1;
+      count++;
     }
     if (this.rowExpansionTemplate) count++;
     return count;

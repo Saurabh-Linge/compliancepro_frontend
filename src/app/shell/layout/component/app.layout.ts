@@ -4,6 +4,7 @@ import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 import { AppTopbar } from './app.topbar';
 import { AppSidebar } from './app.sidebar';
+import { AppFooter } from './app.footer';
 import { LayoutService } from '../service/layout.service';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -11,7 +12,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 @Component({
     selector: 'app-layout',
     standalone: true,
-    imports: [CommonModule, AppTopbar, AppSidebar, RouterModule, ToastModule, ConfirmDialogModule],
+    imports: [CommonModule, AppTopbar, AppSidebar, AppFooter, RouterModule, ToastModule, ConfirmDialogModule],
     template: `<div class="layout-wrapper" [ngClass]="containerClass">
         <app-topbar></app-topbar>
         <app-sidebar></app-sidebar>
@@ -19,6 +20,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
             <div class="layout-main">
                 <router-outlet></router-outlet>
             </div>
+            <app-footer></app-footer>
         </div>
         <div class="layout-mask animate-fadein"></div>
         <p-toast position="top-right"></p-toast>

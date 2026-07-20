@@ -185,8 +185,12 @@ export class ComplianceApiService {
     return this.http.get<PaginatedResponse<ComplianceTask>>(`${this.baseUrl}/tasks`, { params: httpParams });
   }
 
-  getTaskStats() {
-    return this.http.get<{ total: number, pending: number, approved: number }>(`${this.baseUrl}/tasks/stats`);
+  getTaskStats(circularId?: number | null) {
+    let httpParams = new HttpParams();
+    if (circularId !== undefined && circularId !== null) {
+      httpParams = httpParams.set('circular_id', String(circularId));
+    }
+    return this.http.get<{ total: number, pending: number, approved: number }>(`${this.baseUrl}/tasks/stats`, { params: httpParams });
   }
 
   // Backward compatibility methods if still used
@@ -341,6 +345,14 @@ export class ComplianceApiService {
   // Bulk Upload Tasks
   bulkUploadTasks(data: { rows: any[] }) {
     return this.http.post<any>(`${this.baseUrl}/master-bulk-upload/tasks`, data);
+  }
+
+  extractTasksFromText(text: string) {
+    return this.http.post<{ tasks: string[] }>(`${this.baseUrl}/tasks/extract-from-text`, { text });
+  }
+
+  createBulkTasks(circularId: number, tasks: { description: string }[]) {
+    return this.http.post<any>(`${this.baseUrl}/tasks/bulk`, { circular_id: circularId, tasks });
   }
 }
 

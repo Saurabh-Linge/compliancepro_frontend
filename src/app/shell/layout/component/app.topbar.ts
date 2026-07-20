@@ -79,6 +79,7 @@ interface SearchItem {
       </div>
 
       <div class="layout-topbar-actions">
+        <!-- Topbar search field (commented out)
         <div class="topbar-search-wrapper">
           <p-iconField iconPosition="left">
             <p-inputIcon class="pi pi-search" />
@@ -112,6 +113,7 @@ interface SearchItem {
             </p-autoComplete>
           </p-iconField>
         </div>
+        -->
 
         <p-select
           [options]="languages"

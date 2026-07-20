@@ -1,0 +1,327 @@
+:host ::ng-deep .circular-drawer .p-drawer-content,
+:host ::ng-deep .chat-drawer .p-drawer-content {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  background: var(--surface-ground);
+}
+
+:host ::ng-deep .circular-drawer .p-drawer-header,
+:host ::ng-deep .chat-drawer .p-drawer-header {
+  padding: 1.15rem 1.35rem;
+  border-bottom: 1px solid var(--surface-200);
+  background: var(--surface-card);
+}
+
+:host ::ng-deep .circular-drawer .p-drawer-footer,
+:host ::ng-deep .chat-drawer .p-drawer-footer {
+  padding: 0;
+  border-top: 1px solid var(--surface-200);
+  background: var(--surface-card);
+  box-shadow: 0 -8px 22px rgba(15, 23, 42, 0.06);
+}
+
+.drawer-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+}
+
+.drawer-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.drawer-title-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.65rem;
+  height: 2.65rem;
+  border-radius: 8px;
+  color: var(--primary-color);
+  background: var(--primary-50, var(--surface-100));
+  border: 1px solid var(--primary-100, var(--surface-border));
+  flex: 0 0 auto;
+}
+
+.drawer-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 1rem 1.35rem;
+}
+
+.drawer-footer-row button {
+  min-width: 9.5rem;
+}
+
+.drawer-content-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 1rem 1.35rem 1.25rem;
+}
+
+.drawer-section {
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  padding: 1rem 1rem 0.35rem;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.1rem;
+}
+
+.section-kicker {
+  color: var(--text-color);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.section-line {
+  flex: 1;
+  height: 1px;
+  background: var(--surface-border);
+}
+
+.drawer-form-grid {
+  row-gap: 0.65rem;
+}
+
+.drawer-form-grid .field {
+  margin-bottom: 0.85rem;
+}
+
+.date-field-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.date-field-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-color-secondary);
+}
+
+.date-field-wrapper input[type="date"] {
+  height: 2.75rem;
+}
+
+.penalty-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 3rem;
+  padding: 0.65rem 0.85rem;
+  margin-bottom: 0.85rem;
+  background: var(--surface-50);
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+}
+
+.penalty-fields {
+  padding-top: 0.15rem;
+}
+
+:host ::ng-deep .circular-file-upload .p-fileupload-header {
+  padding: 0.85rem;
+  background: var(--surface-50);
+  border-color: var(--surface-border);
+  border-radius: 8px 8px 0 0;
+}
+
+:host ::ng-deep .circular-file-upload .p-fileupload-content {
+  border-color: var(--surface-border);
+  border-radius: 0 0 8px 8px;
+  padding: 1rem;
+}
+
+:host ::ng-deep .circular-file-upload .p-fileupload-file {
+  width: 100%;
+  display: flex;
+  padding: 0;
+  margin: 0;
+}
+
+.processing-panel {
+  margin-top: 0.9rem;
+  padding: 0.85rem;
+  border-radius: 8px;
+  border: 1px solid var(--surface-border);
+  background: var(--surface-50);
+}
+
+.processing-panel.processing {
+  border-color: var(--primary-200, var(--surface-border));
+  background: var(--primary-50, var(--surface-50));
+}
+
+.processing-panel.done {
+  border-color: var(--green-200);
+  background: var(--green-50);
+}
+
+.processing-panel.error {
+  border-color: var(--red-200);
+  background: var(--red-50);
+}
+
+.processing-panel i {
+  color: var(--primary-color);
+  font-size: 1.35rem;
+}
+
+.processing-panel.done i {
+  color: var(--green-600);
+}
+
+.processing-panel.error i {
+  color: var(--red-600);
+}
+
+.chat-shell {
+  min-height: 0;
+  flex: 1;
+}
+
+:host ::ng-deep .chat-scroll {
+  min-height: 40vh;
+  overflow-y: auto;
+}
+
+.chat-bubble {
+  max-width: 80%;
+  border-radius: 1rem;
+  padding: 0.85rem 1rem;
+  line-height: 1.45;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.chat-bubble-user {
+  background: var(--primary-color);
+  color: var(--primary-color-text, #ffffff);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.chat-bubble-ai {
+  background: var(--surface-card);
+  color: var(--text-color);
+  border: 1px solid var(--surface-border);
+}
+
+.chat-content {
+  font-size: 0.94rem;
+}
+
+.white-space-pre-wrap {
+  white-space: pre-wrap;
+}
+
+@media (max-width: 520px) {
+  .drawer-header-row {
+    align-items: flex-start;
+  }
+
+  .drawer-footer-row {
+    padding: 0.85rem 1rem;
+  }
+
+  .drawer-footer-row button {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+/* Timeline styles for Amendment Chain */
+.amendment-timeline {
+  position: relative;
+  padding: 1rem 0 1rem 1rem;
+}
+
+.timeline-event {
+  display: flex;
+  position: relative;
+}
+
+.timeline-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 1.5rem;
+  width: 1.5rem;
+}
+
+.marker-dot {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 0 0 2px var(--surface-border);
+  z-index: 2;
+  background: white;
+  margin-top: 0.5rem;
+}
+
+.original-dot {
+  box-shadow: 0 0 0 2px var(--gray-400);
+  background: var(--gray-500);
+}
+
+.amendment-dot {
+  box-shadow: 0 0 0 2px var(--blue-400);
+  background: var(--blue-500);
+}
+
+.error-dot {
+  box-shadow: 0 0 0 2px var(--red-400);
+  background: var(--red-500);
+}
+
+.marker-line {
+  flex: 1;
+  width: 2px;
+  background: var(--surface-border);
+  margin-top: -0.25rem;
+  margin-bottom: -1rem;
+  z-index: 1;
+}
+
+::ng-deep .highlighted-row {
+  background: rgba(59, 130, 246, 0.15) !important;
+  border-left: 4px solid #3b82f6 !important;
+  animation: highlight-pulse 2s infinite ease-in-out;
+}
+
+@keyframes highlight-pulse {
+  0% { background: rgba(59, 130, 246, 0.15); }
+  50% { background: rgba(59, 130, 246, 0.25); }
+  100% { background: rgba(59, 130, 246, 0.15); }
+}
+
+:host ::ng-deep {
+  .toolbar-filter-select .p-select {
+    height: 2.5rem !important;
+    align-items: center !important;
+  }
+  .toolbar-filter-select .p-select .p-select-label {
+    font-size: 0.875rem !important;
+    padding: 0.5rem 0.75rem !important;
+    line-height: 1.5 !important;
+  }
+}

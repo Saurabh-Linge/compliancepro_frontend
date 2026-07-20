@@ -31,37 +31,22 @@ export class AppMenu implements OnInit {
 
     const menu: MenuItem[] = [];
 
-    // 1. MASTERS Section
-    const masterItems: MenuItem[] = [];
+    // 1. GENERAL Section
+    const generalItems: MenuItem[] = [];
+    generalItems.push({ label: 'Dashboard', icon: 'pi pi-fw pi-home', routerLink: ['/home'] });
 
-    if (['admin', 'cco', 'co'].includes(userRole)) {
-      masterItems.push({ label: 'Authority Master', icon: 'pi pi-fw pi-building', routerLink: ['/admin/authorities'] });
-    }
-
-    if (['admin', 'cco', 'co'].includes(userRole)) {
-      masterItems.push({
-        label: 'Circular Master',
-        icon: 'pi pi-fw pi-file-pdf',
-        items: [
-          { label: 'Circular List', icon: 'pi pi-fw pi-list', routerLink: ['/circulars'] },
-          { label: 'Task Master', icon: 'pi pi-fw pi-check-square', routerLink: ['/tasks'] },
-          { label: 'Task Header Master', icon: 'pi pi-fw pi-tags', routerLink: ['/admin/task-headers'] },
-          { label: 'Task Set Master', icon: 'pi pi-fw pi-server', routerLink: ['/task-sets'] }
-        ]
+    if (['admin', 'co', 'cco'].includes(userRole)) {
+      generalItems.push({
+        label: 'Reports',
+        icon: 'pi pi-fw pi-file',
+        routerLink: ['/reports']
       });
     }
 
-    if (userRole === 'admin') {
-      masterItems.push({ label: 'Branch and Department Master', icon: 'pi pi-fw pi-map-marker', routerLink: ['/admin/branches'] });
-      masterItems.push({ label: 'Users Master', icon: 'pi pi-fw pi-users', routerLink: ['/admin/users'] });
-    }
-
-    if (masterItems.length > 0) {
-      menu.push({
-        label: 'MASTERS',
-        items: masterItems
-      });
-    }
+    menu.push({
+      label: 'GENERAL',
+      items: generalItems
+    });
 
     // 2. COMPLIANCE Section
     const complianceItems: MenuItem[] = [];
@@ -83,22 +68,47 @@ export class AppMenu implements OnInit {
       });
     }
 
-    // 3. GENERAL Section
-    const generalItems: MenuItem[] = [];
-    generalItems.push({ label: 'Dashboard', icon: 'pi pi-fw pi-home', routerLink: ['/home'] });
+    // 3. MASTERS Section
+    const masterItems: MenuItem[] = [];
 
-    if (['admin', 'co', 'cco'].includes(userRole)) {
-      generalItems.push({
-        label: 'Reports',
-        icon: 'pi pi-fw pi-file',
-        routerLink: ['/reports']
+    if (['admin', 'cco', 'co'].includes(userRole)) {
+      masterItems.push({ label: 'Authority Master', icon: 'pi pi-fw pi-building', routerLink: ['/admin/authorities'] });
+    }
+
+    if (['admin', 'cco', 'co'].includes(userRole)) {
+      masterItems.push({
+        label: 'Circular Master',
+        icon: 'pi pi-fw pi-file-pdf',
+        items: [
+          { label: 'Circular List', icon: 'pi pi-fw pi-list', routerLink: ['/circulars'] },
+          {
+            label: 'Task Master',
+            icon: 'pi pi-fw pi-check-square',
+            routerLink: ['/tasks'],
+            routerLinkActiveOptions: { paths: 'exact', queryParams: 'exact', matrixParams: 'ignored', fragment: 'ignored' }
+          },
+          { label: 'Task Header Master', icon: 'pi pi-fw pi-tags', routerLink: ['/admin/task-headers'] },
+          {
+            label: 'Task Set Master',
+            icon: 'pi pi-fw pi-server',
+            routerLink: ['/task-sets'],
+            routerLinkActiveOptions: { paths: 'exact', queryParams: 'exact', matrixParams: 'ignored', fragment: 'ignored' }
+          }
+        ]
       });
     }
 
-    menu.push({
-      label: 'GENERAL',
-      items: generalItems
-    });
+    if (userRole === 'admin') {
+      masterItems.push({ label: 'Branch and Department Master', icon: 'pi pi-fw pi-map-marker', routerLink: ['/admin/branches'] });
+      masterItems.push({ label: 'Users Master', icon: 'pi pi-fw pi-users', routerLink: ['/admin/users'] });
+    }
+
+    if (masterItems.length > 0) {
+      menu.push({
+        label: 'MASTERS',
+        items: masterItems
+      });
+    }
 
     this.model = menu;
   }

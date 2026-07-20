@@ -1,0 +1,528 @@
+<div class="card">
+  <div class="flex align-items-center justify-content-between mb-4">
+    <h5 class="m-0 text-xl font-semibold">Circular Master</h5>
+  </div>
+    <app-table
+        [data]="circulars()"
+        [columns]="tableColumns"
+        [actions]="tableActions"
+        [rowClass]="getCircularRowClass"
+        (onAdd)="openUploadModal()"
+        [showRefreshButton]="true"
+        [paginator]="true"
+        [rows]="limit"
+        [lazy]="true"
+        [totalRecords]="totalRecords()"
+        (onLazyLoad)="handleLazyLoad($event)"
+        (onSearch)="handleSearch($event)"
+        (onRefresh)="loadData()"
+        (onActionClick)="handleTableActionClick($event)"
+    >
+      <div toolbar-actions class="flex align-items-center gap-2 ml-2 flex-shrink-0" style="flex-wrap: nowrap;">
+        <!-- Add Filter Dropdown Button -->
+        <button
+          pButton
+          pRipple
+          type="button"
+          icon="pi pi-filter"
+          label="Add Filter"
+          class="p-button-outlined p-button-secondary p-button-sm"
+          style="height: 2.5rem; white-space: nowrap; flex-shrink: 0;"
+          (click)="filterMenu.toggle($event)"
+        ></button>
+        <p-menu #filterMenu [model]="filterMenuItems" [popup]="true" appendTo="body"></p-menu>
+
+        <!-- Active Filter: Authority -->
+        @if (activeFilters().authority) {
+          <div class="flex align-items-center gap-1 animate-fadein" style="flex-shrink: 0;">
+            <app-select-field
+              [field]="selectedAuthorityFilter"
+              [options]="authorities()"
+              optionLabel="name"
+              optionValue="id"
+              [hideLabel]="true"
+              [showClear]="false"
+              placeholder="Select Authority"
+              (onChange)="handleAuthorityFilterChange()"
+              class="w-14rem flex-shrink-0 animate-fadein toolbar-filter-select"
+            ></app-select-field>
+            <button
+              pButton
+              pRipple
+              type="button"
+              icon="pi pi-times"
+              class="p-button-text p-button-secondary p-button-sm flex-shrink-0 animate-fadein"
+              style="width: 2rem; height: 2.5rem; padding: 0;"
+              (click)="removeFilter('authority')"
+              pTooltip="Remove Authority Filter"
+              tooltipPosition="top"
+            ></button>
+          </div>
+        }
+
+        <!-- Active Filter: Date Range -->
+        @if (activeFilters().dateRange) {
+          <div class="flex align-items-center gap-1 animate-fadein" style="flex-shrink: 0;">
+            <app-date-range-field
+              [field]="selectedDateRange"
+              [defaultToToday]="false"
+              placeholder="Select Date Range"
+              class="flex-shrink-0 animate-fadein"
+            ></app-date-range-field>
+            <button
+              pButton
+              pRipple
+              type="button"
+              icon="pi pi-times"
+              class="p-button-text p-button-secondary p-button-sm flex-shrink-0 animate-fadein"
+              style="width: 2rem; height: 2.5rem; padding: 0;"
+              (click)="removeFilter('dateRange')"
+              pTooltip="Remove Date Filter"
+              tooltipPosition="top"
+            ></button>
+          </div>
+        }
+
+        <!-- Active Filter: Institution (Mocked) -->
+        @if (activeFilters().institution) {
+          <div class="flex align-items-center gap-1 px-3 bg-surface-card border-round animate-fadein" style="border: 1px solid var(--surface-border); border-radius: 6px; height: 2.5rem; opacity: 0.85; flex-shrink: 0;">
+            <i class="pi pi-university text-primary text-xs mr-1"></i>
+            <span class="text-xs font-semibold mr-2 text-600">Institution:</span>
+            <span class="text-xs text-500 italic mr-2">All Institutions</span>
+            <button
+              pButton
+              pRipple
+              type="button"
+              icon="pi pi-times"
+              class="p-button-text p-button-secondary p-button-sm ml-2"
+              style="width: 1.5rem; height: 1.5rem; padding: 0;"
+              (click)="removeFilter('institution')"
+              pTooltip="Remove Institution Filter"
+              tooltipPosition="top"
+            ></button>
+          </div>
+        }
+      </div>
+    </app-table>
+  </div>
+
+<p-confirmDialog></p-confirmDialog>
+<p-toast position="top-right"></p-toast>
+
+<!-- Circular Master Drawer -->
+<p-drawer
+  [visible]="showCircularDrawer()"
+  (visibleChange)="showCircularDrawer.set($event)"
+  position="right"
+  [style]="{ width: '760px', maxWidth: '96vw' }"
+  [modal]="true"
+  [dismissible]="true"
+  [showCloseIcon]="false"
+  styleClass="circular-drawer"
+  appendTo="body"
+>
+  <ng-template pTemplate="header">
+    <div class="drawer-header-row">
+      <div class="drawer-title-wrap">
+        <span class="drawer-title-icon">
+          <i class="pi pi-file"></i>
+        </span>
+        <div>
+          <div class="text-900 font-semibold text-xl">{{ editingCircularId() ? 'Edit Circular' : 'Circular Master' }}</div>
+          <div class="text-600 text-sm mt-1">{{ editingCircularId() ? 'Update existing circular details' : 'Create a circular record' }}</div>
+        </div>
+      </div>
+      <button pButton pRipple type="button" icon="pi pi-times" class="p-button-text p-button-rounded" (click)="closeCircularDrawer()"></button>
+    </div>
+  </ng-template>
+
+  <ng-template pTemplate="content">
+    <div class="drawer-content-shell">
+      <section class="drawer-section">
+        <div class="section-heading">
+          <span class="section-kicker">Details</span>
+          <span class="section-line"></span>
+        </div>
+
+        <div class="grid formgrid p-fluid drawer-form-grid">
+          <div class="field col-12 md:col-6">
+            <app-select-field
+              label="Authority"
+              placeholder="Please select authority"
+              [field]="newAuthorityId"
+              [options]="authorities()"
+              optionLabel="name"
+              optionValue="id"
+              [required]="true"
+              [virtualScroll]="false">
+            </app-select-field>
+          </div>
+
+          <div class="field col-12 md:col-6">
+            <app-text-field
+              label="Reference No."
+              [field]="referenceNoField"
+              placeholder="Enter reference number">
+            </app-text-field>
+          </div>
+
+          <div class="field col-12">
+            <app-text-field
+              label="Circular Title"
+              [field]="circularTitleField"
+              placeholder="Enter circular title"
+              [required]="true">
+            </app-text-field>
+          </div>
+
+          <div class="field col-12 md:col-6">
+            <app-text-field
+              label="Circular Date"
+              [field]="circularDate"
+              type="date"
+              [required]="true">
+            </app-text-field>
+          </div>
+
+          <div class="field col-12 md:col-6">
+            <app-select-field
+              label="Priority"
+              [field]="priority"
+              [options]="priorityOptions"
+              optionLabel="label"
+              optionValue="value"
+              [required]="true"
+              [virtualScroll]="false">
+            </app-select-field>
+          </div>
+        </div>
+      </section>
+
+      <section class="drawer-section">
+        <div class="section-heading">
+          <span class="section-kicker">Classification</span>
+          <span class="section-line"></span>
+        </div>
+
+        <div class="grid formgrid p-fluid drawer-form-grid">
+          <div class="field col-12 md:col-6">
+            <app-select-field
+              label="Circular Type"
+              [field]="circularType"
+              [options]="circularTypeOptions"
+              optionLabel="label"
+              optionValue="value"
+              [required]="true">
+            </app-select-field>
+          </div>
+
+          <div class="field col-12 md:col-6">
+            <app-text-field
+              label="Circular Portal / Website"
+              [field]="portalWebsiteField"
+              placeholder="Enter portal or website">
+            </app-text-field>
+          </div>
+
+          <div class="field col-12">
+            <app-textarea-field
+              label="Circular Description"
+              [field]="descriptionField"
+              [rows]="4"
+              [autoResize]="true">
+            </app-textarea-field>
+          </div>
+
+          <div class="field col-12 md:col-6">
+            <app-checkbox-field
+              label="Is Applicable"
+              [field]="isApplicable">
+            </app-checkbox-field>
+          </div>
+
+          <div class="field col-12 md:col-6">
+            <app-checkbox-field
+              label="Is Active"
+              [field]="isActive">
+            </app-checkbox-field>
+          </div>
+        </div>
+      </section>
+
+      <section class="drawer-section">
+        <div class="section-heading">
+          <span class="section-kicker">Documents</span>
+          <span class="section-line"></span>
+        </div>
+
+        <p-fileupload
+          name="files"
+          accept="application/pdf"
+          [multiple]="true"
+          [customUpload]="true"
+          [showUploadButton]="false"
+          [showCancelButton]="false"
+          chooseLabel="Choose PDFs"
+          chooseIcon="pi pi-upload"
+          styleClass="circular-file-upload"
+          (onSelect)="onCircularFilesSelected($event)"
+          (onRemove)="onCircularFileRemoved($event)"
+          (onClear)="clearCircularFiles()">
+          <ng-template pTemplate="file" let-file let-index="index" let-removeFileCallback="removeFileCallback">
+            <div class="flex align-items-center justify-content-between p-3 border-round border-1 border-300 mb-2 bg-surface-card w-full gap-2">
+              <div class="flex align-items-center gap-3 min-width-0 flex-1">
+                <span class="inline-flex align-items-center justify-content-center bg-red-100 text-red-500 border-round animate-fadein" style="width: 2.5rem; height: 2.5rem; flex: 0 0 auto;">
+                  <i class="pi pi-file-pdf text-xl"></i>
+                </span>
+                <div class="min-width-0 flex-1">
+                  <div class="font-semibold text-900 text-sm" style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 280px;" [title]="file.name">{{ file.name }}</div>
+                  <div class="text-xs text-600 mt-1">{{ (file.size / 1024 / 1024).toFixed(3) }} MB</div>
+                </div>
+              </div>
+              <div class="flex align-items-center gap-3 flex-shrink-0">
+                <span class="bg-orange-100 text-orange-700 text-xs font-semibold px-2 py-1 border-round">Pending Upload</span>
+                <button pButton pRipple type="button" icon="pi pi-times" class="p-button-text p-button-rounded p-button-danger p-button-sm" (click)="removeFileCallback($event, index)"></button>
+              </div>
+            </div>
+          </ng-template>
+        </p-fileupload>
+
+        <div *ngIf="processingState() !== 'idle'" class="processing-panel" [ngClass]="processingState()">
+          <div class="flex align-items-center justify-content-between gap-3">
+            <div>
+              <div class="font-semibold text-900">{{ processingTitle() }}</div>
+              <div class="text-sm text-600 mt-1">{{ processingMessage() }}</div>
+            </div>
+            <i [class]="processingIcon()"></i>
+          </div>
+          <p-progressBar
+            *ngIf="processingState() === 'uploading' || processingState() === 'processing'"
+            mode="indeterminate"
+            [style]="{ height: '6px' }"
+            styleClass="mt-3">
+          </p-progressBar>
+        </div>
+      </section>
+
+
+    </div>
+  </ng-template>
+
+  <ng-template pTemplate="footer">
+    <div class="drawer-footer-row">
+      <button pButton pRipple type="button" label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary" [disabled]="uploading()" (click)="closeCircularDrawer()"></button>
+      <button pButton pRipple type="button" label="Save Circular" icon="pi pi-check" [loading]="uploading()" [disabled]="uploading()" (click)="onUpload($event)"></button>
+    </div>
+  </ng-template>
+</p-drawer>
+
+<!-- AI Chat Drawer -->
+<p-drawer
+  [visible]="showChatDrawer()"
+  (visibleChange)="showChatDrawer.set($event)"
+  position="right"
+  [style]="{ width: '600px', maxWidth: '96vw' }"
+  [modal]="true"
+  [dismissible]="true"
+  [showCloseIcon]="false"
+  styleClass="chat-drawer"
+  appendTo="body"
+>
+  <ng-template pTemplate="header">
+    <div class="drawer-header-row">
+      <div>
+        <div class="text-900 font-semibold text-xl">Qwen AI Compliance Chat</div>
+        <div class="text-600 text-sm mt-1">Asking questions about {{ chatCircular()?.title }}</div>
+      </div>
+      <button pButton pRipple type="button" icon="pi pi-times" class="p-button-text" (click)="closeChatDrawer()"></button>
+    </div>
+  </ng-template>
+
+  <ng-template pTemplate="content">
+    <div class="drawer-content-shell chat-shell">
+      <div class="chat-scroll flex-1 surface-50 border-1 surface-border border-round-lg p-3">
+        <div *ngFor="let msg of chatMessages()" class="chat-row flex mb-3" [ngClass]="{'justify-content-end': msg.role === 'user'}">
+          <div class="chat-bubble" [ngClass]="msg.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'">
+             <div class="text-xs font-semibold mb-1">{{ msg.role === 'user' ? 'You' : 'Qwen Assistant' }}</div>
+             <div class="chat-content">{{ msg.content }}</div>
+          </div>
+        </div>
+        <div *ngIf="isTyping()" class="text-600 text-sm italic">Qwen is thinking...</div>
+      </div>
+
+      <form (submit)="sendMessage($event)" class="flex gap-2 align-items-end">
+        <app-text-field
+          [field]="chatInput"
+          [hideLabel]="true"
+          placeholder="Ask anything about this circular..."
+          class="flex-1">
+        </app-text-field>
+        <button pButton type="submit" icon="pi pi-send" [disabled]="isTyping() || !chatInput().trim()" label="Send"></button>
+      </form>
+    </div>
+  </ng-template>
+</p-drawer>
+
+<!-- Logs Modal -->
+<p-dialog header="AI Processing Logs" [(visible)]="showLogsModal" [modal]="true" [style]="{ width: '100%', 'max-width': '50rem', 'margin': '1rem' }" [dismissableMask]="true" (onHide)="closeLogsModal()">
+  <div class="logs-container bg-gray-900 text-green-400 p-4 border-round h-24rem overflow-y-auto font-mono text-sm" #logsScroll>
+    <div *ngFor="let log of activeLogs()">
+      <span class="text-gray-500">[{{ log.created_at | date:'mediumTime' }}]</span> 
+      <span [ngClass]="{'text-yellow-400': log.status === 'PROCESSING', 'text-green-500': log.status === 'COMPLETED', 'text-red-500': log.status === 'FAILED'}">[{{ log.status }}]</span> 
+      <span class="white-space-pre-wrap">{{ log.message }}</span>
+    </div>
+    <div *ngIf="streamingThinkingText()" class="mb-2 p-2 border-round" style="background: #1a1a2e; border: 1px solid #444;">
+      <div class="text-purple-300 text-xs font-bold mb-1">🧠 THINKING (Chain of Thought)</div>
+      <span class="text-purple-200 white-space-pre-wrap" style="font-size: 0.8rem; opacity: 0.85">{{ streamingThinkingText() }}</span>
+    </div>
+    <div *ngIf="streamingLogText()" class="mt-2 text-yellow-300">
+      <span class="text-gray-500">[Live Stream]</span> <span class="text-yellow-400">[GENERATING]</span> 
+      <span class="white-space-pre-wrap">{{ streamingLogText() }}</span>
+    </div>
+    <div *ngIf="activeLogs().length === 0 && !streamingLogText() && !streamingThinkingText()" class="text-gray-500 italic">No logs available.</div>
+    <div *ngIf="isPollingLogs()" class="mt-2 text-yellow-300 animate-pulse">Connected to live stream...</div>
+  </div>
+</p-dialog>
+
+<!-- Amendment Chain Drawer -->
+<p-drawer
+  [visible]="showAmendmentChainModal()"
+  (visibleChange)="showAmendmentChainModal.set($event)"
+  position="right"
+  [style]="{ width: '600px', maxWidth: '96vw' }"
+  [modal]="true"
+  [dismissible]="true"
+  [showCloseIcon]="false"
+  styleClass="circular-drawer"
+  appendTo="body"
+>
+  <ng-template pTemplate="header">
+    <div class="drawer-header-row">
+      <div class="drawer-title-wrap">
+        <span class="drawer-title-icon" style="color: var(--teal-600); background: var(--teal-50); border-color: var(--teal-200)">
+          <i class="pi pi-link"></i>
+        </span>
+        <div>
+          <div class="text-900 font-semibold text-xl">Amendment Chain</div>
+          <div class="text-600 text-sm mt-1">History of modifications and updates</div>
+        </div>
+      </div>
+      <button pButton pRipple type="button" icon="pi pi-times" class="p-button-text p-button-rounded" (click)="closeAmendmentChainModal()"></button>
+    </div>
+  </ng-template>
+
+  <ng-template pTemplate="content">
+    <div class="drawer-content-shell">
+      
+      <!-- Universal Circular Summary Card -->
+      <div *ngIf="modalCircular() as mc" class="card mb-4 surface-card border-round border-1 surface-border p-3 flex flex-column md:flex-row md:align-items-center md:justify-content-between gap-3">
+        <div class="flex-1">
+          <div class="flex align-items-center gap-2 mb-2 flex-wrap">
+            <span class="text-xs font-semibold px-2 py-0.5 bg-primary-100 text-primary-900 border-round">
+              {{ mc.authority_name || 'Circular' }}
+            </span>
+            <span class="text-xs font-medium text-500">Ref: {{ mc.reference_no || 'N/A' }}</span>
+            <span class="text-xs font-medium text-500">Date: {{ mc.published_date | date:'dd MMM yyyy' }}</span>
+            <p-tag [value]="mc.priority || 'Medium'" [severity]="prioritySeverity(mc.priority || '')"></p-tag>
+          </div>
+          <h6 class="m-0 text-lg font-bold text-900 line-height-3" style="font-size: 1.1rem;">{{ mc.title }}</h6>
+          <p class="m-0 text-xs text-600 mt-1" style="max-height: 40px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+            {{ mc.description || 'No description provided.' }}
+          </p>
+        </div>
+        <div class="flex align-items-center gap-2 flex-shrink-0">
+          <a *ngIf="mc.pdf_url" [href]="getFileUrl(mc.pdf_url)" target="_blank" class="p-button p-button-outlined p-button-secondary p-button-sm flex align-items-center gap-2" style="text-decoration: none;">
+            <i class="pi pi-file-pdf"></i><span>Download PDF</span>
+          </a>
+        </div>
+      </div>
+
+      <div *ngIf="!amendmentChainData()" class="flex align-items-center justify-content-center p-5 text-gray-500">
+        <i class="pi pi-spin pi-spinner text-2xl mr-2"></i> Loading chain...
+      </div>
+      
+      <div *ngIf="amendmentChainData() as data" class="mt-2">
+        <!-- Timeline UI using standard HTML/CSS for complete control -->
+        <div class="amendment-timeline">
+          <!-- Root / Original Circular -->
+          <div class="timeline-event" *ngIf="data.original">
+            <div class="timeline-marker">
+              <div class="marker-dot original-dot"></div>
+              <div class="marker-line" *ngIf="data.amendments?.length"></div>
+            </div>
+            <div class="timeline-content p-card p-3 w-full mb-4 border-1 border-gray-200 border-round-xl">
+              <div class="flex justify-content-between align-items-center mb-2">
+                <span class="p-badge p-badge-secondary p-badge-outlined px-2 py-1 text-xs">ORIGINAL</span>
+                <span class="text-gray-500 text-sm font-medium"><i class="pi pi-calendar mr-1 text-xs"></i> {{ data.original.published_date | date:'mediumDate' }}</span>
+              </div>
+              <div class="font-semibold text-lg text-900 mb-1 line-height-3">{{ data.original.title }}</div>
+              <div class="text-gray-600 text-sm mb-3">Ref: {{ data.original.reference_no || 'N/A' }}</div>
+              
+              <div class="flex justify-content-between align-items-center">
+                <span class="text-xs" [ngClass]="{'text-green-600 font-medium': data.original.ai_processing_status === 'COMPLETED'}">
+                  <i class="pi" [ngClass]="{'pi-check-circle': data.original.ai_processing_status === 'COMPLETED', 'pi-clock text-orange-500': data.original.ai_processing_status !== 'COMPLETED'}"></i>
+                  {{ data.original.ai_processing_status | titlecase }}
+                </span>
+                <div class="flex align-items-center gap-1">
+                  <a *ngIf="data.original.pdf_url" [href]="getFileUrl(data.original.pdf_url)" target="_blank" class="p-button p-button-text p-button-sm p-button-secondary py-1 flex align-items-center gap-1" style="text-decoration: none;">
+                    <i class="pi pi-file-pdf"></i><span>View PDF</span>
+                  </a>
+                  <button pButton pRipple icon="pi pi-external-link" label="View Tasks" class="p-button-text p-button-sm p-button-secondary py-1" (click)="viewTasks(data.original.id); closeAmendmentChainModal()"></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Missing Original state -->
+          <div class="timeline-event" *ngIf="!data.original && data.amendments?.length">
+            <div class="timeline-marker">
+              <div class="marker-dot error-dot"></div>
+              <div class="marker-line"></div>
+            </div>
+            <div class="timeline-content p-3 w-full mb-4 border-round-xl" style="background: var(--red-50); border: 1px dashed var(--red-300)">
+              <div class="font-medium text-red-600"><i class="pi pi-exclamation-triangle mr-2"></i> Original Circular Not Found</div>
+              <div class="text-sm text-red-500 mt-1">The system could not automatically link the amendment to an original circular.</div>
+            </div>
+          </div>
+
+          <!-- Amendments -->
+          <div class="timeline-event" *ngFor="let am of data.amendments; let last = last; let i = index">
+            <div class="timeline-marker">
+              <div class="marker-dot amendment-dot"></div>
+              <div class="marker-line" *ngIf="!last"></div>
+            </div>
+            <div class="timeline-content p-card p-3 w-full mb-4 border-1 border-blue-100 border-round-xl" [ngStyle]="{'background': 'linear-gradient(to right, var(--blue-50) 0%, #ffffff 50%)'}">
+              <div class="flex justify-content-between align-items-center mb-2">
+                <span class="p-badge p-badge-info px-2 py-1 text-xs"><i class="pi pi-pencil mr-1 text-xs"></i> AMENDMENT {{ i + 1 }}</span>
+                <span class="text-gray-500 text-sm font-medium"><i class="pi pi-calendar mr-1 text-xs"></i> {{ am.published_date | date:'mediumDate' }}</span>
+              </div>
+              <div class="font-semibold text-lg text-900 mb-1 line-height-3">{{ am.title }}</div>
+              <div class="text-gray-600 text-sm mb-3">Ref: {{ am.reference_no || 'N/A' }}</div>
+              
+              <div *ngIf="am.amendment_notes" class="bg-white p-2 border-round border-1 border-gray-200 text-sm text-gray-700 mb-3 shadow-1" style="border-left: 3px solid var(--blue-400)">
+                <strong>AI Notes:</strong> {{ am.amendment_notes }}
+              </div>
+              
+              <div class="flex justify-content-between align-items-center">
+                <span class="text-xs" [ngClass]="{'text-green-600 font-medium': am.ai_processing_status === 'COMPLETED'}">
+                  <i class="pi" [ngClass]="{'pi-check-circle': am.ai_processing_status === 'COMPLETED', 'pi-clock text-orange-500': am.ai_processing_status !== 'COMPLETED'}"></i>
+                  {{ am.ai_processing_status | titlecase }}
+                </span>
+                <div class="flex align-items-center gap-1">
+                  <a *ngIf="am.pdf_url" [href]="getFileUrl(am.pdf_url)" target="_blank" class="p-button p-button-text p-button-sm p-button-secondary py-1 flex align-items-center gap-1" style="text-decoration: none;">
+                    <i class="pi pi-file-pdf"></i><span>View PDF</span>
+                  </a>
+                  <button pButton pRipple icon="pi pi-external-link" label="View Tasks" class="p-button-text p-button-sm p-button-secondary py-1" (click)="viewTasks(am.id); closeAmendmentChainModal()"></button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div *ngIf="!data.amendments?.length && data.original" class="text-center text-gray-500 mt-4 italic">
+            No amendments have been issued for this circular.
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-template>
+</p-drawer>

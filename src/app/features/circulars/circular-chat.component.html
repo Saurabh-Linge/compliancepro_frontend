@@ -1,0 +1,501 @@
+<div class="chat-full-page">
+
+  <!-- Slim top bar: back button + circular title -->
+  <div class="chat-topbar flex align-items-center justify-content-between mb-3 w-full" style="background: transparent; border: none; padding: 0;">
+    <div class="flex align-items-center gap-3">
+      <button
+        pButton
+        pRipple
+        type="button"
+        icon="pi pi-arrow-left"
+        label="Back to Circulars"
+        class="p-button-outlined p-button-secondary p-button-sm bg-white"
+        (click)="goBack()"
+      ></button>
+      <div class="chat-topbar-title font-semibold text-xl text-900 flex align-items-center gap-2">
+        <i class="pi pi-comments text-primary text-xl"></i>
+        <span>AI Chat</span>
+        @if (circular()) {
+          <span class="text-500 font-normal">·</span>
+          <span class="text-600 font-medium text-lg text-overflow-ellipsis overflow-hidden white-space-nowrap" style="max-width: 500px;" [title]="circular()!.title">{{ circular()!.title }}</span>
+        }
+      </div>
+    </div>
+    <button
+      pButton
+      pRipple
+      icon="pi pi-refresh"
+      class="p-button-outlined p-button-secondary p-button-sm bg-white"
+      pTooltip="Clear chat"
+      tooltipPosition="left"
+      (click)="clearChat()"
+      [disabled]="messages().length === 0"
+    ></button>
+  </div>
+
+  <!-- Body: sidebar + chat -->
+  <div class="chat-page-layout">
+
+    <!-- Left Panel: Circular Info + Suggested Prompts -->
+    <aside class="chat-sidebar">
+
+      <!-- Circular Info Card -->
+      <div class="sidebar-card circular-info-card">
+        <div class="sidebar-card-header">
+          <i class="pi pi-file-pdf sidebar-card-icon"></i>
+          <span class="sidebar-card-title">Circular Details</span>
+        </div>
+
+        @if (loadingCircular()) {
+          <div class="flex flex-column gap-2 mt-2">
+            <p-skeleton width="100%" height="1rem"></p-skeleton>
+            <p-skeleton width="80%" height="1rem"></p-skeleton>
+            <p-skeleton width="60%" height="1rem"></p-skeleton>
+          </div>
+        } @else if (circular()) {
+          <div class="circular-detail-grid">
+            <div class="detail-row">
+              <span class="detail-label">Title</span>
+              <span class="detail-value font-semibold">{{ circular()!.title }}</span>
+            </div>
+            @if (circular()!.authority_name) {
+              <div class="detail-row">
+                <span class="detail-label">Authority</span>
+                <span class="detail-value">{{ circular()!.authority_name }}</span>
+              </div>
+            }
+            @if (circular()!.reference_no) {
+              <div class="detail-row">
+                <span class="detail-label">Reference</span>
+                <span class="detail-value text-mono">{{ circular()!.reference_no }}</span>
+              </div>
+            }
+            @if (circular()!.published_date) {
+              <div class="detail-row">
+                <span class="detail-label">Date</span>
+                <span class="detail-value">{{ circular()!.published_date | date:'dd MMM yyyy' }}</span>
+              </div>
+            }
+            @if (circular()!.priority) {
+              <div class="detail-row">
+                <span class="detail-label">Priority</span>
+                <p-tag
+                  [value]="circular()!.priority!"
+                  [severity]="prioritySeverity(circular()!.priority!)"
+                ></p-tag>
+              </div>
+            }
+            @if (circular()!.circular_type_name) {
+              <div class="detail-row">
+                <span class="detail-label">Type</span>
+                <span class="detail-value text-sm">{{ circular()!.circular_type_name }}</span>
+              </div>
+            }
+            @if (circular()!.pdf_url) {
+              <div class="detail-row mt-1">
+                <a [href]="getFileUrl(circular()!.pdf_url)" target="_blank" class="view-pdf-link">
+                  <i class="pi pi-external-link"></i>
+                  View PDF
+                </a>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="text-600 text-sm mt-2">Circular not found.</p>
+        }
+      </div>
+
+      <!-- Suggested Prompts -->
+      <div class="sidebar-card prompts-card">
+        <div class="sidebar-card-header">
+          <i class="pi pi-bolt sidebar-card-icon"></i>
+          <span class="sidebar-card-title">Quick Prompts</span>
+        </div>
+        <div class="prompts-list">
+          @for (prompt of suggestedPrompts; track prompt.label) {
+            <button
+              class="prompt-chip"
+              [disabled]="isTyping()"
+              (click)="sendSuggestedPrompt(prompt)"
+              [pTooltip]="prompt.text"
+              tooltipPosition="right"
+            >
+              <i [class]="prompt.icon + ' prompt-chip-icon'"></i>
+              <span>{{ prompt.label }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Circular Comparator Card -->
+      <div class="sidebar-card comparator-card">
+        <div class="sidebar-card-header">
+          <i class="pi pi-sync sidebar-card-icon"></i>
+          <span class="sidebar-card-title">Compare Circulars</span>
+        </div>
+        <p class="text-600 text-xs mb-2">Upload a revised version of this circular to identify compliance changes.</p>
+        
+        <div class="flex flex-column gap-2">
+          
+          <!-- Search Input -->
+          <div class="flex flex-column gap-1">
+            <div class="p-input-icon-left w-full" style="position: relative; display: inline-block;">
+              <i class="pi pi-search" style="position: absolute; left: 0.50rem; top: 50%; transform: translateY(-50%); font-size: 0.8rem; color: var(--text-color-secondary);"></i>
+              <input
+                type="text"
+                pInputText
+                [ngModel]="searchQuery()"
+                (ngModelChange)="searchQuery.set($event); searchOtherCirculars()"
+                placeholder="Search other circulars..."
+                class="w-full text-xs p-2 border-1 border-round surface-border text-color bg-surface-card"
+                style="padding-left: 1.6rem !important; border-style: solid; outline: none;"
+                [disabled]="isComparing() || isTyping()"
+              />
+            </div>
+          </div>
+
+          <div class="flex flex-column gap-1 mb-1">
+            <select
+              [ngModel]="selectedTargetId()"
+              (ngModelChange)="selectedTargetId.set($event)"
+              class="w-full text-xs p-2 border-1 border-round surface-border text-color bg-surface-card"
+              style="border-style: solid; outline: none; max-width: 100%; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;"
+              [disabled]="isComparing() || isTyping()"
+            >
+              @if (searchQuery().trim()) {
+                <option value="">-- Search Results ({{ searchResults().length }}) --</option>
+                @for (c of searchResults(); track c.id) {
+                  <option [value]="c.id">
+                    {{ c.reference_no || 'No Ref' }} - {{ c.title }}
+                  </option>
+                }
+              } @else {
+                <option value="">-- Compare Stored Revision --</option>
+                @for (lc of linkedCirculars(); track lc.id) {
+                  <option [value]="lc.id">
+                    {{ lc.reference_no || 'No Ref' }} - {{ lc.title }}
+                  </option>
+                }
+              }
+            </select>
+            <button
+              pButton
+              pRipple
+              type="button"
+              icon="pi pi-sync"
+              label="Compare Stored"
+              class="p-button-primary p-button-sm w-full mt-1"
+              (click)="compareStored(selectedTargetId()); selectedTargetId.set('')"
+              [disabled]="isComparing() || isTyping() || !selectedTargetId()"
+            ></button>
+          </div>
+          <div class="text-center text-500 text-xs my-1">— OR —</div>
+          <input
+            #fileInput
+            type="file"
+            accept="application/pdf"
+            style="display: none"
+            (change)="onRevisedFileSelected($event)"
+          />
+          <button
+            pButton
+            pRipple
+            type="button"
+            [icon]="selectedRevisedFile() ? 'pi pi-file-pdf' : 'pi pi-upload'"
+            [label]="selectedRevisedFile() ? selectedRevisedFile()!.name : 'Choose Revised PDF'"
+            class="p-button-outlined p-button-secondary p-button-sm text-left overflow-hidden text-overflow-ellipsis w-full"
+            style="display: block; max-width: 100%; white-space: nowrap;"
+            (click)="fileInput.click()"
+            [disabled]="isComparing() || isTyping()"
+          ></button>
+          
+          @if (selectedRevisedFile()) {
+            <div class="flex gap-2">
+              <button
+                pButton
+                pRipple
+                type="button"
+                icon="pi pi-sync"
+                label="Compare"
+                class="p-button-primary p-button-sm flex-grow-1"
+                (click)="compareCirculars()"
+                [loading]="isComparing()"
+                [disabled]="isTyping()"
+              ></button>
+              <button
+                pButton
+                pRipple
+                type="button"
+                icon="pi pi-times"
+                class="p-button-outlined p-button-danger p-button-sm"
+                (click)="clearSelectedFile()"
+                [disabled]="isComparing()"
+              ></button>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- AI Info -->
+      <div class="sidebar-card ai-info-card">
+        <div class="flex align-items-center gap-2">
+          <span class="ai-badge">Qwen</span>
+          <span class="text-500 text-xs">via Ollama · RAG</span>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- Right Panel: Chat Area -->
+    <main class="chat-main" style="display: flex; flex-direction: column;">
+      
+
+
+      <!-- Chat Messages -->
+      <div class="chat-messages-container" #chatContainer>
+        @if (messages().length === 0 && !isTyping()) {
+          <div class="chat-empty-state">
+            <div class="empty-icon-wrap">
+              <i class="pi pi-comments"></i>
+            </div>
+            <p class="text-700 font-semibold text-lg mt-3 mb-1">Start a conversation</p>
+            <p class="text-500 text-sm">
+              Ask anything about <strong>{{ circular()?.title || 'this circular' }}</strong>.
+              Use the quick prompts on the left to get started.
+            </p>
+          </div>
+        }
+
+        @for (msg of messages(); track $index; let idx = $index) {
+          <div class="chat-message-row" [class.user-row]="msg.role === 'user'">
+            @if (msg.role === 'ai') {
+              <div class="avatar ai-avatar">
+                <i class="pi pi-microchip-ai"></i>
+              </div>
+            }
+            <div class="message-block" [class.user-block]="msg.role === 'user'">
+              <div class="message-meta">
+                <span class="message-sender">{{ msg.role === 'user' ? 'You' : 'Qwen Assistant' }}</span>
+                <span class="message-time">{{ msg.timestamp | date:'HH:mm' }}</span>
+                @if (msg.elapsed) {
+                  <span class="message-elapsed">{{ msg.elapsed }}s</span>
+                }
+              </div>
+              <!-- Thoughts block (AI only) -->
+              @if (msg.role === 'ai' && msg.thoughts) {
+                <div class="thoughts-block">
+                  <button class="thoughts-toggle" (click)="msg.showThoughts = !msg.showThoughts">
+                    <i class="pi pi-lightbulb"></i>
+                    <span>{{ msg.showThoughts ? 'Hide' : 'Show' }} thinking</span>
+                    <i [class]="msg.showThoughts ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
+                  </button>
+                  @if (msg.showThoughts) {
+                    <div class="thoughts-content">{{ msg.thoughts }}</div>
+                  }
+                </div>
+              }
+              <div
+                class="message-bubble"
+                [class.bubble-user]="msg.role === 'user'"
+                [class.bubble-ai]="msg.role === 'ai'"
+                style="position: relative;"
+              >
+                <span class="message-text" [innerHTML]="renderMarkdown(msg.content)"></span>
+
+                <!-- Import Button for AI responses that contain tasks/tables/lists -->
+                @if (msg.role === 'ai' && shouldShowImportButton(msg, idx)) {
+                  <div class="message-actions mt-2 flex justify-content-end border-top-1 pt-2" style="border-top: 1px dashed var(--surface-border)">
+                    <button
+                      pButton
+                      pRipple
+                      type="button"
+                      icon="pi pi-download"
+                      label="Import to Task Master"
+                      class="p-button-outlined p-button-primary p-button-sm"
+                      [loading]="loadingExtractionMap[msg.timestamp.getTime()]"
+                      (click)="extractAndPreviewTasks(msg)"
+                    ></button>
+                  </div>
+                }
+              </div>
+            </div>
+            @if (msg.role === 'user') {
+              <div class="avatar user-avatar">
+                <i class="pi pi-user"></i>
+              </div>
+            }
+          </div>
+        }
+
+        @if (isTyping()) {
+          <div class="chat-message-row">
+            <div class="avatar ai-avatar">
+              <i class="pi pi-microchip-ai"></i>
+            </div>
+            <div class="message-block">
+              <div class="message-meta">
+                <span class="message-sender">Qwen Assistant</span>
+                <span class="message-elapsed thinking-timer">{{ elapsedSeconds() }}s</span>
+              </div>
+              <!-- Live thoughts while waiting -->
+              @if (thinkingText()) {
+                <div class="thoughts-block live">
+                  <div class="thoughts-live-header">
+                    <i class="pi pi-lightbulb"></i>
+                    <span>Thinking...</span>
+                    <span class="thinking-dots"><span></span><span></span><span></span></span>
+                  </div>
+                  <div class="thoughts-content live-content">{{ thinkingText() }}</div>
+                </div>
+              } @else {
+                <div class="message-bubble bubble-ai typing-bubble">
+                  <span class="typing-dot"></span>
+                  <span class="typing-dot"></span>
+                  <span class="typing-dot"></span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Input Area -->
+      <div class="chat-input-area">
+        <div class="chat-input-wrap">
+          <textarea
+            pTextarea
+            [(ngModel)]="inputText"
+            [autoResize]="false"
+            rows="2"
+            placeholder="Ask a question about this circular..."
+            class="chat-textarea"
+            (keydown)="onKeydown($event)"
+            [disabled]="isTyping() || loadingCircular()"
+          ></textarea>
+          <div class="input-actions">
+            <span class="input-hint text-500 text-xs">Enter to send &nbsp;·&nbsp; Shift+Enter for new line</span>
+            <button
+              pButton
+              pRipple
+              type="button"
+              icon="pi pi-send"
+              label="Send"
+              class="p-button-sm send-btn"
+              (click)="sendMessage()"
+              [disabled]="isTyping() || !inputText.trim() || loadingCircular()"
+              [loading]="isTyping()"
+            ></button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<p-dialog
+  header="Review & Import Tasks"
+  [visible]="showPreviewDialog()"
+  (visibleChange)="showPreviewDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '45rem', maxWidth: '95vw' }"
+  [dismissableMask]="false"
+  appendTo="body"
+>
+  <div class="flex flex-column gap-3 mt-2">
+    <p class="text-600 text-sm m-0">
+      We extracted the following compliance tasks from the chat response. You can select, edit, or add new tasks before importing them to the Task Master for this circular.
+    </p>
+
+    <!-- Actions: Toggle All & Add Task -->
+    <div class="flex justify-content-between align-items-center gap-2 mt-2">
+      <div class="flex gap-2">
+        <button
+          pButton
+          pRipple
+          type="button"
+          label="Select All"
+          class="p-button-outlined p-button-sm p-button-secondary py-1"
+          (click)="selectAllPreview(true)"
+        ></button>
+        <button
+          pButton
+          pRipple
+          type="button"
+          label="Deselect All"
+          class="p-button-outlined p-button-sm p-button-secondary py-1"
+          (click)="selectAllPreview(false)"
+        ></button>
+      </div>
+      <button
+        pButton
+        pRipple
+        type="button"
+        icon="pi pi-plus"
+        label="Add Task"
+        class="p-button-sm p-button-success py-1"
+        (click)="addNewPreviewTask()"
+      ></button>
+    </div>
+
+    <!-- Task List container -->
+    <div class="flex flex-column gap-2 overflow-y-auto pr-1" style="max-height: 320px; border: 1px solid var(--surface-border); border-radius: 8px; padding: 0.5rem; background: var(--surface-ground)">
+      @if (previewTasks().length === 0) {
+        <div class="text-center text-500 py-4 italic">No tasks in list. Click "Add Task" to create one.</div>
+      }
+      @for (task of previewTasks(); track $index; let idx = $index) {
+        <div class="flex align-items-start gap-2 p-2 border-round bg-surface-card border-1 surface-border animate-fadein">
+          <!-- Checkbox -->
+          <input
+            type="checkbox"
+            [checked]="task.checked"
+            (change)="togglePreviewTaskChecked(idx)"
+            class="mt-2 cursor-pointer"
+            style="width: 1.15rem; height: 1.15rem;"
+          />
+          <!-- Inline Textarea for Description -->
+          <textarea
+            pTextarea
+            [ngModel]="task.description"
+            (ngModelChange)="updatePreviewTaskDescription(idx, $event)"
+            class="flex-1 p-2 text-sm border-round border-1 surface-border font-medium line-height-3"
+            rows="2"
+            style="resize: vertical; outline: none; background: transparent; border-style: none;"
+            [disabled]="!task.checked"
+            placeholder="Enter task description..."
+          ></textarea>
+          <!-- Delete/Remove button -->
+          <button
+            pButton
+            pRipple
+            type="button"
+            icon="pi pi-trash"
+            class="p-button-text p-button-danger p-button-sm mt-1"
+            (click)="removePreviewTask(idx)"
+          ></button>
+        </div>
+      }
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button
+      pButton
+      pRipple
+      label="Cancel"
+      class="p-button-text p-button-secondary"
+      (click)="showPreviewDialog.set(false)"
+      [disabled]="savingTasks()"
+    ></button>
+    <button
+      pButton
+      pRipple
+      icon="pi pi-check"
+      label="Import to Task Master"
+      class="p-button-primary"
+      [loading]="savingTasks()"
+      [disabled]="savingTasks() || getCheckedPreviewCount() === 0"
+      (click)="savePreviewedTasks()"
+    ></button>
+  </ng-template>
+</p-dialog>

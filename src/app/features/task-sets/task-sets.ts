@@ -15,6 +15,7 @@ import { ToastModule } from 'primeng/toast';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { FieldsetModule } from 'primeng/fieldset';
 import { SelectModule } from 'primeng/select';
+import { TagModule } from 'primeng/tag';
 
 import { TextFieldComponent } from '../../shared/components/form/text-field/text-field.component';
 import { SelectFieldComponent } from '../../shared/components/form/select-field/select-field.component';
@@ -39,7 +40,8 @@ import { DateFieldComponent } from '../../shared/components/form/date-field/date
     ToastModule,
     ConfirmDialogModule,
     FieldsetModule,
-    SelectModule
+    SelectModule,
+    TagModule
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './task-sets.html',
@@ -134,6 +136,22 @@ import { DateFieldComponent } from '../../shared/components/form/date-field/date
   `]
 })
 export class TaskSetsComponent implements OnInit {
+  currentCircular = signal<any | null>(null);
+
+  getFileUrl(url: string | null | undefined): string {
+    return this.api.getFileUrl(url);
+  }
+
+  prioritySeverity(priority: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {
+    switch (priority?.toLowerCase()) {
+      case 'critical': return 'danger';
+      case 'high': return 'warn';
+      case 'medium': return 'info';
+      case 'low': return 'success';
+      default: return 'secondary';
+    }
+  }
+
   taskSets = signal<any[]>([]);
   loadingRowIds = signal<Set<string>>(new Set());
   generatedTaskSetIds = new Set<number>();
@@ -288,6 +306,12 @@ export class TaskSetsComponent implements OnInit {
     if (circularId) {
       this.selectedCircularFilter.set(+circularId);
       this.cameFromCirculars.set(true);
+      this.api.getCircularById(+circularId).subscribe({
+        next: (data) => this.currentCircular.set(data),
+        error: (err) => console.error('Failed to load circular details in task sets:', err)
+      });
+    } else {
+      this.currentCircular.set(null);
     }
     const parentPage = this.route.snapshot.queryParamMap.get('parent_page');
     if (parentPage) {

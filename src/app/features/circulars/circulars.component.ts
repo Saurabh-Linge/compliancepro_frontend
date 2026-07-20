@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ComplianceApiService, Circular, Authority } from '../../core/services/api/compliance-api.service';
@@ -10,6 +10,7 @@ import { TextFieldComponent } from '../../shared/components/form/text-field/text
 import { TextareaFieldComponent } from '../../shared/components/form/textarea-field/textarea-field.component';
 import { SelectFieldComponent } from '../../shared/components/form/select-field/select-field.component';
 import { CheckboxFieldComponent } from '../../shared/components/form/checkbox-field/checkbox-field.component';
+import { DateRangeFieldComponent } from '../../shared/components/form/date-range-field/date-range-field.component';
 import { PageComponent } from '../../shared/components/page/page.component';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -22,7 +23,11 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
 import { DialogModule } from 'primeng/dialog';
 import { SelectModule } from 'primeng/select';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService, MenuItem } from 'primeng/api';
+import { TagModule } from 'primeng/tag';
+import { DatePickerModule } from 'primeng/datepicker';
+import { MenuModule } from 'primeng/menu';
+import { TooltipModule } from 'primeng/tooltip';
 
 @Component({
   selector: 'app-circulars',
@@ -47,771 +52,48 @@ import { ConfirmationService, MessageService } from 'primeng/api';
     ToastModule,
     DialogModule,
     SelectModule,
+    TagModule,
+    DatePickerModule,
+    MenuModule,
+    TooltipModule,
+    DateRangeFieldComponent
   ],
   providers: [ConfirmationService, MessageService],
-  template: `
-    <div class="card">
-      <div class="flex align-items-center justify-content-between mb-4">
-        <h5 class="m-0 text-xl font-semibold">Circular Master</h5>
-      </div>
-        <app-table
-            [data]="circulars()"
-            [columns]="tableColumns"
-            [actions]="tableActions"
-            [rowClass]="getCircularRowClass"
-            (onAdd)="openUploadModal()"
-            [showRefreshButton]="true"
-            [paginator]="true"
-            [rows]="limit"
-            [lazy]="true"
-            [totalRecords]="totalRecords()"
-            (onLazyLoad)="handleLazyLoad($event)"
-            (onSearch)="handleSearch($event)"
-            (onRefresh)="loadData()"
-        >
-          <div toolbar-actions class="flex align-items-center ml-2">
-            <p-select
-              [options]="authorities()"
-              [ngModel]="selectedAuthorityFilter()"
-              (ngModelChange)="selectedAuthorityFilter.set($event); handleAuthorityFilterChange()"
-              placeholder="Filter by Authority"
-              [showClear]="true"
-              optionLabel="name"
-              optionValue="id"
-              class="w-16rem"
-              styleClass="h-2.5rem flex align-items-center animate-fadein"
-            ></p-select>
-          </div>
-        </app-table>
-      </div>
-
-    <p-confirmDialog></p-confirmDialog>
-    <p-toast position="top-right"></p-toast>
-
-    <!-- Circular Master Drawer -->
-    <p-drawer
-      [visible]="showCircularDrawer()"
-      (visibleChange)="showCircularDrawer.set($event)"
-      position="right"
-      [style]="{ width: '760px', maxWidth: '96vw' }"
-      [modal]="true"
-      [dismissible]="true"
-      [showCloseIcon]="false"
-      styleClass="circular-drawer"
-      appendTo="body"
-    >
-      <ng-template pTemplate="header">
-        <div class="drawer-header-row">
-          <div class="drawer-title-wrap">
-            <span class="drawer-title-icon">
-              <i class="pi pi-file"></i>
-            </span>
-            <div>
-              <div class="text-900 font-semibold text-xl">{{ editingCircularId() ? 'Edit Circular' : 'Circular Master' }}</div>
-              <div class="text-600 text-sm mt-1">{{ editingCircularId() ? 'Update existing circular details' : 'Create a circular record' }}</div>
-            </div>
-          </div>
-          <button pButton pRipple type="button" icon="pi pi-times" class="p-button-text p-button-rounded" (click)="closeCircularDrawer()"></button>
-        </div>
-      </ng-template>
-
-      <ng-template pTemplate="content">
-        <div class="drawer-content-shell">
-          <section class="drawer-section">
-            <div class="section-heading">
-              <span class="section-kicker">Details</span>
-              <span class="section-line"></span>
-            </div>
-
-            <div class="grid formgrid p-fluid drawer-form-grid">
-              <div class="field col-12 md:col-6">
-                <app-select-field
-                  label="Authority"
-                  placeholder="Please select authority"
-                  [field]="newAuthorityId"
-                  [options]="authorities()"
-                  optionLabel="name"
-                  optionValue="id"
-                  [required]="true"
-                  [virtualScroll]="false">
-                </app-select-field>
-              </div>
-
-              <div class="field col-12 md:col-6">
-                <app-text-field
-                  label="Reference No."
-                  [field]="referenceNoField"
-                  placeholder="Enter reference number">
-                </app-text-field>
-              </div>
-
-              <div class="field col-12">
-                <app-text-field
-                  label="Circular Title"
-                  [field]="circularTitleField"
-                  placeholder="Enter circular title"
-                  [required]="true">
-                </app-text-field>
-              </div>
-
-              <div class="field col-12 md:col-6">
-                <app-text-field
-                  label="Circular Date"
-                  [field]="circularDate"
-                  type="date"
-                  [required]="true">
-                </app-text-field>
-              </div>
-
-              <div class="field col-12 md:col-6">
-                <app-select-field
-                  label="Priority"
-                  [field]="priority"
-                  [options]="priorityOptions"
-                  optionLabel="label"
-                  optionValue="value"
-                  [required]="true"
-                  [virtualScroll]="false">
-                </app-select-field>
-              </div>
-            </div>
-          </section>
-
-          <section class="drawer-section">
-            <div class="section-heading">
-              <span class="section-kicker">Classification</span>
-              <span class="section-line"></span>
-            </div>
-
-            <div class="grid formgrid p-fluid drawer-form-grid">
-              <div class="field col-12 md:col-6">
-                <app-select-field
-                  label="Circular Type"
-                  [field]="circularType"
-                  [options]="circularTypeOptions"
-                  optionLabel="label"
-                  optionValue="value"
-                  [required]="true">
-                </app-select-field>
-              </div>
-
-              <div class="field col-12 md:col-6">
-                <app-text-field
-                  label="Circular Portal / Website"
-                  [field]="portalWebsiteField"
-                  placeholder="Enter portal or website">
-                </app-text-field>
-              </div>
-
-              <div class="field col-12">
-                <app-textarea-field
-                  label="Circular Description"
-                  [field]="descriptionField"
-                  [rows]="4"
-                  [autoResize]="true">
-                </app-textarea-field>
-              </div>
-
-              <div class="field col-12 md:col-6">
-                <app-checkbox-field
-                  label="Is Applicable"
-                  [field]="isApplicable">
-                </app-checkbox-field>
-              </div>
-
-              <div class="field col-12 md:col-6">
-                <app-checkbox-field
-                  label="Is Active"
-                  [field]="isActive">
-                </app-checkbox-field>
-              </div>
-            </div>
-          </section>
-
-          <section class="drawer-section">
-            <div class="section-heading">
-              <span class="section-kicker">Documents</span>
-              <span class="section-line"></span>
-            </div>
-
-            <p-fileupload
-              name="files"
-              accept="application/pdf"
-              [multiple]="true"
-              [customUpload]="true"
-              [showUploadButton]="false"
-              [showCancelButton]="false"
-              chooseLabel="Choose PDFs"
-              chooseIcon="pi pi-upload"
-              styleClass="circular-file-upload"
-              (onSelect)="onCircularFilesSelected($event)"
-              (onRemove)="onCircularFileRemoved($event)"
-              (onClear)="clearCircularFiles()">
-              <ng-template pTemplate="file" let-file let-index="index" let-removeFileCallback="removeFileCallback">
-                <div class="flex align-items-center justify-content-between p-3 border-round border-1 border-300 mb-2 bg-surface-card w-full gap-2">
-                  <div class="flex align-items-center gap-3 min-width-0 flex-1">
-                    <span class="inline-flex align-items-center justify-content-center bg-red-100 text-red-500 border-round animate-fadein" style="width: 2.5rem; height: 2.5rem; flex: 0 0 auto;">
-                      <i class="pi pi-file-pdf text-xl"></i>
-                    </span>
-                    <div class="min-width-0 flex-1">
-                      <div class="font-semibold text-900 text-sm" style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 280px;" [title]="file.name">{{ file.name }}</div>
-                      <div class="text-xs text-600 mt-1">{{ (file.size / 1024 / 1024).toFixed(3) }} MB</div>
-                    </div>
-                  </div>
-                  <div class="flex align-items-center gap-3 flex-shrink-0">
-                    <span class="bg-orange-100 text-orange-700 text-xs font-semibold px-2 py-1 border-round">Pending Upload</span>
-                    <button pButton pRipple type="button" icon="pi pi-times" class="p-button-text p-button-rounded p-button-danger p-button-sm" (click)="removeFileCallback($event, index)"></button>
-                  </div>
-                </div>
-              </ng-template>
-            </p-fileupload>
-
-            <div *ngIf="processingState() !== 'idle'" class="processing-panel" [ngClass]="processingState()">
-              <div class="flex align-items-center justify-content-between gap-3">
-                <div>
-                  <div class="font-semibold text-900">{{ processingTitle() }}</div>
-                  <div class="text-sm text-600 mt-1">{{ processingMessage() }}</div>
-                </div>
-                <i [class]="processingIcon()"></i>
-              </div>
-              <p-progressBar
-                *ngIf="processingState() === 'uploading' || processingState() === 'processing'"
-                mode="indeterminate"
-                [style]="{ height: '6px' }"
-                styleClass="mt-3">
-              </p-progressBar>
-            </div>
-          </section>
-
-          <section class="drawer-section">
-            <div class="section-heading">
-              <span class="section-kicker">Penalty</span>
-              <span class="section-line"></span>
-            </div>
-
-            <div class="penalty-toggle">
-              <p-checkbox [(ngModel)]="isPenaltyApplicable" [binary]="true" inputId="penaltyApplicable"></p-checkbox>
-              <label for="penaltyApplicable" class="font-medium text-700 mb-0">Is Penalty Applicable</label>
-            </div>
-
-            <div *ngIf="isPenaltyApplicable" class="penalty-fields">
-              <div class="grid formgrid p-fluid drawer-form-grid">
-                <div class="field col-12 md:col-4">
-                  <p-floatlabel variant="on">
-                    <input pInputText type="number" [(ngModel)]="penaltyAmount" id="penaltyAmount" class="w-full">
-                    <label for="penaltyAmount">Penalty Amount</label>
-                  </p-floatlabel>
-                </div>
-                <div class="field col-12 md:col-8">
-                  <app-text-field
-                    label="Penalty Description"
-                    [field]="penaltyDescriptionField"
-                    placeholder="Enter penalty description">
-                  </app-text-field>
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
-      </ng-template>
-
-      <ng-template pTemplate="footer">
-        <div class="drawer-footer-row">
-          <button pButton pRipple type="button" label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary" [disabled]="uploading()" (click)="closeCircularDrawer()"></button>
-          <button pButton pRipple type="button" label="Save Circular" icon="pi pi-check" [loading]="uploading()" [disabled]="uploading()" (click)="onUpload($event)"></button>
-        </div>
-      </ng-template>
-    </p-drawer>
-
-    <!-- AI Chat Drawer -->
-    <p-drawer
-      [visible]="showChatDrawer()"
-      (visibleChange)="showChatDrawer.set($event)"
-      position="right"
-      [style]="{ width: '600px', maxWidth: '96vw' }"
-      [modal]="true"
-      [dismissible]="true"
-      [showCloseIcon]="false"
-      styleClass="chat-drawer"
-      appendTo="body"
-    >
-      <ng-template pTemplate="header">
-        <div class="drawer-header-row">
-          <div>
-            <div class="text-900 font-semibold text-xl">Qwen AI Compliance Chat</div>
-            <div class="text-600 text-sm mt-1">Asking questions about {{ chatCircular()?.title }}</div>
-          </div>
-          <button pButton pRipple type="button" icon="pi pi-times" class="p-button-text" (click)="closeChatDrawer()"></button>
-        </div>
-      </ng-template>
-
-      <ng-template pTemplate="content">
-        <div class="drawer-content-shell chat-shell">
-          <div class="chat-scroll flex-1 surface-50 border-1 surface-border border-round-lg p-3">
-            <div *ngFor="let msg of chatMessages()" class="chat-row flex mb-3" [ngClass]="{'justify-content-end': msg.role === 'user'}">
-              <div class="chat-bubble" [ngClass]="msg.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'">
-                 <div class="text-xs font-semibold mb-1">{{ msg.role === 'user' ? 'You' : 'Qwen Assistant' }}</div>
-                 <div class="chat-content">{{ msg.content }}</div>
-              </div>
-            </div>
-            <div *ngIf="isTyping()" class="text-600 text-sm italic">Qwen is thinking...</div>
-          </div>
-
-          <form (submit)="sendMessage($event)" class="flex gap-2 align-items-end">
-            <app-text-field
-              [field]="chatInput"
-              [hideLabel]="true"
-              placeholder="Ask anything about this circular..."
-              class="flex-1">
-            </app-text-field>
-            <button pButton type="submit" icon="pi pi-send" [disabled]="isTyping() || !chatInput().trim()" label="Send"></button>
-          </form>
-        </div>
-      </ng-template>
-    </p-drawer>
-
-    <!-- Logs Modal -->
-    <p-dialog header="AI Processing Logs" [(visible)]="showLogsModal" [modal]="true" [style]="{ width: '100%', 'max-width': '50rem', 'margin': '1rem' }" [dismissableMask]="true" (onHide)="closeLogsModal()">
-      <div class="logs-container bg-gray-900 text-green-400 p-4 border-round h-24rem overflow-y-auto font-mono text-sm" #logsScroll>
-        <div *ngFor="let log of activeLogs()">
-          <span class="text-gray-500">[{{ log.created_at | date:'mediumTime' }}]</span> 
-          <span [ngClass]="{'text-yellow-400': log.status === 'PROCESSING', 'text-green-500': log.status === 'COMPLETED', 'text-red-500': log.status === 'FAILED'}">[{{ log.status }}]</span> 
-          <span class="white-space-pre-wrap">{{ log.message }}</span>
-        </div>
-        <div *ngIf="streamingThinkingText()" class="mb-2 p-2 border-round" style="background: #1a1a2e; border: 1px solid #444;">
-          <div class="text-purple-300 text-xs font-bold mb-1">🧠 THINKING (Chain of Thought)</div>
-          <span class="text-purple-200 white-space-pre-wrap" style="font-size: 0.8rem; opacity: 0.85">{{ streamingThinkingText() }}</span>
-        </div>
-        <div *ngIf="streamingLogText()" class="mt-2 text-yellow-300">
-          <span class="text-gray-500">[Live Stream]</span> <span class="text-yellow-400">[GENERATING]</span> 
-          <span class="white-space-pre-wrap">{{ streamingLogText() }}</span>
-        </div>
-        <div *ngIf="activeLogs().length === 0 && !streamingLogText() && !streamingThinkingText()" class="text-gray-500 italic">No logs available.</div>
-        <div *ngIf="isPollingLogs()" class="mt-2 text-yellow-300 animate-pulse">Connected to live stream...</div>
-      </div>
-    </p-dialog>
-
-    <!-- Amendment Chain Drawer -->
-    <p-drawer
-      [visible]="showAmendmentChainModal()"
-      (visibleChange)="showAmendmentChainModal.set($event)"
-      position="right"
-      [style]="{ width: '600px', maxWidth: '96vw' }"
-      [modal]="true"
-      [dismissible]="true"
-      [showCloseIcon]="false"
-      styleClass="circular-drawer"
-      appendTo="body"
-    >
-      <ng-template pTemplate="header">
-        <div class="drawer-header-row">
-          <div class="drawer-title-wrap">
-            <span class="drawer-title-icon" style="color: var(--teal-600); background: var(--teal-50); border-color: var(--teal-200)">
-              <i class="pi pi-link"></i>
-            </span>
-            <div>
-              <div class="text-900 font-semibold text-xl">Amendment Chain</div>
-              <div class="text-600 text-sm mt-1">History of modifications and updates</div>
-            </div>
-          </div>
-          <button pButton pRipple type="button" icon="pi pi-times" class="p-button-text p-button-rounded" (click)="closeAmendmentChainModal()"></button>
-        </div>
-      </ng-template>
-
-      <ng-template pTemplate="content">
-        <div class="drawer-content-shell">
-          <div *ngIf="!amendmentChainData()" class="flex align-items-center justify-content-center p-5 text-gray-500">
-            <i class="pi pi-spin pi-spinner text-2xl mr-2"></i> Loading chain...
-          </div>
-          
-          <div *ngIf="amendmentChainData() as data" class="mt-2">
-            <!-- Timeline UI using standard HTML/CSS for complete control -->
-            <div class="amendment-timeline">
-              <!-- Root / Original Circular -->
-              <div class="timeline-event" *ngIf="data.original">
-                <div class="timeline-marker">
-                  <div class="marker-dot original-dot"></div>
-                  <div class="marker-line" *ngIf="data.amendments?.length"></div>
-                </div>
-                <div class="timeline-content p-card p-3 w-full mb-4 border-1 border-gray-200 border-round-xl">
-                  <div class="flex justify-content-between align-items-center mb-2">
-                    <span class="p-badge p-badge-secondary p-badge-outlined px-2 py-1 text-xs">ORIGINAL</span>
-                    <span class="text-gray-500 text-sm font-medium"><i class="pi pi-calendar mr-1 text-xs"></i> {{ data.original.published_date | date:'mediumDate' }}</span>
-                  </div>
-                  <div class="font-semibold text-lg text-900 mb-1 line-height-3">{{ data.original.title }}</div>
-                  <div class="text-gray-600 text-sm mb-3">Ref: {{ data.original.reference_no || 'N/A' }}</div>
-                  
-                  <div class="flex justify-content-between align-items-center">
-                    <span class="text-xs" [ngClass]="{'text-green-600 font-medium': data.original.ai_processing_status === 'COMPLETED'}">
-                      <i class="pi" [ngClass]="{'pi-check-circle': data.original.ai_processing_status === 'COMPLETED', 'pi-clock text-orange-500': data.original.ai_processing_status !== 'COMPLETED'}"></i>
-                      {{ data.original.ai_processing_status | titlecase }}
-                    </span>
-                    <button pButton pRipple icon="pi pi-external-link" label="View Tasks" class="p-button-text p-button-sm p-button-secondary py-1" (click)="viewTasks(data.original.id); closeAmendmentChainModal()"></button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Missing Original state -->
-              <div class="timeline-event" *ngIf="!data.original && data.amendments?.length">
-                <div class="timeline-marker">
-                  <div class="marker-dot error-dot"></div>
-                  <div class="marker-line"></div>
-                </div>
-                <div class="timeline-content p-3 w-full mb-4 border-round-xl" style="background: var(--red-50); border: 1px dashed var(--red-300)">
-                  <div class="font-medium text-red-600"><i class="pi pi-exclamation-triangle mr-2"></i> Original Circular Not Found</div>
-                  <div class="text-sm text-red-500 mt-1">The system could not automatically link the amendment to an original circular.</div>
-                </div>
-              </div>
-
-              <!-- Amendments -->
-              <div class="timeline-event" *ngFor="let am of data.amendments; let last = last; let i = index">
-                <div class="timeline-marker">
-                  <div class="marker-dot amendment-dot"></div>
-                  <div class="marker-line" *ngIf="!last"></div>
-                </div>
-                <div class="timeline-content p-card p-3 w-full mb-4 border-1 border-blue-100 border-round-xl" [ngStyle]="{'background': 'linear-gradient(to right, var(--blue-50) 0%, #ffffff 50%)'}">
-                  <div class="flex justify-content-between align-items-center mb-2">
-                    <span class="p-badge p-badge-info px-2 py-1 text-xs"><i class="pi pi-pencil mr-1 text-xs"></i> AMENDMENT {{ i + 1 }}</span>
-                    <span class="text-gray-500 text-sm font-medium"><i class="pi pi-calendar mr-1 text-xs"></i> {{ am.published_date | date:'mediumDate' }}</span>
-                  </div>
-                  <div class="font-semibold text-lg text-900 mb-1 line-height-3">{{ am.title }}</div>
-                  <div class="text-gray-600 text-sm mb-3">Ref: {{ am.reference_no || 'N/A' }}</div>
-                  
-                  <div *ngIf="am.amendment_notes" class="bg-white p-2 border-round border-1 border-gray-200 text-sm text-gray-700 mb-3 shadow-1" style="border-left: 3px solid var(--blue-400)">
-                    <strong>AI Notes:</strong> {{ am.amendment_notes }}
-                  </div>
-                  
-                  <div class="flex justify-content-between align-items-center">
-                    <span class="text-xs" [ngClass]="{'text-green-600 font-medium': am.ai_processing_status === 'COMPLETED'}">
-                      <i class="pi" [ngClass]="{'pi-check-circle': am.ai_processing_status === 'COMPLETED', 'pi-clock text-orange-500': am.ai_processing_status !== 'COMPLETED'}"></i>
-                      {{ am.ai_processing_status | titlecase }}
-                    </span>
-                    <button pButton pRipple icon="pi pi-external-link" label="View Tasks" class="p-button-text p-button-sm p-button-secondary py-1" (click)="viewTasks(am.id); closeAmendmentChainModal()"></button>
-                  </div>
-                </div>
-              </div>
-              
-              <div *ngIf="!data.amendments?.length && data.original" class="text-center text-gray-500 mt-4 italic">
-                No amendments have been issued for this circular.
-              </div>
-            </div>
-          </div>
-        </div>
-      </ng-template>
-    </p-drawer>
-  `,
-  styles: [`
-    :host ::ng-deep .circular-drawer .p-drawer-content,
-    :host ::ng-deep .chat-drawer .p-drawer-content {
-      display: flex;
-      flex-direction: column;
-      padding: 0;
-      background: var(--surface-ground);
-    }
-
-    :host ::ng-deep .circular-drawer .p-drawer-header,
-    :host ::ng-deep .chat-drawer .p-drawer-header {
-      padding: 1.15rem 1.35rem;
-      border-bottom: 1px solid var(--surface-200);
-      background: var(--surface-card);
-    }
-
-    :host ::ng-deep .circular-drawer .p-drawer-footer,
-    :host ::ng-deep .chat-drawer .p-drawer-footer {
-      padding: 0;
-      border-top: 1px solid var(--surface-200);
-      background: var(--surface-card);
-      box-shadow: 0 -8px 22px rgba(15, 23, 42, 0.06);
-    }
-
-    .drawer-header-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      width: 100%;
-    }
-
-    .drawer-title-wrap {
-      display: flex;
-      align-items: center;
-      gap: 0.85rem;
-      min-width: 0;
-    }
-
-    .drawer-title-icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 2.65rem;
-      height: 2.65rem;
-      border-radius: 8px;
-      color: var(--primary-color);
-      background: var(--primary-50, var(--surface-100));
-      border: 1px solid var(--primary-100, var(--surface-border));
-      flex: 0 0 auto;
-    }
-
-    .drawer-footer-row {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 0.75rem;
-      width: 100%;
-      padding: 1rem 1.35rem;
-    }
-
-    .drawer-footer-row button {
-      min-width: 9.5rem;
-    }
-
-    .drawer-content-shell {
-      display: flex;
-      flex-direction: column;
-      gap: 0.9rem;
-      padding: 1rem 1.35rem 1.25rem;
-    }
-
-    .drawer-section {
-      background: var(--surface-card);
-      border: 1px solid var(--surface-border);
-      border-radius: 8px;
-      padding: 1rem 1rem 0.35rem;
-    }
-
-    .section-heading {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 1.1rem;
-    }
-
-    .section-kicker {
-      color: var(--text-color);
-      font-size: 0.78rem;
-      font-weight: 700;
-      letter-spacing: 0;
-      text-transform: uppercase;
-      white-space: nowrap;
-    }
-
-    .section-line {
-      flex: 1;
-      height: 1px;
-      background: var(--surface-border);
-    }
-
-    .drawer-form-grid {
-      row-gap: 0.65rem;
-    }
-
-    .drawer-form-grid .field {
-      margin-bottom: 0.85rem;
-    }
-
-    .date-field-wrapper {
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
-    }
-
-    .date-field-label {
-      font-size: 0.875rem;
-      font-weight: 500;
-      color: var(--text-color-secondary);
-    }
-
-    .date-field-wrapper input[type="date"] {
-      height: 2.75rem;
-    }
-
-    .penalty-toggle {
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-      min-height: 3rem;
-      padding: 0.65rem 0.85rem;
-      margin-bottom: 0.85rem;
-      background: var(--surface-50);
-      border: 1px solid var(--surface-border);
-      border-radius: 8px;
-    }
-
-    .penalty-fields {
-      padding-top: 0.15rem;
-    }
-
-    :host ::ng-deep .circular-file-upload .p-fileupload-header {
-      padding: 0.85rem;
-      background: var(--surface-50);
-      border-color: var(--surface-border);
-      border-radius: 8px 8px 0 0;
-    }
-
-    :host ::ng-deep .circular-file-upload .p-fileupload-content {
-      border-color: var(--surface-border);
-      border-radius: 0 0 8px 8px;
-      padding: 1rem;
-    }
-
-    :host ::ng-deep .circular-file-upload .p-fileupload-file {
-      width: 100%;
-      display: flex;
-      padding: 0;
-      margin: 0;
-    }
-
-    .processing-panel {
-      margin-top: 0.9rem;
-      padding: 0.85rem;
-      border-radius: 8px;
-      border: 1px solid var(--surface-border);
-      background: var(--surface-50);
-    }
-
-    .processing-panel.processing {
-      border-color: var(--primary-200, var(--surface-border));
-      background: var(--primary-50, var(--surface-50));
-    }
-
-    .processing-panel.done {
-      border-color: var(--green-200);
-      background: var(--green-50);
-    }
-
-    .processing-panel.error {
-      border-color: var(--red-200);
-      background: var(--red-50);
-    }
-
-    .processing-panel i {
-      color: var(--primary-color);
-      font-size: 1.35rem;
-    }
-
-    .processing-panel.done i {
-      color: var(--green-600);
-    }
-
-    .processing-panel.error i {
-      color: var(--red-600);
-    }
-
-    .chat-shell {
-      min-height: 0;
-      flex: 1;
-    }
-
-    :host ::ng-deep .chat-scroll {
-      min-height: 40vh;
-      overflow-y: auto;
-    }
-
-    .chat-bubble {
-      max-width: 80%;
-      border-radius: 1rem;
-      padding: 0.85rem 1rem;
-      line-height: 1.45;
-      word-break: break-word;
-      white-space: pre-wrap;
-    }
-
-    .chat-bubble-user {
-      background: var(--primary-color);
-      color: var(--primary-color-text, #ffffff);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-    }
-
-    .chat-bubble-ai {
-      background: var(--surface-card);
-      color: var(--text-color);
-      border: 1px solid var(--surface-border);
-    }
-
-    .chat-content {
-      font-size: 0.94rem;
-    }
-
-    .white-space-pre-wrap {
-      white-space: pre-wrap;
-    }
-
-      @media (max-width: 520px) {
-      .drawer-header-row {
-        align-items: flex-start;
-      }
-
-      .drawer-footer-row {
-        padding: 0.85rem 1rem;
-      }
-
-      .drawer-footer-row button {
-        flex: 1 1 0;
-        min-width: 0;
-      }
-    }
-
-    /* Timeline styles for Amendment Chain */
-    .amendment-timeline {
-      position: relative;
-      padding: 1rem 0 1rem 1rem;
-    }
-    .timeline-event {
-      display: flex;
-      position: relative;
-    }
-    .timeline-marker {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-right: 1.5rem;
-      width: 1.5rem;
-    }
-    .marker-dot {
-      width: 1.25rem;
-      height: 1.25rem;
-      border-radius: 50%;
-      border: 3px solid white;
-      box-shadow: 0 0 0 2px var(--surface-border);
-      z-index: 2;
-      background: white;
-      margin-top: 0.5rem;
-    }
-    .original-dot {
-      box-shadow: 0 0 0 2px var(--gray-400);
-      background: var(--gray-500);
-    }
-    .amendment-dot {
-      box-shadow: 0 0 0 2px var(--blue-400);
-      background: var(--blue-500);
-    }
-    .error-dot {
-      box-shadow: 0 0 0 2px var(--red-400);
-      background: var(--red-500);
-    }
-    .marker-line {
-      flex: 1;
-      width: 2px;
-      background: var(--surface-border);
-      margin-top: -0.25rem;
-      margin-bottom: -1rem;
-      z-index: 1;
-    }
-    ::ng-deep .highlighted-row {
-      background: rgba(59, 130, 246, 0.15) !important;
-      border-left: 4px solid #3b82f6 !important;
-      animation: highlight-pulse 2s infinite ease-in-out;
-    }
-    @keyframes highlight-pulse {
-      0% { background: rgba(59, 130, 246, 0.15); }
-      50% { background: rgba(59, 130, 246, 0.25); }
-      100% { background: rgba(59, 130, 246, 0.15); }
-    }
-  `]
+  templateUrl: './circulars.component.html',
+  styleUrl: './circulars.component.css'
 })
 export class CircularsComponent implements OnInit, OnDestroy {
   circulars = signal<Circular[]>([]);
   authorities = signal<Authority[]>([]);
+
+  // Dynamic filter state
+  activeFilters = signal<{ authority: boolean; dateRange: boolean; institution: boolean }>({
+    authority: false,
+    dateRange: false,
+    institution: false
+  });
+
+  selectedDateRange = signal<Date[] | null>(null);
+  selectedInstitution = signal<string>('');
+  private filterInitialized = false;
+
+  filterMenuItems: MenuItem[] = [
+    {
+      label: 'Authority',
+      icon: 'pi pi-building',
+      command: () => this.addFilter('authority')
+    },
+    {
+      label: 'Date Range',
+      icon: 'pi pi-calendar',
+      command: () => this.addFilter('dateRange')
+    },
+    {
+      label: 'Institution',
+      icon: 'pi pi-university',
+      command: () => this.addFilter('institution')
+    }
+  ];
 
   showCircularDrawer = signal<boolean>(false);
   uploading = signal<boolean>(false);
@@ -879,6 +161,21 @@ export class CircularsComponent implements OnInit, OnDestroy {
 
   showAmendmentChainModal = signal<boolean>(false);
   amendmentChainData = signal<{ original: Circular | null, amendments: any[], isOriginal: boolean } | null>(null);
+  modalCircular = signal<any | null>(null);
+
+  prioritySeverity(priority: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {
+    switch (priority?.toLowerCase()) {
+      case 'critical': return 'danger';
+      case 'high': return 'warn';
+      case 'medium': return 'info';
+      case 'low': return 'success';
+      default: return 'secondary';
+    }
+  }
+
+  getFileUrl(url: string | null | undefined): string {
+    return this.api.getFileUrl(url);
+  }
 
   private config: any = inject(APP_CONFIG);
 
@@ -889,8 +186,30 @@ export class CircularsComponent implements OnInit, OnDestroy {
     { field: 'published_date', header: 'Circular Date', type: 'date', width: '12%' },
     { field: 'circular_nature', header: 'Nature', type: 'badge', width: '12%' },
     { field: 'circular_type_name', header: 'Type', width: '15%' },
-    { field: 'is_applicable', header: 'Applicable', type: 'boolean', width: '10%' },
-    { field: 'is_active', header: 'Active', type: 'boolean', width: '10%' },
+    {
+      field: 'is_applicable',
+      header: 'Applicable',
+      type: 'boolean_action',
+      width: '10%',
+      booleanActionTrueIcon: 'pi pi-check-circle',
+      booleanActionFalseIcon: 'pi pi-times-circle',
+      booleanActionTrueLabel: 'Applicable',
+      booleanActionFalseLabel: 'Not Applicable',
+      booleanActionTrueClass: 'p-button-success',
+      booleanActionFalseClass: 'p-button-warning'
+    },
+    {
+      field: 'is_active',
+      header: 'Active',
+      type: 'boolean_action',
+      width: '10%',
+      booleanActionTrueIcon: 'pi pi-check-circle',
+      booleanActionFalseIcon: 'pi pi-ban',
+      booleanActionTrueLabel: 'Active',
+      booleanActionFalseLabel: 'Inactive',
+      booleanActionTrueClass: 'p-button-success',
+      booleanActionFalseClass: 'p-button-danger'
+    },
     { field: 'ai_processing_status', header: 'Status', width: '10%' }
   ];
 
@@ -931,33 +250,33 @@ export class CircularsComponent implements OnInit, OnDestroy {
       label: 'Amendment Chain',
       icon: 'pi pi-link',
       styleClass: 'text-teal-600',
-      command: (row) => this.openAmendmentChainModal(row.id)
+      command: (row) => this.openAmendmentChainModal(row)
     },
-    {
-      label: 'View Logs',
-      icon: 'pi pi-server',
-      styleClass: 'text-blue-600',
-      command: (row) => this.openLogsModal(row)
-    },
-    {
-      label: (row: any) => row?.is_applicable ? 'Mark Not Applicable' : 'Mark Applicable',
-      icon: (row: any) => row?.is_applicable ? 'pi pi-times-circle' : 'pi pi-check-circle',
-      styleClass: 'text-orange-500',
-      command: (row) => this.toggleCircularFlag(row, 'is_applicable')
-    },
-    {
-      label: (row: any) => row?.is_active ? 'Deactivate' : 'Activate',
-      icon: (row: any) => row?.is_active ? 'pi pi-ban' : 'pi pi-play-circle',
-      styleClass: 'text-indigo-500',
-      command: (row) => this.toggleCircularFlag(row, 'is_active')
-    },
-    {
-      label: 'Delete',
-      icon: 'pi pi-trash',
-      styleClass: 'text-red-500',
-      disabled: (row) => row?.ai_processing_status === 'QUEUED' || row?.ai_processing_status === 'PROCESSING',
-      command: (row) => this.confirmDelete(row)
-    }
+    // {
+    //   label: 'View Logs',
+    //   icon: 'pi pi-server',
+    //   styleClass: 'text-blue-600',
+    //   command: (row) => this.openLogsModal(row)
+    // },
+    // {
+    //   label: (row: any) => row?.is_applicable ? 'Mark Not Applicable' : 'Mark Applicable',
+    //   icon: (row: any) => row?.is_applicable ? 'pi pi-times-circle' : 'pi pi-check-circle',
+    //   styleClass: 'text-orange-500',
+    //   command: (row) => this.toggleCircularFlag(row, 'is_applicable')
+    // },
+    // {
+    //   label: (row: any) => row?.is_active ? 'Deactivate' : 'Activate',
+    //   icon: (row: any) => row?.is_active ? 'pi pi-ban' : 'pi pi-play-circle',
+    //   styleClass: 'text-indigo-500',
+    //   command: (row) => this.toggleCircularFlag(row, 'is_active')
+    // },
+    // {
+    //   label: 'Delete',
+    //   icon: 'pi pi-trash',
+    //   styleClass: 'text-red-500',
+    //   disabled: (row) => row?.ai_processing_status === 'QUEUED' || row?.ai_processing_status === 'PROCESSING',
+    //   command: (row) => this.confirmDelete(row)
+    // }
   ];
 
   highlightedCircularId = signal<number | null>(null);
@@ -966,7 +285,28 @@ export class CircularsComponent implements OnInit, OnDestroy {
     return this.highlightedCircularId() === row.id ? 'highlighted-row' : '';
   };
 
-  constructor(private api: ComplianceApiService, private http: HttpClient, private router: Router, private confirmationService: ConfirmationService, private messageService: MessageService, private route: ActivatedRoute) { }
+  constructor(
+    private api: ComplianceApiService,
+    private http: HttpClient,
+    private router: Router,
+    private confirmationService: ConfirmationService,
+    private messageService: MessageService,
+    private route: ActivatedRoute
+  ) {
+    // Reactively watch for date picker changes via signal effect
+    effect(() => {
+      const dates = this.selectedDateRange();
+      this.handleDateRangeFilterChange();
+    });
+  }
+
+  handleTableActionClick(event: { name: string; row: any }) {
+    if (event.name === 'is_applicable') {
+      this.toggleCircularFlag(event.row, 'is_applicable');
+    } else if (event.name === 'is_active') {
+      this.toggleCircularFlag(event.row, 'is_active');
+    }
+  }
 
   toggleCircularFlag(row: any, field: 'is_applicable' | 'is_active') {
     const newValue = !row[field];
@@ -1029,6 +369,31 @@ export class CircularsComponent implements OnInit, OnDestroy {
     this.closeLogsModal();
   }
 
+  addFilter(type: 'authority' | 'dateRange' | 'institution') {
+    this.activeFilters.update(curr => ({ ...curr, [type]: true }));
+  }
+
+  removeFilter(type: 'authority' | 'dateRange' | 'institution') {
+    this.activeFilters.update(curr => ({ ...curr, [type]: false }));
+    if (type === 'authority') {
+      this.selectedAuthorityFilter.set(null);
+      this.handleAuthorityFilterChange();
+    } else if (type === 'dateRange') {
+      this.selectedDateRange.set(null);
+    } else if (type === 'institution') {
+      this.selectedInstitution.set('');
+      this.page = 1;
+      this.loadData();
+    }
+  }
+
+  formatLocalDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   loadData() {
     const params: any = {
       page: this.page,
@@ -1037,16 +402,31 @@ export class CircularsComponent implements OnInit, OnDestroy {
     if (this.searchQuery) {
       params.search = this.searchQuery;
     }
-    const authId = this.selectedAuthorityFilter();
-    if (authId !== null && authId !== undefined) {
-      params.authority_id = authId;
+    
+    if (this.activeFilters().authority) {
+      const authId = this.selectedAuthorityFilter();
+      if (authId !== null && authId !== undefined) {
+        params.authority_id = authId;
+      }
+    }
+
+    const dates = this.selectedDateRange();
+    if (this.activeFilters().dateRange && dates && dates.length > 0) {
+      const startDate = dates[0];
+      const endDate = dates[1];
+      if (startDate) {
+        params.start_date = this.formatLocalDate(startDate);
+      }
+      if (endDate) {
+        params.end_date = this.formatLocalDate(endDate);
+      }
     }
 
     this.api.getCirculars(params).subscribe({
       next: (res) => {
         this.circulars.set(res.data);
         this.totalRecords.set(res.total);
-        
+
         // Auto scroll to highlighted row if exists
         if (this.highlightedCircularId()) {
           setTimeout(() => {
@@ -1065,6 +445,18 @@ export class CircularsComponent implements OnInit, OnDestroy {
   handleAuthorityFilterChange() {
     this.page = 1;
     this.loadData();
+  }
+
+  handleDateRangeFilterChange() {
+    if (!this.filterInitialized) {
+      this.filterInitialized = true;
+      return;
+    }
+    const dates = this.selectedDateRange();
+    if (!dates || (dates[0] && dates[1]) || dates.length === 0) {
+      this.page = 1;
+      this.loadData();
+    }
   }
 
   handleLazyLoad(event: any) {
@@ -1366,25 +758,25 @@ export class CircularsComponent implements OnInit, OnDestroy {
     this.router.navigate(['/tasks'], { queryParams: { circular_id: id, parent_page: this.page, parent_limit: this.limit } });
   }
 
-  confirmDelete(row: Circular) {
-    this.confirmationService.confirm({
-      message: `Delete circular "<strong>${row.title}</strong>"? This will also delete all associated tasks and files.`,
-      header: 'Delete Circular',
-      icon: 'pi pi-exclamation-triangle',
-      acceptButtonStyleClass: 'p-button-danger',
-      accept: () => {
-        this.api.deleteCircular(row.id).subscribe({
-          next: () => {
-            this.circulars.update(list => list.filter(c => c.id !== row.id));
-            this.messageService.add({ severity: 'success', summary: 'Deleted', detail: `"${row.title}" deleted successfully.`, life: 3000 });
-          },
-          error: () => {
-            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to delete circular.', life: 4000 });
-          }
-        });
-      }
-    });
-  }
+  // confirmDelete(row: Circular) {
+  //   this.confirmationService.confirm({
+  //     message: `Delete circular "<strong>${row.title}</strong>"? This will also delete all associated tasks and files.`,
+  //     header: 'Delete Circular',
+  //     icon: 'pi pi-exclamation-triangle',
+  //     acceptButtonStyleClass: 'p-button-danger',
+  //     accept: () => {
+  //       this.api.deleteCircular(row.id).subscribe({
+  //         next: () => {
+  //           this.circulars.update(list => list.filter(c => c.id !== row.id));
+  //           this.messageService.add({ severity: 'success', summary: 'Deleted', detail: `"${row.title}" deleted successfully.`, life: 3000 });
+  //         },
+  //         error: () => {
+  //           this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to delete circular.', life: 4000 });
+  //         }
+  //       });
+  //     }
+  //   });
+  // }
 
   openChatModal(c: Circular) {
     this.chatCircular.set(c);
@@ -1528,10 +920,11 @@ export class CircularsComponent implements OnInit, OnDestroy {
 
   // ── Amendment Chain ──────────────────────────────────────────────────────────
 
-  openAmendmentChainModal(circularId: number) {
+  openAmendmentChainModal(row: any) {
     this.showAmendmentChainModal.set(true);
+    this.modalCircular.set(row);
     this.amendmentChainData.set(null);
-    this.api.getAmendmentChain(circularId).subscribe({
+    this.api.getAmendmentChain(row.id).subscribe({
       next: (data) => {
         this.amendmentChainData.set(data);
       },
@@ -1549,5 +942,6 @@ export class CircularsComponent implements OnInit, OnDestroy {
   closeAmendmentChainModal() {
     this.showAmendmentChainModal.set(false);
     this.amendmentChainData.set(null);
+    this.modalCircular.set(null);
   }
 }

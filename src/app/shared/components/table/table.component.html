@@ -127,20 +127,11 @@
 
           <!-- Actions Column Header -->
           @if (actions().length) {
-            @if (actionDisplayMode() === 'buttons') {
-              <th
-                [attr.colspan]="actions().length"
-                style="text-align: center"
-              >
-                Actions
-              </th>
-            } @else {
-              <th
-                style="width: 4rem; text-align: center"
-              >
-                Action
-              </th>
-            }
+            <th
+              style="text-align: center; width: auto;"
+            >
+              {{ actionDisplayMode() === 'buttons' ? 'Actions' : 'Action' }}
+            </th>
           }
 
           <!-- Action Columns (Left Side) -->
@@ -290,20 +281,24 @@
             <!-- Actions Cell -->
             @if (actions().length) {
               @if (actionDisplayMode() === 'buttons') {
-                <td *ngFor="let action of actions()" style="text-align: center; width: 2.25rem;">
-                  @if (action.visible === undefined || action.visible(rowData)) {
-                  <button
-                    pButton
-                    pRipple
-                    [icon]="isRowLoading(rowData, action.name) ? 'pi pi-spin pi-spinner' : getActionIcon(action, rowData)"
-                    [label]="showActionLabels() ? getActionLabel(action, rowData) : ''"
-                    class="p-button-text p-button-secondary p-button-rounded table-action-btn"
-                    [disabled]="isRowLoading(rowData, action.name) || (action.disabled ? action.disabled(rowData) : false)"
-                    (click)="action.command(rowData); $event.stopPropagation()"
-                    [pTooltip]="getActionLabel(action, rowData)"
-                    tooltipPosition="top"
-                  ></button>
-                  }
+                <td style="text-align: center; width: auto; white-space: nowrap;">
+                  <div class="flex align-items-center justify-content-center gap-1">
+                    @for (action of actions(); track action) {
+                      @if (action.visible === undefined || action.visible(rowData)) {
+                      <button
+                        pButton
+                        pRipple
+                        [icon]="isRowLoading(rowData, action.name) ? 'pi pi-spin pi-spinner' : getActionIcon(action, rowData)"
+                        [label]="showActionLabels() ? getActionLabel(action, rowData) : ''"
+                        class="p-button-text p-button-secondary p-button-rounded table-action-btn"
+                        [disabled]="isRowLoading(rowData, action.name) || (action.disabled ? action.disabled(rowData) : false)"
+                        (click)="action.command(rowData); $event.stopPropagation()"
+                        [pTooltip]="getActionLabel(action, rowData)"
+                        tooltipPosition="top"
+                      ></button>
+                      }
+                    }
+                  </div>
                 </td>
               } @else {
                 <td style="text-align: center; width: 4rem;">
@@ -377,6 +372,20 @@
                     {{ formatValue(rowData[col.field], col) }}
                   </span>
                 </ng-container>
+
+                <!-- Boolean Action Type -->
+                <ng-container *ngSwitchCase="'boolean_action'">
+                  <button
+                    pButton
+                    pRipple
+                    [icon]="rowData[col.field] ? (col.booleanActionTrueIcon || 'pi pi-check') : (col.booleanActionFalseIcon || 'pi pi-times')"
+                    [label]="rowData[col.field] ? (col.booleanActionTrueLabel || 'Yes') : (col.booleanActionFalseLabel || 'No')"
+                    [class]="'p-button-text p-button-sm ' + (rowData[col.field] ? (col.booleanActionTrueClass || 'p-button-success') : (col.booleanActionFalseClass || 'p-button-danger'))"
+                    (click)="onActionClick.emit({ name: col.actionName || col.field, row: rowData }); $event.stopPropagation()"
+                    [pTooltip]="rowData[col.field] ? (col.booleanActionTrueLabel || 'Yes') : (col.booleanActionFalseLabel || 'No')"
+                    tooltipPosition="top"
+                  ></button>
+                </ng-container>
                 
                 <!-- Default Text -->
                 <ng-container *ngSwitchDefault>
@@ -416,12 +425,14 @@
           <!-- Actions Loading Cells -->
           @if (actions().length) {
             @if (actionDisplayMode() === 'buttons') {
-              <td *ngFor="let action of actions()" style="text-align: center">
-                <p-skeleton shape="w-full" height="1.5rem"></p-skeleton>
+              <td style="text-align: center; width: auto;">
+                <div class="flex align-items-center justify-content-center gap-1">
+                  <p-skeleton *ngFor="let action of actions()" shape="circle" size="2rem"></p-skeleton>
+                </div>
               </td>
             } @else {
-              <td style="text-align: center">
-                <p-skeleton shape="w-full" height="1.5rem"></p-skeleton>
+              <td style="text-align: center; width: 4rem;">
+                <p-skeleton shape="circle" size="2rem"></p-skeleton>
               </td>
             }
           }

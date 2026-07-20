@@ -1,10 +1,37 @@
 <p-toast></p-toast>
 <p-confirmdialog></p-confirmdialog>
+@if (currentCircular()) {
+  <div class="card mb-4 surface-card border-round border-1 surface-border p-3 flex flex-column md:flex-row md:align-items-center md:justify-content-between gap-3">
+    <div class="flex-1">
+      <div class="flex align-items-center gap-2 mb-2 flex-wrap">
+        <span class="text-xs font-semibold px-2 py-0.5 bg-primary-100 text-primary-900 border-round">
+          {{ currentCircular()?.authority_name || 'Circular' }}
+        </span>
+        <span class="text-xs font-medium text-500">Ref: {{ currentCircular()?.reference_no || 'N/A' }}</span>
+        <span class="text-xs font-medium text-500">Date: {{ currentCircular()?.published_date | date:'dd MMM yyyy' }}</span>
+        <p-tag [value]="currentCircular()?.priority || 'Medium'" [severity]="prioritySeverity(currentCircular()?.priority || '')"></p-tag>
+      </div>
+      <h6 class="m-0 text-lg font-bold text-900 line-height-3" style="font-size: 1.1rem;">{{ currentCircular()?.title }}</h6>
+      <p class="m-0 text-xs text-600 mt-1" style="max-height: 40px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+        {{ currentCircular()?.description || 'No description provided.' }}
+      </p>
+    </div>
+    <div class="flex align-items-center gap-2 flex-shrink-0">
+      @if (currentCircular()?.file_url) {
+        <a [href]="getFileUrl(currentCircular()?.file_url)" target="_blank" class="p-button p-button-outlined p-button-secondary p-button-sm flex align-items-center gap-2" style="text-decoration: none;">
+          <i class="pi pi-file-pdf"></i><span>Download PDF</span>
+        </a>
+      }
+      <button pButton pRipple type="button" icon="pi pi-arrow-left" label="Back to Circulars" class="p-button-outlined p-button-secondary p-button-sm" (click)="goBackToCirculars()"></button>
+    </div>
+  </div>
+}
+
 <div class="card">
   <div class="flex align-items-center justify-content-between mb-4">
     <h5 class="m-0 text-xl font-semibold">Task Sets Master</h5>
     <div class="flex align-items-center gap-2">
-      @if (cameFromCirculars()) {
+      @if (cameFromCirculars() && !currentCircular()) {
         <button
           pButton
           type="button"
