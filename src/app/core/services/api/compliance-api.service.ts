@@ -294,8 +294,16 @@ export class ComplianceApiService {
     return this.http.patch<any>(`${this.baseUrl}/assignments/${id}/propose-timeline`, { date });
   }
 
+  proposeCustomTimeline(id: number, date: string, taskTimelines: { assignment_task_id: number; proposed_due_date: string }[]) {
+    return this.http.patch<any>(`${this.baseUrl}/assignments/${id}/propose-custom-timeline`, { date, task_timelines: taskTimelines });
+  }
+
   acceptTimeline(id: number) {
     return this.http.patch<any>(`${this.baseUrl}/assignments/${id}/accept-timeline`, {});
+  }
+
+  acceptTimelineWithChanges(id: number, date?: string, taskTimelines?: { assignment_task_id: number; proposed_due_date: string }[]) {
+    return this.http.patch<any>(`${this.baseUrl}/assignments/${id}/accept-timeline-with-changes`, { date, task_timelines: taskTimelines });
   }
 
   getAssignmentTasks(id: number) {

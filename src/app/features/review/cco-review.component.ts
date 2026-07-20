@@ -49,7 +49,7 @@ import { FormsModule } from "@angular/forms";
 export class CcoReviewComponent implements OnInit {
   rawAssignments = signal<any[]>([]);
   searchQuery = signal<string>('');
-  selectedStatusFilter = signal<string | null>('ESCALATED_TO_CCO'); // default filter is ESCALATED_TO_CCO
+  selectedStatusFilter = signal<string | null>(null);
   
   private config: any = inject(APP_CONFIG);
 
@@ -61,6 +61,7 @@ export class CcoReviewComponent implements OnInit {
 
   statusFilterOptions = [
     { label: 'Escalated to CCO',  value: 'ESCALATED_TO_CCO' },
+    { label: 'Timeline Review',   value: 'Timeline_Review' },
     { label: 'Completed',         value: 'COMPLETED' },
     { label: 'Rejected',          value: 'REJECTED' }
   ];
@@ -88,8 +89,15 @@ export class CcoReviewComponent implements OnInit {
 
   tableActions: TableAction[] = [
     { 
+      label: "Review Timeline", 
+      icon: "pi pi-calendar", 
+      visible: (row: any) => row.status === 'Timeline_Review',
+      command: (row: any) => this.router.navigate(["/assignments", row.id]) 
+    },
+    { 
       label: "Review Evidence", 
       icon: "pi pi-search", 
+      visible: (row: any) => row.status !== 'Timeline_Review',
       command: (row: any) => this.router.navigate(["/cco-review", row.id]) 
     }
   ];

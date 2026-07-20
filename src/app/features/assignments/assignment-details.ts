@@ -49,9 +49,19 @@ import { TooltipModule } from 'primeng/tooltip';
           <span class="text-xs font-semibold text-gray-700 bg-gray-50 border px-2 py-0.5 rounded" style="font-size: 0.8rem;">
             Auth: {{ authorityName() || 'N/A' }}
           </span>
-          <span class="text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded flex items-center gap-1" style="font-size: 0.8rem;">
-            <i class="pi pi-calendar-times"></i> Due: {{ proposedTimeline() | date:'dd-MM-yyyy' }}
-          </span>
+          
+          <!-- Editable main assignment due date in planning phase -->
+          <div *ngIf="canEditTimeline(); else viewDueDate" class="flex items-center gap-1">
+            <span class="text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200 px-2 py-1 rounded" style="font-size: 0.8rem;">
+              <i class="pi pi-calendar"></i> Suggest Assignment Due:
+            </span>
+            <input type="date" [(ngModel)]="tempAssignmentTimeline" class="p-1 border rounded text-xs font-semibold" style="width: 125px; border: 1px solid var(--surface-border); border-radius: 4px;">
+          </div>
+          <ng-template #viewDueDate>
+            <span class="text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded flex items-center gap-1" style="font-size: 0.8rem;">
+              <i class="pi pi-calendar-times"></i> Due: {{ proposedTimeline() | date:'dd-MM-yyyy' }}
+            </span>
+          </ng-template>
         </div>
       </div>
 
@@ -79,71 +89,90 @@ import { TooltipModule } from 'primeng/tooltip';
         
         <button pButton type="button" icon="pi pi-arrow-left" label="Back" severity="secondary" outlined size="small" class="p-button-sm no-print" (click)="goBack()"></button>
       </div>
-
-
     </div>
 
-      <!-- Rejection Alert Banner -->
-      <div *ngIf="assignmentStatus() === 'REJECTED'" class="p-3 mb-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg shadow-sm">
-        <div class="flex">
-          <div class="flex-shrink-0">
-            <i class="pi pi-exclamation-triangle text-red-500 text-lg"></i>
-          </div>
-          <div class="ml-3">
-            <h3 class="text-xs font-bold text-red-800 m-0">Assignment Rejected by CCO/CO</h3>
-            <div class="mt-1 text-xs text-red-700">
-              <p class="font-semibold m-0">Reason: "{{ reviewRemark() || 'No feedback provided' }}"</p>
-            </div>
+    <!-- Rejection Alert Banner -->
+    <div *ngIf="assignmentStatus() === 'REJECTED'" class="p-3 mb-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg shadow-sm">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <i class="pi pi-exclamation-triangle text-red-500 text-lg"></i>
+        </div>
+        <div class="ml-3">
+          <h3 class="text-xs font-bold text-red-800 m-0">Assignment Rejected by CCO/CO</h3>
+          <div class="mt-1 text-xs text-red-700">
+            <p class="font-semibold m-0">Reason: "{{ reviewRemark() || 'No feedback provided' }}"</p>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Task Headers Groups -->
-      <ng-container *ngFor="let group of taskGroups()">
-        <!-- Blue Header Banner matching PHP -->
-        <div class="bg-indigo-600 text-white font-bold px-4 py-2 mt-4 rounded-t-xl" 
-             style="background-color: #4f46e5; text-transform: uppercase; font-size: 0.825rem; letter-spacing: 0.05em; display: flex; justify-content: space-between; align-items: center;">
-          <span>Compliance</span>
-          <span class="text-xs opacity-90">{{ group.tasks.length }} Tasks</span>
+    <!-- Task Headers Groups -->
+    <ng-container *ngFor="let group of taskGroups()">
+      <div class="bg-indigo-600 text-white font-bold px-4 py-2 mt-4 rounded-t-xl" 
+           style="background-color: #4f46e5; text-transform: uppercase; font-size: 0.825rem; letter-spacing: 0.05em; display: flex; justify-content: space-between; align-items: center;">
+        <span>Compliance</span>
+        <span class="text-xs opacity-90">{{ group.tasks.length }} Tasks</span>
+      </div>
+
+      <div class="glass-panel mb-4 bg-white rounded-b-xl rounded-t-none border border-gray-100 overflow-hidden shadow-sm"
+           style="border-top: 0; padding: 0.5rem 1.25rem 0.75rem 1.25rem;">
+        
+        <div class="border-b border-gray-100 pb-1.5 mb-2">
+          <h2 class="text-xs font-bold text-gray-500 m-0 uppercase tracking-wider" style="font-size: 0.725rem; letter-spacing: 0.05em; color: #4b5563;">
+            HEADER: {{ group.headerName === 'Uncategorized' ? 'GENERAL TASK' : group.headerName }}
+          </h2>
         </div>
+        
+        <div class="flex flex-column" style="padding: 0;">
+          <div *ngFor="let t of group.tasks; let i = index" 
+               class="question-card"
+               [ngClass]="{
+                 'border-left-green': t.status === 'COMPLETED' && t.compliance_status === 'COMPLIED',
+                 'border-left-red': t.status === 'COMPLETED' && t.compliance_status === 'NOT_COMPLIED',
+                 'border-left-yellow': t.status === 'PENDING'
+               }">
+            
+            <!-- Left Column: Serial Number & Task Info -->
+            <div class="question-main">
+              <div class="question-number">
+                {{ i + 1 }}
+              </div>
+              <div>
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-0.5" style="font-size: 0.65rem; letter-spacing: 0.05em;">
+                  {{ t.circular_title }}
+                </span>
+                <p class="font-semibold text-gray-800 m-0" style="line-height: 1.45; font-size: 0.95rem;">
+                  {{ t.description }}
+                </p>
+              </div>
+            </div>
 
-        <div class="glass-panel mb-4 bg-white rounded-b-xl rounded-t-none border border-gray-100 overflow-hidden shadow-sm"
-             style="border-top: 0; padding: 0.5rem 1.25rem 0.75rem 1.25rem;">
-          
-          <!-- Header name block matching PHP -->
-          <div class="border-b border-gray-100 pb-1.5 mb-2">
-            <h2 class="text-xs font-bold text-gray-500 m-0 uppercase tracking-wider" style="font-size: 0.725rem; letter-spacing: 0.05em; color: #4b5563;">
-              HEADER: {{ group.headerName === 'Uncategorized' ? 'GENERAL TASK' : group.headerName }}
-            </h2>
-          </div>
-          
-          <!-- Compact checklist continuous row layout -->
-          <div class="flex flex-column" style="padding: 0;">
-            <div *ngFor="let t of group.tasks; let i = index" 
-                 class="question-card"
-                 [ngClass]="{
-                   'border-left-green': t.status === 'COMPLETED' && t.compliance_status === 'COMPLIED',
-                   'border-left-red': t.status === 'COMPLETED' && t.compliance_status === 'NOT_COMPLIED',
-                   'border-left-yellow': t.status === 'PENDING'
-                 }">
-              
-              <!-- Left Column: Serial Number & Task Info -->
-              <div class="question-main">
-                <div class="question-number">
-                  {{ i + 1 }}
-                </div>
-                <div>
-                  <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-0.5" style="font-size: 0.65rem; letter-spacing: 0.05em;">
-                    {{ t.circular_title }}
+            <!-- Right Column: Answer Form or Timeline Proposing -->
+            <div class="answer-form" *ngIf="assignmentStatus() === 'Pending_Timeline' || assignmentStatus() === 'Timeline_Review'; else complianceForm" style="display: flex; flex-direction: column; align-items: stretch; justify-content: center; width: 100%;">
+              <div style="display: flex; flex-direction: column; gap: 0.35rem; width: 100%; min-width: 250px;">
+                <label class="control-label font-bold text-gray-700" style="font-size: 0.75rem;">Suggested Task Due Date</label>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <input type="date" 
+                         [(ngModel)]="t.temp_proposed_due_date" 
+                         [disabled]="!canEditTimeline()" 
+                         class="answer-control p-2 border rounded w-full" 
+                         style="font-size: 0.85rem; padding: 0.4rem; border: 1px solid var(--surface-border); border-radius: 6px;">
+                  <span class="text-xs text-indigo-600 font-bold bg-indigo-50 border border-indigo-200 px-2 py-1 rounded-full whitespace-nowrap" *ngIf="t.due_date && t.proposed_due_date && t.due_date !== t.proposed_due_date">
+                    Revised
                   </span>
-                  <p class="font-semibold text-gray-800 m-0" style="line-height: 1.45; font-size: 0.95rem;">
-                    {{ t.description }}
-                  </p>
+                </div>
+                <div class="text-xs text-gray-400 mt-1" *ngIf="t.due_date">
+                  Default Task Due Date: {{ t.due_date | date:'dd-MM-yyyy' }}
                 </div>
               </div>
+            </div>
 
-              <!-- Right Column: Answer Form Sub-grid -->
-              <div class="answer-form">
+            <ng-template #complianceForm>
+              <div class="answer-form" style="display: flex; flex-direction: column; align-items: stretch; justify-content: center; width: 100%;">
+                <div class="text-xs text-gray-500 font-bold mb-2 flex items-center gap-1" style="font-size: 0.75rem; width: 100%; display: flex; align-items: center;">
+                  <i class="pi pi-calendar-times text-indigo-500"></i> Task Due Date: 
+                  <span class="text-gray-900 font-extrabold">{{ (t.due_date ? (t.due_date | date:'dd-MM-yyyy') : (proposedTimeline() | date:'dd-MM-yyyy')) }}</span>
+                </div>
                 <div class="answer-form-grid">
                   
                   <!-- Left Sub-column: Dropdown & File Uploader & Save Button (Stacked) -->
@@ -222,28 +251,51 @@ import { TooltipModule } from 'primeng/tooltip';
 
                 </div>
               </div>
+            </ng-template>
 
-            </div>
           </div>
         </div>
-      </ng-container>
-
-      <!-- Bulk Submit Compliance Button -->
-      <div class="flex justify-content-center mt-4 mb-5" *ngIf="canEditAssignment()" style="display: flex; justify-content: center;">
-        <p-button
-          label="Submit Compliance"
-          icon="pi pi-send"
-          severity="primary"
-          [loading]="submitting"
-          loadingIcon="pi pi-spinner pi-spin"
-          (click)="submitAllCompliance()" />
       </div>
+    </ng-container>
 
-      <div *ngIf="taskGroups().length === 0" class="glass-panel text-center py-8 text-gray-500 bg-white rounded-xl border border-gray-100">
-        No compliance tasks found for this assignment.
-      </div>
-      
-      <div style="height: 4rem;"></div> <!-- bottom padding spacing -->
+    <!-- Bulk Submit Compliance Button -->
+    <div class="flex justify-content-center mt-4 mb-5" *ngIf="canEditAssignment()" style="display: flex; justify-content: center;">
+      <p-button
+        label="Submit Compliance"
+        icon="pi pi-send"
+        severity="primary"
+        [loading]="submitting"
+        loadingIcon="pi pi-spinner pi-spin"
+        (click)="submitAllCompliance()" />
+    </div>
+
+    <!-- Submit Timeline for Approval (Branch user planning) -->
+    <div class="flex justify-content-center mt-4 mb-5" *ngIf="assignmentStatus() === 'Pending_Timeline' && canEditTimeline()" style="display: flex; justify-content: center;">
+      <p-button
+        label="Submit Timeline for Approval"
+        icon="pi pi-send"
+        severity="primary"
+        [loading]="submitting"
+        loadingIcon="pi pi-spinner pi-spin"
+        (click)="submitCustomTimeline()" />
+    </div>
+
+    <!-- Approve Timeline with changes (CCO/CO reviewing) -->
+    <div class="flex justify-content-center mt-4 mb-5" *ngIf="assignmentStatus() === 'Timeline_Review' && canEditTimeline()" style="display: flex; justify-content: center;">
+      <p-button
+        label="Approve Timeline"
+        icon="pi pi-check"
+        severity="success"
+        [loading]="submitting"
+        loadingIcon="pi pi-spinner pi-spin"
+        (click)="approveCustomTimeline()" />
+    </div>
+
+    <div *ngIf="taskGroups().length === 0" class="glass-panel text-center py-8 text-gray-500 bg-white rounded-xl border border-gray-100">
+      No compliance tasks found for this assignment.
+    </div>
+    
+    <div style="height: 4rem;"></div> <!-- bottom padding spacing -->->
   `,
 })
 export class AssignmentDetailsComponent implements OnInit {
@@ -277,6 +329,10 @@ export class AssignmentDetailsComponent implements OnInit {
 
   submitting = false;
 
+  // Customizable due dates state
+  userRole = signal<string>('');
+  tempAssignmentTimeline: string = '';
+
   // Options for the p-select compliance status dropdown
   complianceOptions = [
     { label: 'Pending Declaration', value: 'PENDING' },
@@ -297,6 +353,13 @@ export class AssignmentDetailsComponent implements OnInit {
   ) { }
 
   ngOnInit() {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      this.userRole.set(String(user.role || '').toLowerCase());
+    } catch (e) {
+      console.warn('Failed to parse user in details:', e);
+    }
+
     this.route.paramMap.subscribe(params => {
       const id = params.get('id');
       if (id) {
@@ -310,21 +373,77 @@ export class AssignmentDetailsComponent implements OnInit {
   progressPercentage = computed(() => this.tasks().length ? Math.round((this.completedCount() / this.tasks().length) * 100) : 0);
 
   canEditAssignment(): boolean {
-    let user: any = {};
-    try {
-      user = JSON.parse(localStorage.getItem('user') || '{}');
-    } catch (e) {
-      console.warn('Invalid user JSON in assignment details:', e);
-    }
-    const userRole = String(user.role || '').toLowerCase();
-
+    const role = this.userRole();
     // Only branch users / branch managers are permitted to enter compliance details
-    if (userRole !== 'branch' && userRole !== 'branch_user') {
+    if (role !== 'branch' && role !== 'branch_user') {
       return false;
     }
 
     const status = this.assignmentStatus();
-    return status !== 'REVIEW_PENDING' && status !== 'COMPLETED' && status !== 'ESCALATED_TO_CCO';
+    return status === 'In_Progress' || status === 'REJECTED' || status === 'PENDING_RECOMPLIANCE';
+  }
+
+  canEditTimeline(): boolean {
+    const role = this.userRole();
+    const status = this.assignmentStatus();
+    if (status === 'Pending_Timeline' && (role === 'branch' || role === 'branch_user')) {
+      return true;
+    }
+    if (status === 'Timeline_Review' && (role === 'cco' || role === 'co' || role === 'admin')) {
+      return true;
+    }
+    return false;
+  }
+
+  submitCustomTimeline() {
+    if (!this.assignmentId) return;
+
+    const dateStr = this.tempAssignmentTimeline;
+    if (!dateStr) {
+      this.notification.warn('Assignment due date is required.');
+      return;
+    }
+
+    const taskTimelines = this.tasks().map(t => ({
+      assignment_task_id: t.assignment_task_id,
+      proposed_due_date: t.temp_proposed_due_date || dateStr
+    }));
+
+    this.submitting = true;
+    this.api.proposeCustomTimeline(this.assignmentId, dateStr, taskTimelines).subscribe({
+      next: () => {
+        this.submitting = false;
+        this.notification.success('Timeline successfully proposed and submitted for approval.');
+        this.loadTasks();
+      },
+      error: (err) => {
+        this.submitting = false;
+        this.notification.error('Failed to submit timeline proposal: ' + (err.message || err.statusText));
+      }
+    });
+  }
+
+  approveCustomTimeline() {
+    if (!this.assignmentId) return;
+
+    const dateStr = this.tempAssignmentTimeline;
+    const taskTimelines = this.tasks().map(t => ({
+      assignment_task_id: t.assignment_task_id,
+      proposed_due_date: t.temp_proposed_due_date || dateStr
+    }));
+
+    this.submitting = true;
+    this.api.acceptTimelineWithChanges(this.assignmentId, dateStr, taskTimelines).subscribe({
+      next: () => {
+        this.submitting = false;
+        this.notification.success('Timeline approved successfully.');
+        this.loadTasks();
+      },
+      error: (err) => {
+        this.submitting = false;
+        this.notification.error('Failed to approve timeline: ' + (err.message || err.statusText));
+      }
+    });
   }
 
   loadTasks() {
@@ -339,6 +458,7 @@ export class AssignmentDetailsComponent implements OnInit {
             ...t,
             temp_compliance_status: t.compliance_status || 'PENDING',
             temp_remarks: t.remarks || '',
+            temp_proposed_due_date: t.proposed_due_date ? t.proposed_due_date.split('T')[0] : (t.due_date ? t.due_date.split('T')[0] : ''),
             has_evidence: false,
             evidence_url: ''
           }));
@@ -354,6 +474,11 @@ export class AssignmentDetailsComponent implements OnInit {
             this.branchName.set(first.branch_name || '');
             this.taskSetName.set(first.task_set_name || '');
             this.proposedTimeline.set(first.proposed_timeline || '');
+            
+            if (first.proposed_timeline) {
+              this.tempAssignmentTimeline = first.proposed_timeline.split('T')[0];
+            }
+
             const freqVal = first.frequency || '';
             this.frequency.set(this.frequencyMap[freqVal] || freqVal || 'ONCE');
             this.startDate.set(first.start_date || '');

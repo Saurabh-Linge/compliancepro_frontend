@@ -49,7 +49,7 @@ import { FormsModule } from "@angular/forms";
 export class CoReviewComponent implements OnInit {
   rawAssignments = signal<any[]>([]);
   searchQuery = signal<string>('');
-  selectedStatusFilter = signal<string | null>('REVIEW_PENDING'); // default filter is REVIEW_PENDING
+  selectedStatusFilter = signal<string | null>(null);
   
   private config: any = inject(APP_CONFIG);
 
@@ -61,6 +61,7 @@ export class CoReviewComponent implements OnInit {
 
   statusFilterOptions = [
     { label: 'Review Pending',    value: 'REVIEW_PENDING' },
+    { label: 'Timeline Review',   value: 'Timeline_Review' },
     { label: 'In Progress',       value: 'In_Progress' },
     { label: 'Completed',         value: 'COMPLETED' },
     { label: 'Rejected',          value: 'REJECTED' }
@@ -89,8 +90,15 @@ export class CoReviewComponent implements OnInit {
 
   tableActions: TableAction[] = [
     { 
+      label: "Review Timeline", 
+      icon: "pi pi-calendar", 
+      visible: (row: any) => row.status === 'Timeline_Review',
+      command: (row: any) => this.router.navigate(["/assignments", row.id]) 
+    },
+    { 
       label: "Review Evidence", 
       icon: "pi pi-search", 
+      visible: (row: any) => row.status !== 'Timeline_Review',
       command: (row: any) => this.router.navigate(["/co-review", row.id]) 
     }
   ];

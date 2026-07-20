@@ -399,7 +399,10 @@ export class TaskSetsComponent implements OnInit {
 
   private formatDate(date: Date | null): string | undefined {
     if (!date) return undefined;
-    return date.toISOString().split('T')[0];
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   saveTaskSet() {
@@ -504,12 +507,21 @@ export class TaskSetsComponent implements OnInit {
 
         this.messageService.clear();
         if (res.generated === 0) {
-          this.messageService.add({
-            severity: 'warn',
-            summary: 'Already Created',
-            detail: `Assignments for "${row.name}" have already been created for this period. No new assignments generated.`,
-            life: 5000
-          });
+          if (res.skipped === 0) {
+            this.messageService.add({
+              severity: 'warn',
+              summary: 'No Branches Assigned',
+              detail: `You haven't assigned any departments/branches to "${row.name}". Please edit the task set and assign them before generating assignments.`,
+              life: 6000
+            });
+          } else {
+            this.messageService.add({
+              severity: 'warn',
+              summary: 'Already Created',
+              detail: `Assignments for "${row.name}" have already been created for this period. No new assignments generated.`,
+              life: 5000
+            });
+          }
         } else {
           this.generatedTaskSetIds.add(row.id);
           this.messageService.add({
@@ -529,7 +541,7 @@ export class TaskSetsComponent implements OnInit {
         this.messageService.add({
           severity: 'error',
           summary: 'Error',
-          detail: 'Failed to auto-generate assignments: ' + (err.message || err.statusText)
+          detail: 'Failed to auto-generate assignments: ' + (err.error?.message || err.message || err.statusText)
         });
       }
     });

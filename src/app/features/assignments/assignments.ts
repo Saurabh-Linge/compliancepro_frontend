@@ -197,6 +197,22 @@ export class AssignmentsComponent implements OnInit {
       }
     },
     {
+      label: 'Setup Timeline',
+      icon: 'pi pi-calendar-plus',
+      visible: (row) => row.status === 'Pending_Timeline' && this.isBranchUser,
+      command: (row) => {
+        this.goToTasks(row.id);
+      }
+    },
+    {
+      label: 'Review Timeline',
+      icon: 'pi pi-calendar-minus',
+      visible: (row) => row.status === 'Timeline_Review' && this.isReviewerUser,
+      command: (row) => {
+        this.goToTasks(row.id);
+      }
+    },
+    {
       label: 'Accept Timeline',
       icon: 'pi pi-check',
       styleClass: 'text-green-600',
@@ -311,8 +327,11 @@ export class AssignmentsComponent implements OnInit {
     const dt = this.proposedDate();
     if (!asg || !dt) return;
 
-    // Format date properly
-    const dateStr = dt.toISOString().split('T')[0];
+    // Format date properly using local timezone to avoid day shift
+    const year = dt.getFullYear();
+    const month = String(dt.getMonth() + 1).padStart(2, '0');
+    const day = String(dt.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
 
     this.api.proposeTimeline(asg.id, dateStr).subscribe(() => {
       this.showProposeModal.set(false);
@@ -350,10 +369,15 @@ export class AssignmentsComponent implements OnInit {
       return;
     }
 
+    const year = dt.getFullYear();
+    const month = String(dt.getMonth() + 1).padStart(2, '0');
+    const day = String(dt.getDate()).padStart(2, '0');
+    const formattedTimeline = `${year}-${month}-${day}`;
+
     const payload = {
       task_set_id: ts.id,
       branch_ids: this.selectedBranchIds,
-      proposed_timeline: dt.toISOString().split('T')[0]
+      proposed_timeline: formattedTimeline
     };
 
     this.api.createAssignment(payload).subscribe(() => {
