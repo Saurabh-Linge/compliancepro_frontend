@@ -6,24 +6,25 @@ import { Router } from '@angular/router';
 import { ComplianceApiService } from '../../core/services/api/compliance-api.service';
 import { AuthService } from '../../core/services/auth/auth.service';
 import { DateFieldComponent } from '../../shared/components/form/date-field/date-field.component';
-import { CardListComponent } from '../../shared/components/card-list/card-list.component';
-import { TableColumn, TableAction } from '../../shared/components/table/table.component';
+import { TableComponent, TableColumn, TableAction } from '../../shared/components/table/table.component';
 
 import { DialogModule } from 'primeng/dialog';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { ButtonModule } from 'primeng/button';
+import { SelectModule } from 'primeng/select';
 
 @Component({
   selector: 'app-assignments',
   standalone: true,
   imports: [
-    CommonModule, 
-    FormsModule, 
-    CardListComponent, 
-    DialogModule, 
-    MultiSelectModule, 
+    CommonModule,
+    FormsModule,
+    TableComponent,
+    DialogModule,
+    MultiSelectModule,
     ButtonModule,
-    DateFieldComponent
+    DateFieldComponent,
+    SelectModule
   ],
   template: `
     <div class="card">
@@ -32,21 +33,35 @@ import { ButtonModule } from 'primeng/button';
       </div>
         <!-- ASSIGNMENTS TAB -->
         <div *ngIf="activeTab() === 'ASSIGNMENTS'">
-          <app-card-list
+          <app-table
               [data]="assignments()"
+              [columns]="assignmentColumns"
               [actions]="assignmentActions"
-              [showSearch]="true"
-              [showStatusFilter]="true"
+              [showAddButton]="false"
               [showRefreshButton]="true"
               [paginator]="true"
               [rows]="limit"
               [totalRecords]="totalRecords()"
-              [first]="(page - 1) * limit"
-              (onPageChange)="handlePageChange($event)"
-              (onSearch)="handleSearch($event)"
-              (onStatusChange)="onStatusFilterChange($event)"
+              [lazy]="true"
+              (onLazyLoad)="handleLazyLoad($event)"
               (onRefresh)="loadAssignments()"
-          ></app-card-list>
+              (onSearch)="handleSearch($event)"
+          >
+            <!-- Project the Status filter inside the toolbar-actions slot -->
+            <div toolbar-actions class="flex align-items-center gap-2">
+              <p-select
+                [options]="statusFilterOptions"
+                [ngModel]="selectedStatusFilter()"
+                (ngModelChange)="onStatusFilterChange($event)"
+                placeholder="Filter by Status"
+                [showClear]="true"
+                optionLabel="label"
+                optionValue="value"
+                class="w-full sm:w-16rem"
+                styleClass="h-2.5rem flex align-items-center"
+              ></p-select>
+            </div>
+          </app-table>
         </div>
 
         <!-- TASK SETS TAB REMOVED (Moved to Task Sets Master) -->
@@ -105,11 +120,12 @@ import { ButtonModule } from 'primeng/button';
         <button pButton pRipple label="Assign" icon="pi pi-check" class="p-button-text" [disabled]="selectedBranchIds.length === 0 || !proposedTimeline()" (click)="createAssignments()"></button>
       </ng-template>
     </p-dialog>
+
   `
 })
 export class AssignmentsComponent implements OnInit {
   activeTab = signal<'ASSIGNMENTS' | 'TASK_SETS'>('ASSIGNMENTS');
-  
+
   assignments = signal<any[]>([]);
   totalRecords = signal<number>(0);
   page = 1;
@@ -119,13 +135,13 @@ export class AssignmentsComponent implements OnInit {
   // Status filter
   selectedStatusFilter = signal<string | null>(null);
   statusFilterOptions = [
-    { label: 'Pending Timeline',  value: 'Pending_Timeline' },
-    { label: 'Timeline Review',   value: 'Timeline_Review' },
-    { label: 'In Progress',       value: 'In_Progress' },
-    { label: 'Review Pending',    value: 'REVIEW_PENDING' },
-    { label: 'Completed',         value: 'COMPLETED' },
-    { label: 'Escalated to CCO',  value: 'ESCALATED_TO_CCO' },
-    { label: 'Rejected',          value: 'REJECTED' },
+    { label: 'Pending Timeline', value: 'Pending_Timeline' },
+    { label: 'Timeline Review', value: 'Timeline_Review' },
+    { label: 'In Progress', value: 'In_Progress' },
+    { label: 'Review Pending', value: 'REVIEW_PENDING' },
+    { label: 'Completed', value: 'COMPLETED' },
+    { label: 'Escalated to CCO', value: 'ESCALATED_TO_CCO' },
+    { label: 'Rejected', value: 'REJECTED' },
     { label: 'Pending Recompliance', value: 'PENDING_RECOMPLIANCE' },
   ];
   taskSets = signal<any[]>([]);
@@ -192,7 +208,7 @@ export class AssignmentsComponent implements OnInit {
       }
     },
     {
-      label: 'Execute Tasks',
+      label: 'Do Compliance',
       icon: 'pi pi-list',
       visible: (row) => (row.status === 'In_Progress' || row.status === 'REJECTED' || row.status === 'PENDING_RECOMPLIANCE') && this.isBranchUser,
       command: (row) => {
@@ -202,7 +218,7 @@ export class AssignmentsComponent implements OnInit {
       }
     },
     {
-      label: 'View Tasks',
+      label: 'View Compliance',
       icon: 'pi pi-eye',
       visible: (row) => (row.status === 'REVIEW_PENDING' || row.status === 'COMPLETED' || row.status === 'ESCALATED_TO_CCO') || (this.isReviewerUser && (row.status === 'In_Progress' || row.status === 'PENDING_RECOMPLIANCE')),
       command: (row) => {
@@ -219,7 +235,7 @@ export class AssignmentsComponent implements OnInit {
     }
   ];
 
-  constructor(private api: ComplianceApiService, private router: Router) {}
+  constructor(private api: ComplianceApiService, private router: Router) { }
 
   ngOnInit() {
     this.loadAssignments();
@@ -242,7 +258,7 @@ export class AssignmentsComponent implements OnInit {
     if (status) {
       params.status = status;
     }
-    
+
     this.api.getAssignments(params).subscribe(res => {
       this.assignments.set(res.data);
       this.totalRecords.set(res.total);
@@ -294,7 +310,7 @@ export class AssignmentsComponent implements OnInit {
     const asg = this.selectedAssignment();
     const dt = this.proposedDate();
     if (!asg || !dt) return;
-    
+
     // Format date properly
     const dateStr = dt.toISOString().split('T')[0];
 

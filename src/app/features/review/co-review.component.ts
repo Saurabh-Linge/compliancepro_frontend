@@ -5,27 +5,44 @@ import { Router } from "@angular/router";
 import { inject } from "@angular/core";
 import { APP_CONFIG } from "../../core/services/config/config.token";
 import { NotificationService } from "../../core/services/notification/notification.service";
-import { CardListComponent } from "../../shared/components/card-list/card-list.component";
+import { TableComponent, TableColumn, TableAction } from "../../shared/components/table/table.component";
+import { SelectModule } from "primeng/select";
+import { FormsModule } from "@angular/forms";
 
 @Component({
   selector: "app-co-review",
   standalone: true,
-  imports: [CommonModule, CardListComponent],
+  imports: [CommonModule, TableComponent, SelectModule, FormsModule],
   template: `
     <div class="card">
       <div class="flex align-items-center justify-content-between mb-4">
         <h5 class="m-0 text-xl font-semibold">CO Review Queue</h5>
       </div>
-      <app-card-list
+      <app-table
         [data]="assignments()"
+        [columns]="tableColumns"
         [actions]="tableActions"
-        [showSearch]="true"
-        [showStatusFilter]="true"
+        [showAddButton]="false"
         [showRefreshButton]="true"
+        [paginator]="true"
+        [rows]="10"
         (onSearch)="handleSearch($event)"
-        (onStatusChange)="handleStatusChange($event)"
-        (onRefresh)="loadAssignments()">
-      </app-card-list>
+        (onRefresh)="loadAssignments()"
+      >
+        <div toolbar-actions class="flex align-items-center gap-2">
+          <p-select
+            [options]="statusFilterOptions"
+            [ngModel]="selectedStatusFilter()"
+            (ngModelChange)="handleStatusChange($event)"
+            placeholder="Filter by Status"
+            [showClear]="true"
+            optionLabel="label"
+            optionValue="value"
+            class="w-full sm:w-16rem"
+            styleClass="h-2.5rem flex align-items-center"
+          ></p-select>
+        </div>
+      </app-table>
     </div>
   `
 })
@@ -35,6 +52,19 @@ export class CoReviewComponent implements OnInit {
   selectedStatusFilter = signal<string | null>('REVIEW_PENDING'); // default filter is REVIEW_PENDING
   
   private config: any = inject(APP_CONFIG);
+
+  tableColumns: TableColumn[] = [
+    { field: 'task_set_name', header: 'Task Set Name', width: '40%' },
+    { field: 'branch_name', header: 'Branch', width: '30%' },
+    { field: 'status', header: 'Status', type: 'status', width: '20%' }
+  ];
+
+  statusFilterOptions = [
+    { label: 'Review Pending',    value: 'REVIEW_PENDING' },
+    { label: 'In Progress',       value: 'In_Progress' },
+    { label: 'Completed',         value: 'COMPLETED' },
+    { label: 'Rejected',          value: 'REJECTED' }
+  ];
 
   assignments = computed(() => {
     let list = this.rawAssignments();
@@ -57,11 +87,10 @@ export class CoReviewComponent implements OnInit {
     return list;
   });
 
-  tableActions = [
+  tableActions: TableAction[] = [
     { 
       label: "Review Evidence", 
       icon: "pi pi-search", 
-      styleClass: "w-full",
       command: (row: any) => this.router.navigate(["/co-review", row.id]) 
     }
   ];
@@ -88,5 +117,6 @@ export class CoReviewComponent implements OnInit {
     this.selectedStatusFilter.set(status);
   }
 }
+
 
 

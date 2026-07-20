@@ -1,0 +1,174 @@
+<!-- CO Compliance Officer Dashboard View -->
+<div class="dashboard-hero">
+  <div class="hero-left">
+    <div class="hero-tag">Compliance Review</div>
+    <h1>Compliance Officer Dashboard</h1>
+    <p>Review unit timelines, checklists, and overdue compliance items.</p>
+  </div>
+  <div class="hero-right">
+    <span class="role-badge"><i class="pi pi-check-circle"></i> {{ role }}</span>
+  </div>
+</div>
+
+<!-- Quick Metrics Grid -->
+<div class="metrics-grid">
+  <div class="metric-card theme-blue cursor-pointer" [routerLink]="['/home']" fragment="branch-performance">
+    <div class="card-glow"></div>
+    <div class="card-icon"><i class="pi pi-sitemap"></i></div>
+    <div class="card-details">
+      <span class="card-title">Mapped Units</span>
+      <span class="card-value">{{ (stats?.coMetrics?.totalBranches ?? 0) + (stats?.coMetrics?.totalHeadOffice ?? 0) }}</span>
+    </div>
+  </div>
+
+  <div class="metric-card theme-amber cursor-pointer" routerLink="/assignments">
+    <div class="card-glow"></div>
+    <div class="card-icon"><i class="pi pi-calendar-times"></i></div>
+    <div class="card-details">
+      <span class="card-title">Timeline Reviews</span>
+      <span class="card-value">{{ stats?.assignments?.timelineReview ?? 0 }}</span>
+    </div>
+  </div>
+
+  <div class="metric-card theme-purple cursor-pointer" routerLink="/co-review">
+    <div class="card-glow"></div>
+    <div class="card-icon"><i class="pi pi-search"></i></div>
+    <div class="card-details">
+      <span class="card-title">Checklist Reviews</span>
+      <span class="card-value">{{ stats?.assignments?.reviewPending ?? 0 }}</span>
+    </div>
+  </div>
+
+  <div class="metric-card theme-red cursor-pointer" routerLink="/co-review">
+    <div class="card-glow"></div>
+    <div class="card-icon"><i class="pi pi-clock"></i></div>
+    <div class="card-details">
+      <span class="card-title">Overdue Tasks</span>
+      <span class="card-value">{{ stats?.coMetrics?.totalOverdue ?? 0 }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Grid -->
+<div class="dashboard-grid-2col">
+  <!-- Awaiting Action Queue -->
+  <div class="dashboard-panel table-panel">
+    <div class="panel-header">
+      <div>
+        <h3>Awaiting Action Queue</h3>
+        <span class="panel-subtitle">Submissions waiting for review or timeline validation</span>
+      </div>
+      <span class="text-xs text-orange-600 font-bold bg-orange-50 border border-orange-200 px-3 py-1 rounded-full flex items-center gap-1"
+            *ngIf="stats?.coMetrics?.awaitingActionQueue?.length > 0">
+        <i class="pi pi-exclamation-circle"></i> {{ stats?.coMetrics?.awaitingActionQueue?.length }} Pending
+      </span>
+    </div>
+    <div class="panel-body">
+      <div class="overflow-x-auto w-full" *ngIf="stats?.coMetrics?.awaitingActionQueue?.length > 0; else noActionQueue">
+        <table class="dashboard-table w-full">
+          <thead>
+            <tr>
+              <th>Branch / Dept</th>
+              <th>Task Set</th>
+              <th>Due Date</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of stats?.coMetrics?.awaitingActionQueue">
+              <td class="font-bold text-gray-900">{{ item.branch_name }}</td>
+              <td>{{ item.task_set_name }}</td>
+              <td class="font-semibold text-gray-600">{{ item.proposed_timeline | date:'mediumDate' }}</td>
+              <td>
+                <a [routerLink]="item.status === 'REVIEW_PEND' || item.status === 'REVIEW_PENDING' ? ['/co-review', item.assignment_id] : ['/assignments']"
+                   class="text-indigo-600 hover:text-indigo-900 font-bold text-sm flex items-center gap-1 cursor-pointer">
+                  <i class="pi pi-chevron-right"></i> Review
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <ng-template #noActionQueue>
+        <div class="text-center py-6 text-gray-400 font-medium">All caught up! No items awaiting your action.</div>
+      </ng-template>
+    </div>
+  </div>
+
+  <!-- Recent Regulatory Circulars -->
+  <div class="dashboard-panel">
+    <div class="panel-header">
+      <div>
+        <h3>Recent Regulatory Circulars</h3>
+        <span class="panel-subtitle">Latest incoming guidelines to map/assign</span>
+      </div>
+      <a routerLink="/circulars" class="text-primary hover:underline text-sm font-medium">View All →</a>
+    </div>
+    <div class="panel-body">
+      <div class="progress-list" *ngIf="stats?.recentCirculars?.length > 0; else noCircularsCO">
+        <div *ngFor="let c of stats.recentCirculars" class="progress-item" style="border-bottom: 1px solid var(--surface-border); padding-bottom: 0.75rem; margin-bottom: 0.75rem; display: flex; gap: 0.75rem;">
+          <div style="width: 2.25rem; height: 2.25rem; border-radius: 8px; background-color: #fee2e2; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i class="pi pi-file-pdf" style="color: #ef4444; font-size: 1.1rem;"></i>
+          </div>
+          <div style="flex: 1; min-width: 0;">
+            <span class="font-semibold text-gray-900 block" style="font-size: 0.9rem; line-height: 1.4; white-space: normal;">{{ c.title }}</span>
+            <span class="text-xs text-gray-500 block mt-1">{{ c.authority_name }} · {{ c.published_date | date:'mediumDate' }}</span>
+          </div>
+        </div>
+      </div>
+      <ng-template #noCircularsCO>
+        <div class="text-center py-6 text-gray-400 font-medium">No recent circulars found.</div>
+      </ng-template>
+    </div>
+  </div>
+</div>
+
+<!-- Mapped Units performance -->
+<div class="dashboard-panel margin-top-2rem" id="branch-performance">
+  <div class="panel-header">
+    <h3>Branch / Department Compliance Progress</h3>
+    <span class="panel-subtitle">Overview of total, active, completed and overdue checklists across mapped units</span>
+  </div>
+  <div class="panel-body">
+    <div class="overflow-x-auto w-full">
+      <table class="dashboard-table w-full">
+        <thead>
+          <tr>
+            <th style="width: 60px;">Sr. No.</th>
+            <th>Branch / Department</th>
+            <th class="text-center">Total Assigned</th>
+            <th class="text-center">Active (In Progress)</th>
+            <th class="text-center">Review Pending</th>
+            <th class="text-center">Completed</th>
+            <th class="text-center">Overdue</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let br of stats?.coMetrics?.branchReports; let i = index">
+            <td class="text-center text-gray-500 font-semibold">{{ i + 1 }}</td>
+            <td>
+              <span class="font-bold text-primary block text-base">{{ br.name }}</span>
+              <span class="text-xs text-gray-400 font-medium uppercase">{{ br.type }}</span>
+            </td>
+            <td class="text-center text-gray-800 font-semibold">{{ br.total_assignments }}</td>
+            <td class="text-center">
+              <span class="text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded text-xs">{{ br.active_assignments }}</span>
+            </td>
+            <td class="text-center">
+              <span class="text-purple-600 font-bold bg-purple-50 px-2 py-0.5 rounded text-xs">{{ br.review_pending_assignments }}</span>
+            </td>
+            <td class="text-center">
+              <span class="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded text-xs">{{ br.completed_assignments }}</span>
+            </td>
+            <td class="text-center">
+              <span class="text-red-600 font-bold bg-red-50 px-2 py-0.5 rounded text-xs" [class.bg-red-100]="br.overdue_assignments > 0">{{ br.overdue_assignments }}</span>
+            </td>
+          </tr>
+          <tr *ngIf="stats?.coMetrics?.branchReports?.length === 0">
+            <td colspan="7" class="text-center py-6 text-gray-400 font-medium">No mapped branches/departments assigned to you yet.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

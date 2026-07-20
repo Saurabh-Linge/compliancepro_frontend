@@ -4,11 +4,14 @@ import { RouterModule } from '@angular/router';
 import { ComplianceApiService } from '../../core/services/api/compliance-api.service';
 import { AuthService } from '../../core/services/auth/auth.service';
 import { PageComponent } from '../../shared/components/page/page.component';
+import { BranchDashboardComponent } from './branch-dashboard.component';
+import { CoDashboardComponent } from './co-dashboard.component';
+import { CcoDashboardComponent } from './cco-dashboard.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, PageComponent],
+  imports: [CommonModule, RouterModule, PageComponent, BranchDashboardComponent, CoDashboardComponent, CcoDashboardComponent],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss']
 })
@@ -51,5 +54,20 @@ export class Dashboard implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  getStatusLabel(status: string): string {
+    if (!status) return '';
+    const map: Record<string, string> = {
+      'Pending_Timeline': 'Pending Timeline',
+      'Timeline_Review': 'Timeline Review',
+      'In_Progress': 'In Progress',
+      'REVIEW_PENDING': 'Review Pending',
+      'COMPLETED': 'Completed',
+      'ESCALATED_TO_CCO': 'Escalated to CCO',
+      'REJECTED': 'Rejected',
+      'PENDING_RECOMPLIANCE': 'Pending Recompliance'
+    };
+    return map[status] || status;
   }
 }

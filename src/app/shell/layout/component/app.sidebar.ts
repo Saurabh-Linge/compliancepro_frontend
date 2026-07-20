@@ -9,6 +9,10 @@ import { LayoutService } from '../service/layout.service';
     imports: [CommonModule, AppMenu],
     template: ` 
     <div class="layout-sidebar" [class.no-transition]="layoutService.isSidebarResizing()" [style.width.rem]="sidebarWidth">
+        <div class="sidebar-header" style="padding: 0.75rem 0.25rem; display: flex; align-items: center; gap: 0.5rem; margin: 0.25rem 0.35rem 0.5rem; border-bottom: 1px solid #e2eaf2;">
+            <i class="pi pi-shield" style="font-size: 1.35rem; color: var(--primary-color);"></i>
+            <span class="sidebar-brand-name" style="font-family: 'Inter', sans-serif; font-size: 1.15rem; font-weight: 800; color: #1e293b; letter-spacing: -0.02em;">CompliancePro</span>
+        </div>
         <app-menu></app-menu>
         <div class="sidebar-resize-handle" 
              (mousedown)="onResizeStart($event)"

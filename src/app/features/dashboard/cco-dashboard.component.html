@@ -1,0 +1,119 @@
+<!-- CCO Executive Dashboard View -->
+<div class="dashboard-hero">
+  <div class="hero-left">
+    <div class="hero-tag">Compliance Management</div>
+    <h1>Compliance Executive Overview</h1>
+    <p>Analyze authority risks, checklist status, and overdue compliance items.</p>
+  </div>
+  <div class="hero-right">
+    <span class="role-badge"><i class="pi pi-shield"></i> {{ role }}</span>
+  </div>
+</div>
+
+<!-- Quick Metrics Grid -->
+<div class="metrics-grid">
+  <div class="metric-card theme-blue cursor-pointer" routerLink="/admin/branches">
+    <div class="card-glow"></div>
+    <div class="card-icon"><i class="pi pi-sitemap"></i></div>
+    <div class="card-details">
+      <span class="card-title">Total Branches</span>
+      <span class="card-value">{{ stats?.ccoMetrics?.totalBranches ?? 0 }}</span>
+    </div>
+  </div>
+
+  <div class="metric-card theme-purple cursor-pointer" routerLink="/admin/branches">
+    <div class="card-glow"></div>
+    <div class="card-icon"><i class="pi pi-home"></i></div>
+    <div class="card-details">
+      <span class="card-title">Total Head Office</span>
+      <span class="card-value">{{ stats?.ccoMetrics?.totalHeadOffice ?? 0 }}</span>
+    </div>
+  </div>
+
+  <div class="metric-card theme-orange cursor-pointer" routerLink="/cco-review">
+    <div class="card-glow"></div>
+    <div class="card-icon"><i class="pi pi-clock"></i></div>
+    <div class="card-details">
+      <span class="card-title">Pending Compliance</span>
+      <span class="card-value">{{ stats?.ccoMetrics?.pendingCompliance ?? 0 }}</span>
+    </div>
+  </div>
+
+  <div class="metric-card theme-red cursor-pointer" routerLink="/reports">
+    <div class="card-glow"></div>
+    <div class="card-icon"><i class="pi pi-exclamation-triangle"></i></div>
+    <div class="card-details">
+      <span class="card-title">Total Overdue</span>
+      <span class="card-value">{{ stats?.ccoMetrics?.totalOverdue ?? 0 }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- CCO Detail Grid -->
+<div class="dashboard-grid-2col">
+  <!-- Authority Performance Table -->
+  <div class="dashboard-panel table-panel">
+    <div class="panel-header">
+      <h3>Authority Performance</h3>
+      <span class="panel-subtitle">Summary of checklist items assigned under regulators</span>
+    </div>
+    <div class="panel-body">
+      <div class="overflow-x-auto w-full">
+        <table class="dashboard-table w-full">
+          <thead>
+            <tr>
+              <th style="width: 60px;">Sr. No.</th>
+              <th>Authority</th>
+              <th class="text-center">Total</th>
+              <th class="text-center">Done</th>
+              <th class="text-center">Pending</th>
+              <th class="text-center">Overdue</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let auth of stats?.ccoMetrics?.authorityReports; let i = index">
+              <td class="text-center text-gray-500 font-semibold">{{ i + 1 }}</td>
+              <td class="font-bold text-gray-900">{{ auth.name }}</td>
+              <td class="text-center text-gray-800">{{ auth.total_tasks }}</td>
+              <td class="text-center">
+                <span class="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded text-xs">{{ auth.completed_tasks }}</span>
+              </td>
+              <td class="text-center">
+                <span class="text-yellow-600 font-bold bg-yellow-50 px-2 py-0.5 rounded text-xs">{{ auth.pending_tasks }}</span>
+              </td>
+              <td class="text-center">
+                <span class="text-red-600 font-bold bg-red-50 px-2 py-0.5 rounded text-xs" [class.bg-red-100]="auth.overdue_tasks > 0">{{ auth.overdue_tasks }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Authority Penalty & Circular Breakdown -->
+  <div class="dashboard-panel">
+    <div class="panel-header">
+      <h3>Authority Action Logs</h3>
+      <span class="panel-subtitle">Circular counts, task completions and penal actions</span>
+    </div>
+    <div class="panel-body">
+      <div class="progress-list">
+        <div class="progress-item" *ngFor="let auth of stats?.ccoMetrics?.authorityReports">
+          <div class="item-meta" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+            <span class="item-name font-semibold text-gray-900" style="font-size: 0.9rem;">{{ auth.name }}</span>
+            <span class="item-val text-xs font-semibold text-gray-600">{{ auth.completed_tasks }} / {{ auth.total_tasks }} Done</span>
+          </div>
+          <div class="progress-bar-bg" style="height: 6px; background-color: var(--surface-border); border-radius: 3px; overflow: hidden; margin-bottom: 0.5rem;">
+            <div class="progress-bar-fill bg-emerald" [style.width.%]="(auth.completed_tasks / (auth.total_tasks || 1)) * 100" style="height: 100%; border-radius: 3px;"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;" class="text-xs text-gray-500">
+            <span>Circulars: <strong>{{ auth.applicable_circulars }}</strong></span>
+            <span class="text-red-600 font-semibold" *ngIf="auth.total_penalty > 0">Penalty: ₹{{ auth.total_penalty | number }}</span>
+          </div>
+          <hr style="border: 0; border-top: 1px solid var(--surface-border); margin: 0.75rem 0;" />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

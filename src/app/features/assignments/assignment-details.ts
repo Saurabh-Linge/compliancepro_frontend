@@ -38,18 +38,18 @@ import { TooltipModule } from 'primeng/tooltip';
 
       <!-- Middle: Circular Ref & Due Date -->
       <div class="flex-column gap-1" style="flex: 1.5; min-width: 280px; border-left: 1px solid #f3f4f6; padding-left: 1rem;">
-        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block" style="font-size: 0.65rem;">Circular Details</span>
-        <p class="text-xs font-bold text-gray-700 m-0 truncate max-w-md" [title]="circularTitle()">
+        <span class="text-xs font-bold text-gray-500 uppercase tracking-wider block" style="font-size: 0.75rem;">Circular Details</span>
+        <p class="text-sm font-bold text-gray-900 m-0 truncate max-w-md" [title]="circularTitle()" style="font-size: 0.95rem; line-height: 1.35;">
           {{ circularTitle() }}
         </p>
-        <div class="flex items-center gap-2 mt-1" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.15rem;">
-          <span class="text-xs font-semibold text-gray-600 bg-gray-50 border px-2 py-0.5 rounded" style="font-size: 0.7rem;">
+        <div class="flex items-center gap-2 mt-1" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem;">
+          <span class="text-xs font-semibold text-gray-700 bg-gray-50 border px-2 py-0.5 rounded" style="font-size: 0.8rem;">
             Ref: {{ circularReferenceNo() || 'N/A' }}
           </span>
-          <span class="text-xs font-semibold text-gray-600 bg-gray-50 border px-2 py-0.5 rounded" style="font-size: 0.7rem;">
+          <span class="text-xs font-semibold text-gray-700 bg-gray-50 border px-2 py-0.5 rounded" style="font-size: 0.8rem;">
             Auth: {{ authorityName() || 'N/A' }}
           </span>
-          <span class="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded flex items-center gap-1" style="font-size: 0.7rem;">
+          <span class="text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded flex items-center gap-1" style="font-size: 0.8rem;">
             <i class="pi pi-calendar-times"></i> Due: {{ proposedTimeline() | date:'dd-MM-yyyy' }}
           </span>
         </div>
@@ -58,7 +58,7 @@ import { TooltipModule } from 'primeng/tooltip';
       <!-- Right: Progress, Status & Back Button -->
       <div class="flex items-center justify-content-between gap-4" style="display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; min-width: 320px; border-left: 1px solid #f3f4f6; padding-left: 1.5rem; flex: 1.2;">
         <div class="flex-column items-start" style="display: flex; flex-direction: column; align-items: flex-start; flex: 1;">
-          <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-0.5" style="font-size: 0.65rem;">Status & Progress</span>
+          <span class="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-0.5" style="font-size: 0.75rem;">Status & Progress</span>
           <div class="flex items-center gap-2" style="display: flex; align-items: center; gap: 0.5rem;">
             <span class="px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider"
                   [ngClass]="{
@@ -67,7 +67,7 @@ import { TooltipModule } from 'primeng/tooltip';
                     'bg-orange-100 text-orange-800': assignmentStatus() === 'REVIEW_PENDING' || assignmentStatus() === 'ESCALATED_TO_CCO',
                     'bg-green-100 text-green-800': assignmentStatus() === 'COMPLETED',
                     'bg-red-100 text-red-800': assignmentStatus() === 'REJECTED'
-                  }" style="font-size: 0.7rem; padding: 0.15rem 0.5rem;">
+                  }" style="font-size: 0.8rem; padding: 0.15rem 0.5rem;">
               {{ assignmentStatus() }}
             </span>
             <span class="text-xs font-bold text-indigo-600">{{ completedCount() }}/{{ tasks().length }} Done</span>
@@ -79,6 +79,7 @@ import { TooltipModule } from 'primeng/tooltip';
         
         <button pButton type="button" icon="pi pi-arrow-left" label="Back" severity="secondary" outlined size="small" class="p-button-sm no-print" (click)="goBack()"></button>
       </div>
+
 
     </div>
 
@@ -265,6 +266,15 @@ export class AssignmentDetailsComponent implements OnInit {
   circularTitle = signal<string>('');
   authorityName = signal<string>('');
 
+  readonly frequencyMap: Record<string, string> = {
+    '1': 'Fortnight',
+    '2': 'Monthly',
+    '3': 'Quarterly',
+    '4': 'Semi-Annually',
+    '5': 'Yearly',
+    '6': '1 Time Use'
+  };
+
   submitting = false;
 
   // Options for the p-select compliance status dropdown
@@ -344,9 +354,10 @@ export class AssignmentDetailsComponent implements OnInit {
             this.branchName.set(first.branch_name || '');
             this.taskSetName.set(first.task_set_name || '');
             this.proposedTimeline.set(first.proposed_timeline || '');
-            this.frequency.set(first.frequency || '');
+            const freqVal = first.frequency || '';
+            this.frequency.set(this.frequencyMap[freqVal] || freqVal || 'ONCE');
             this.startDate.set(first.start_date || '');
-            this.endDate.set(first.end_date || '');
+            this.endDate.set(first.endDate || first.end_date || '');
             this.circularReferenceNo.set(first.circular_reference_no || '');
             this.circularTitle.set(first.circular_title || '');
             this.authorityName.set(first.authority_name || '');
