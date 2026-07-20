@@ -4,9 +4,9 @@ import { RouterModule } from '@angular/router';
 import { ComplianceApiService } from '../../core/services/api/compliance-api.service';
 import { AuthService } from '../../core/services/auth/auth.service';
 import { PageComponent } from '../../shared/components/page/page.component';
-import { BranchDashboardComponent } from './branch-dashboard.component';
-import { CoDashboardComponent } from './co-dashboard.component';
-import { CcoDashboardComponent } from './cco-dashboard.component';
+import { BranchDashboardComponent } from './branch-dept-dashboard/branch-dashboard.component';
+import { CoDashboardComponent } from './co-dashboard/co-dashboard.component';
+import { CcoDashboardComponent } from './cco-dashboard/cco-dashboard.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -24,7 +24,7 @@ export class Dashboard implements OnInit {
     private api: ComplianceApiService,
     private auth: AuthService,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   get role(): string {
     return this.auth.currentUser()?.role || '';
