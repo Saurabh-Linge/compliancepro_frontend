@@ -117,3 +117,43 @@
     </div>
   </div>
 </div>
+
+<!-- Recent Regulatory Circulars -->
+<div class="dashboard-panel margin-top-2rem">
+  <div class="panel-header">
+    <div>
+      <h3>Recent Regulatory Circulars</h3>
+      <span class="panel-subtitle">Latest incoming guidelines to map/assign</span>
+    </div>
+    <a routerLink="/circulars" class="text-primary hover:underline text-sm font-medium">View All →</a>
+  </div>
+  <div class="panel-body">
+    <div class="progress-list" *ngIf="stats?.recentCirculars?.length > 0; else noCircularsCCO">
+      <ng-container *ngFor="let c of stats.recentCirculars">
+        <a *ngIf="c.pdf_url; else noPdfCCO" [href]="getFileUrl(c.pdf_url)" target="_blank" class="progress-item circular-item-link" style="border-bottom: 1px solid var(--surface-border); padding-bottom: 0.75rem; margin-bottom: 0.75rem; display: flex; flex-direction: row; gap: 0.75rem; text-decoration: none; cursor: pointer; transition: all 0.2s;">
+          <div style="width: 2.25rem; height: 2.25rem; border-radius: 8px; background-color: #fee2e2; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <i class="pi pi-file-pdf" style="color: #ef4444; font-size: 1.1rem;"></i>
+          </div>
+          <div style="flex: 1; min-width: 0;">
+            <span class="font-semibold text-gray-900 block" style="font-size: 0.9rem; line-height: 1.4; white-space: normal; color: var(--text-color);">{{ c.title }}</span>
+            <span class="text-xs text-gray-500 block mt-1">{{ c.authority_name }} · {{ c.published_date | date:'mediumDate' }}</span>
+          </div>
+        </a>
+        <ng-template #noPdfCCO>
+          <div class="progress-item" style="border-bottom: 1px solid var(--surface-border); padding-bottom: 0.75rem; margin-bottom: 0.75rem; display: flex; flex-direction: row; gap: 0.75rem;">
+            <div style="width: 2.25rem; height: 2.25rem; border-radius: 8px; background-color: #f3f4f6; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+              <i class="pi pi-file-pdf" style="color: #9ca3af; font-size: 1.1rem;"></i>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <span class="font-semibold text-gray-900 block" style="font-size: 0.9rem; line-height: 1.4; white-space: normal; color: var(--text-color);">{{ c.title }}</span>
+              <span class="text-xs text-gray-500 block mt-1">{{ c.authority_name }} · {{ c.published_date | date:'mediumDate' }}</span>
+            </div>
+          </div>
+        </ng-template>
+      </ng-container>
+    </div>
+    <ng-template #noCircularsCCO>
+      <div class="text-center py-6 text-gray-400 font-medium">No recent circulars found.</div>
+    </ng-template>
+  </div>
+</div>

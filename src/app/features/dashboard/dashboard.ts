@@ -70,4 +70,8 @@ export class Dashboard implements OnInit {
     };
     return map[status] || status;
   }
+
+  getFileUrl(url: string | null | undefined): string {
+    return this.api.getFileUrl(url);
+  }
 }
