@@ -1,6 +1,7 @@
 <p-toast></p-toast>
 
 <div class="login-page">
+
   <!-- Fixed Banner -->
   <div class="top-banner">
     <div class="glow-node node-1"></div>
@@ -80,6 +81,20 @@
               class="login-btn animate-item delay-4"
             ></button>
           </form>
+
+          <!-- Language Toggle -->
+          <div class="lang-toggle-row animate-item delay-5">
+            <button
+              class="lang-pill"
+              [class.active]="selectedLanguage === 'en'"
+              (click)="onLanguageChange('en')"
+            >English</button>
+            <button
+              class="lang-pill"
+              [class.active]="selectedLanguage === 'mr'"
+              (click)="onLanguageChange('mr')"
+            >मराठी</button>
+          </div>
         </div>
       </div>
     </div>

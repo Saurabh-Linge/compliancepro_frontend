@@ -9,6 +9,7 @@ import { ButtonModule } from 'primeng/button';
 import { AuthService } from '../../core/services/auth/auth.service';
 import { MessageService } from 'primeng/api';
 import { Toast } from 'primeng/toast';
+import { OfflineTranslationService } from '../../core/services/offline-translation.service';
 
 @Component({
   selector: 'app-login',
@@ -29,6 +30,7 @@ export class LoginComponent {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private messageService = inject(MessageService);
+  translationService = inject(OfflineTranslationService);
 
   username = '';
   password = '';
@@ -36,6 +38,18 @@ export class LoginComponent {
   
   loading = signal(false);
   error = signal<string | undefined>(undefined);
+
+  selectedLanguage = this.translationService.getCurrentLanguage();
+
+  async onLanguageChange(lang: string) {
+    this.selectedLanguage = lang;
+    await this.translationService.setLanguage(lang);
+  }
+
+  async toggleLanguage() {
+    const next = this.selectedLanguage === 'en' ? 'mr' : 'en';
+    await this.onLanguageChange(next);
+  }
 
   @HostListener('document:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {

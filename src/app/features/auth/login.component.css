@@ -6,6 +6,46 @@
     position: relative;
 }
 
+
+/* Language Toggle (inline card) */
+.lang-toggle-row {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.lang-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 34px;
+    padding: 0 18px;
+    border-radius: 50px;
+    border: 1px solid #cfd6e4;
+    background: #ffffff;
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 0.2px;
+}
+
+.lang-pill:hover {
+    border-color: #3f51b5;
+    color: #3f51b5;
+    background: #f0f2ff;
+}
+
+.lang-pill.active {
+    background: #e8eaf6;
+    border-color: #3f51b5;
+    color: #3f51b5;
+    font-weight: 700;
+}
+
 /* Fixed Banner */
 .top-banner {
     position: fixed;

@@ -37,6 +37,38 @@
   font-display: swap;
 }
 
+/* Marathi Font (Local Static - Poppins Unicode) */
+@font-face {
+  font-family: 'MarathiFont';
+  src: url('./fonts/Marathi/Poppins-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'MarathiFont';
+  src: url('./fonts/Marathi/Poppins-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'MarathiFont';
+  src: url('./fonts/Marathi/Poppins-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'MarathiFont';
+  src: url('./fonts/Marathi/Poppins-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 /* Apply Inter font globally */
 * {
@@ -48,6 +80,51 @@ body {
   font-optical-sizing: auto;
   font-weight: 400;
   font-style: normal;
+}
+
+/* Apply Marathi Font globally when language is mr */
+body.lang-mr {
+  font-family: 'MarathiFont', 'Inter', -apple-system, sans-serif !important;
+  line-height: 1.6 !important;
+}
+
+body.lang-mr * {
+  font-family: 'MarathiFont', 'Inter', -apple-system, sans-serif;
+  line-height: 1.5;
+}
+
+body.lang-mr .pi {
+  font-family: 'primeicons' !important;
+}
+
+/* Devanagari text-layout alignment fixes */
+body.lang-mr h1, 
+body.lang-mr h2, 
+body.lang-mr h3, 
+body.lang-mr h4, 
+body.lang-mr h5, 
+body.lang-mr h6, 
+body.lang-mr .question-main,
+body.lang-mr .font-medium.text-900,
+body.lang-mr .timeline-text,
+body.lang-mr .audit-comment-suggestion-item {
+  line-height: 1.6 !important;
+}
+
+body.lang-mr .question-card {
+  padding: 1.4rem !important;
+}
+
+body.lang-mr .answer-label,
+body.lang-mr label {
+  margin-bottom: 0.35rem !important;
+  display: inline-block;
+}
+
+body.lang-mr input, 
+body.lang-mr select, 
+body.lang-mr textarea {
+  padding: 0.5rem 0.75rem !important;
 }
 
 /* Prevent text selection during sidebar resize */

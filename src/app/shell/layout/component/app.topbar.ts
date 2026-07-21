@@ -33,6 +33,7 @@ import { Subscription } from 'rxjs';
 import { KeyboardShortcutService } from '../../../core/services/keyboard-shortcut';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { APP_CONFIG } from '../../../core/services/config/config.token';
+import { OfflineTranslationService } from '../../../core/services/offline-translation.service';
 
 interface SearchItem {
   label: string;
@@ -78,58 +79,24 @@ interface SearchItem {
         </a>
       </div>
 
-      <div class="layout-topbar-actions">
-        <!-- Topbar search field (commented out)
-        <div class="topbar-search-wrapper">
-          <p-iconField iconPosition="left">
-            <p-inputIcon class="pi pi-search" />
-            <p-autoComplete
-              #searchInput
-              [(ngModel)]="selectedItem"
-              [suggestions]="suggestions"
-              (completeMethod)="search($event)"
-              (onSelect)="onSelect($event)"
-              (onClear)="onClear()"
-              placeholder="Search (Ctrl+K)"
+        <div class="layout-topbar-actions">
+
+            <p-select
+              [options]="languages"
+              [(ngModel)]="selectedLanguage"
+              (ngModelChange)="onLanguageChange($event)"
+              optionLabel="label"
+              optionValue="value"
               appendTo="body"
-              [minLength]="0"
-              [completeOnFocus]="true"
-              [delay]="0"
-              [style]="{ width: '100%' }"
-              [inputStyle]="{ width: '100%' }"
-              field="label"
-              styleClass="topbar-search-autocomplete"
-              [forceSelection]="false"
+              class="hide-on-small"
             >
-              <ng-template let-item pTemplate="item">
-                <div class="search-item">
-                  <i [class]="item.icon" class="item-icon"></i>
-                  <div class="item-details">
-                    <span class="item-label">{{ item.label }}</span>
-                    <span class="item-route">{{ item.route }}</span>
-                  </div>
+              <ng-template pTemplate="selectedItem">
+                <div class="flex align-items-center gap-2" *ngIf="selectedLanguage">
+                  <i class="pi pi-language"></i>
+                  <span>{{ selectedLanguage === 'en' ? 'English' : (selectedLanguage === 'mr' ? 'मराठी' : selectedLanguage) }}</span>
                 </div>
               </ng-template>
-            </p-autoComplete>
-          </p-iconField>
-        </div>
-        -->
-
-        <p-select
-          [options]="languages"
-          [(ngModel)]="selectedLanguage"
-          optionLabel="label"
-          optionValue="value"
-          appendTo="body"
-          class="hide-on-small"
-        >
-          <ng-template pTemplate="selectedItem">
-            <div class="flex align-items-center gap-2" *ngIf="selectedLanguage">
-              <i class="pi pi-language"></i>
-              <span>{{ selectedLanguage === 'en' ? 'English' : selectedLanguage }}</span>
-            </div>
-          </ng-template>
-        </p-select>
+            </p-select>
 
         <div class="notification-container hide-on-small">
           <p-button
@@ -690,9 +657,17 @@ export class AppTopbar implements OnInit, OnDestroy {
   cdr = inject(ChangeDetectorRef);
 
   // Role and Language Data
-  languages = [{ label: 'English', value: 'en' }];
+  languages = [
+    { label: 'English', value: 'en' },
+    { label: 'मराठी (Marathi)', value: 'mr' }
+  ];
 
-  selectedLanguage = 'en';
+  translationService = inject(OfflineTranslationService);
+  selectedLanguage = this.translationService.getCurrentLanguage();
+
+  onLanguageChange(lang: string) {
+    this.translationService.setLanguage(lang);
+  }
 
   suggestions: SearchItem[] = [];
   selectedItem: any;

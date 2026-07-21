@@ -34,6 +34,7 @@ export interface Circular {
   circular_nature?: string;
   amendment_notes?: string | null;
   ai_processing_status?: 'QUEUED' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'SKIPPED';
+  task_count?: number;
 }
 
 export interface ComplianceTask {

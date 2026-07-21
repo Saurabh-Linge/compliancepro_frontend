@@ -180,37 +180,43 @@ export class CircularsComponent implements OnInit, OnDestroy {
   private config: any = inject(APP_CONFIG);
 
   tableColumns: TableColumn[] = [
-    { field: 'reference_no', header: 'Reference No.', width: '15%' },
-    { field: 'authority_name', header: 'Authority', width: '18%' },
-    { field: 'title', header: 'Circular Title', width: '22%' },
-    { field: 'published_date', header: 'Circular Date', type: 'date', width: '12%' },
-    { field: 'circular_nature', header: 'Nature', type: 'badge', width: '12%' },
-    { field: 'circular_type_name', header: 'Type', width: '15%' },
+    { field: 'reference_no', header: 'Reference No.', width: '120px' },
+    { field: 'authority_name', header: 'Authority', width: '120px' },
+    { field: 'title', header: 'Circular Title', width: '35%' },
+    { field: 'published_date', header: 'Circular Date', type: 'date', width: '100px' },
+    { field: 'circular_nature', header: 'Nature', type: 'badge', width: '160px' },
+    { field: 'task_count', header: 'Tasks', type: 'number', width: '75px', align: 'center', headerAlign: 'center', sortable: true },
     {
       field: 'is_applicable',
       header: 'Applicable',
-      type: 'boolean_action',
-      width: '10%',
-      booleanActionTrueIcon: 'pi pi-check-circle',
-      booleanActionFalseIcon: 'pi pi-times-circle',
+      type: 'boolean_toggle',
+      width: '85px',
+      align: 'center',
+      headerAlign: 'center',
+      sortable: false,
+      booleanActionTrueIcon: 'pi-toggle-on',
+      booleanActionFalseIcon: 'pi-toggle-off',
       booleanActionTrueLabel: 'Applicable',
       booleanActionFalseLabel: 'Not Applicable',
       booleanActionTrueClass: 'p-button-success',
-      booleanActionFalseClass: 'p-button-warning'
+      booleanActionFalseClass: 'p-button-secondary'
     },
     {
       field: 'is_active',
       header: 'Active',
-      type: 'boolean_action',
-      width: '10%',
-      booleanActionTrueIcon: 'pi pi-check-circle',
-      booleanActionFalseIcon: 'pi pi-ban',
+      type: 'boolean_toggle',
+      width: '80px',
+      align: 'center',
+      headerAlign: 'center',
+      sortable: false,
+      booleanActionTrueIcon: 'pi-toggle-on',
+      booleanActionFalseIcon: 'pi-toggle-off',
       booleanActionTrueLabel: 'Active',
       booleanActionFalseLabel: 'Inactive',
       booleanActionTrueClass: 'p-button-success',
-      booleanActionFalseClass: 'p-button-danger'
+      booleanActionFalseClass: 'p-button-secondary'
     },
-    { field: 'ai_processing_status', header: 'Status', width: '10%' }
+    { field: 'ai_processing_status', header: 'Status', width: '110px' }
   ];
 
   tableActions: TableAction[] = [
@@ -301,6 +307,7 @@ export class CircularsComponent implements OnInit, OnDestroy {
   }
 
   handleTableActionClick(event: { name: string; row: any }) {
+    console.log('[handleTableActionClick] name:', event.name, 'row id:', event.row.id);
     if (event.name === 'is_applicable') {
       this.toggleCircularFlag(event.row, 'is_applicable');
     } else if (event.name === 'is_active') {
@@ -309,17 +316,8 @@ export class CircularsComponent implements OnInit, OnDestroy {
   }
 
   toggleCircularFlag(row: any, field: 'is_applicable' | 'is_active') {
-    const newValue = !row[field];
+    const newValue = row[field]; // Already updated by two-way [(ngModel)] binding
     const fieldLabel = field === 'is_applicable' ? 'Applicable' : 'Active';
-    const action = newValue ? 'enabled' : 'disabled';
-    const icon = field === 'is_applicable'
-      ? (newValue ? 'pi-check-circle' : 'pi-times-circle')
-      : (newValue ? 'pi-play-circle' : 'pi-ban');
-
-    // Optimistically update the row in local state
-    this.circulars.update(list =>
-      list.map(c => c.id === row.id ? { ...c, [field]: newValue } : c)
-    );
 
     this.api.updateCircular(row.id, { [field]: newValue }).subscribe({
       next: () => {
@@ -332,6 +330,7 @@ export class CircularsComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         // Revert on failure
+        row[field] = !newValue;
         this.circulars.update(list =>
           list.map(c => c.id === row.id ? { ...c, [field]: !newValue } : c)
         );
@@ -402,7 +401,7 @@ export class CircularsComponent implements OnInit, OnDestroy {
     if (this.searchQuery) {
       params.search = this.searchQuery;
     }
-    
+
     if (this.activeFilters().authority) {
       const authId = this.selectedAuthorityFilter();
       if (authId !== null && authId !== undefined) {

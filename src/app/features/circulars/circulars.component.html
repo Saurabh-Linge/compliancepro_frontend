@@ -17,6 +17,8 @@
         (onSearch)="handleSearch($event)"
         (onRefresh)="loadData()"
         (onActionClick)="handleTableActionClick($event)"
+        [tableStyle]="{ 'table-layout': 'fixed', 'min-width': '85rem', 'width': '100%' }"
+        [actionsWidth]="'14rem'"
     >
       <div toolbar-actions class="flex align-items-center gap-2 ml-2 flex-shrink-0" style="flex-wrap: nowrap;">
         <!-- Add Filter Dropdown Button -->

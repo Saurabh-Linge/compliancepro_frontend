@@ -128,7 +128,9 @@
           <!-- Actions Column Header -->
           @if (actions().length) {
             <th
-              style="text-align: center; width: auto;"
+              [style.width]="actionsWidth()"
+              [style.min-width]="actionsWidth() === 'auto' ? 'auto' : actionsWidth()"
+              style="text-align: center;"
             >
               {{ actionDisplayMode() === 'buttons' ? 'Actions' : 'Action' }}
             </th>
@@ -179,6 +181,7 @@
             *ngFor="let col of dataColumns()"
             [pSortableColumn]="col.sortable !== false ? col.sortField || col.field : undefined"
             [style.width]="col.width || 'auto'"
+            [style.min-width]="col.width || 'auto'"
             [style.text-align]="getAlignment(col, true)"
             [class]="col.cssClass || ''"
           >
@@ -281,7 +284,11 @@
             <!-- Actions Cell -->
             @if (actions().length) {
               @if (actionDisplayMode() === 'buttons') {
-                <td style="text-align: center; width: auto; white-space: nowrap;">
+                <td 
+                  [style.width]="actionsWidth()" 
+                  [style.min-width]="actionsWidth() === 'auto' ? 'auto' : actionsWidth()" 
+                  style="text-align: center; white-space: nowrap;"
+                >
                   <div class="flex align-items-center justify-content-center gap-1">
                     @for (action of actions(); track action) {
                       @if (action.visible === undefined || action.visible(rowData)) {
@@ -301,7 +308,11 @@
                   </div>
                 </td>
               } @else {
-                <td style="text-align: center; width: 4rem;">
+                <td 
+                  [style.width]="actionsWidth() === 'auto' ? '4rem' : actionsWidth()"
+                  [style.min-width]="actionsWidth() === 'auto' ? '4rem' : actionsWidth()"
+                  style="text-align: center;"
+                >
                   <!-- Menu mode: Show three dots menu (default) -->
                   <button
                     pButton
@@ -315,7 +326,11 @@
             }
 
             <!-- Action Columns (Left Side) -->
-            <td *ngFor="let col of actionColumns()" [style.text-align]="getAlignment(col, false)">
+            <td
+              *ngFor="let col of actionColumns()"
+              [style.width]="col.width || 'auto'"
+              [style.text-align]="getAlignment(col, false)"
+            >
               <!-- ✅ CUSTOM PRINT COLUMN -->
               <ng-container *ngIf="col.field === '_print'; else normalAction">
                 <div class="print-container">
@@ -356,6 +371,8 @@
 
             <td
               *ngFor="let col of dataColumns()"
+              [style.width]="col.width || 'auto'"
+              [style.min-width]="col.width || 'auto'"
               [style.text-align]="getAlignment(col, false)"
               [class]="col.cssClass || ''"
             >
@@ -373,7 +390,7 @@
                   </span>
                 </ng-container>
 
-                <!-- Boolean Action Type -->
+                 <!-- Boolean Action Type -->
                 <ng-container *ngSwitchCase="'boolean_action'">
                   <button
                     pButton
@@ -386,6 +403,32 @@
                     tooltipPosition="top"
                   ></button>
                 </ng-container>
+
+                <!-- Boolean Toggle Type -->
+                <ng-container *ngSwitchCase="'boolean_toggle'">
+                  <div class="flex justify-content-center align-items-center w-full" style="height: 2.5rem;">
+                    <p-toggleswitch
+                      [inputId]="col.field + '_' + rowIndex"
+                      [name]="col.field + '_' + rowIndex"
+                      [ngModelOptions]="{standalone: true}"
+                      [(ngModel)]="rowData[col.field]"
+                      (onChange)="onActionClick.emit({ name: col.actionName || col.field, row: rowData })"
+                      (click)="$event.stopPropagation()"
+                    ></p-toggleswitch>
+                  </div>
+                </ng-container>
+
+
+
+
+
+
+
+
+
+
+
+
                 
                 <!-- Default Text -->
                 <ng-container *ngSwitchDefault>

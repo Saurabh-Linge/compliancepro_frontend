@@ -13,6 +13,7 @@ import { MessageModule } from 'primeng/message';
 import { TooltipModule } from 'primeng/tooltip';
 import { MenuItem } from 'primeng/api';
 import { ExportService } from '../../../core/services/export/export.service';
+import { ToggleSwitch } from 'primeng/toggleswitch';
 
 
 export interface TableColumn {
@@ -21,7 +22,7 @@ export interface TableColumn {
   /** Header label */
   header: string;
   /** Data type for formatting */
-  type?: 'text' | 'number' | 'date' | 'boolean' | 'currency' | 'status' | 'status_inv' | 'badge' | 'action' | 'boolean_action';
+  type?: 'text' | 'number' | 'date' | 'boolean' | 'currency' | 'status' | 'status_inv' | 'badge' | 'action' | 'boolean_action' | 'boolean_toggle';
   /** Action icon (for action type only) */
   actionIcon?: string;
   /** Action name (default is field name) */
@@ -103,9 +104,10 @@ export interface TableStyleConfig {
     ToolbarModule,
     IconFieldModule,
     InputIconModule,
-    MenuModule,
     MessageModule,
-    TooltipModule
+    TooltipModule,
+    ToggleSwitch,
+    MenuModule
   ],
   templateUrl: './table.component.html',
   styleUrls: ['./table.component.scss'],
@@ -119,6 +121,7 @@ export class TableComponent implements OnDestroy {
   rows = input<number>(10);
   globalFilterFields = input<string[]>([]);
   actions = input<TableAction[]>([]);
+  actionsWidth = input<string | undefined>('auto');
   showAddButton = input<boolean>(true);
   showRefreshButton = input<boolean>(true);
   sortField = input<string | undefined>();
