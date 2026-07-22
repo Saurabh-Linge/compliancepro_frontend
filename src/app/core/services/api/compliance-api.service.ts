@@ -302,6 +302,10 @@ export class ComplianceApiService {
     return this.http.patch<any>(`${this.baseUrl}/assignments/${id}/propose-timeline`, { date });
   }
 
+  extendAssignmentTimeline(id: number, date: string) {
+    return this.http.put<any>(`${this.baseUrl}/assignments/${id}/extend-timeline`, { date });
+  }
+
   proposeSingleTaskTimeline(assignmentId: number, assignmentTaskId: number, proposedDueDate: string, proposedRemark?: string) {
     return this.http.patch<any>(`${this.baseUrl}/assignments/${assignmentId}/tasks/${assignmentTaskId}/propose-timeline`, { 
       proposed_due_date: proposedDueDate,
