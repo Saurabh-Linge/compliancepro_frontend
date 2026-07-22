@@ -141,7 +141,7 @@ export class AssignmentsComponent implements OnInit {
     { label: 'Review Pending', value: 'REVIEW_PENDING' },
     { label: 'Completed', value: 'COMPLETED' },
     { label: 'Escalated to CCO', value: 'ESCALATED_TO_CCO' },
-    { label: 'Rejected', value: 'REJECTED' },
+    { label: 'Rejected', value: 'Rejected' },
     { label: 'Pending Recompliance', value: 'PENDING_RECOMPLIANCE' },
   ];
   taskSets = signal<any[]>([]);
@@ -176,7 +176,7 @@ export class AssignmentsComponent implements OnInit {
     { field: 'task_set_name', header: 'Task Set Name', width: '30%' },
     { field: 'created_at', header: 'Assignment Date', type: 'date', pipeFormat: 'mediumDate', width: '15%' },
     { field: 'proposed_timeline', header: 'Due Date', type: 'date', pipeFormat: 'mediumDate', width: '15%' },
-    { field: 'branch_name', header: 'Branch', width: '20%' },
+    { field: 'branch_name', header: 'Dept/Branch', width: '20%' },
     { field: 'status', header: 'Status', type: 'status', width: '15%' }
   ];
 
@@ -226,9 +226,9 @@ export class AssignmentsComponent implements OnInit {
     {
       label: 'Do Compliance',
       icon: 'pi pi-list',
-      visible: (row) => (row.status === 'In_Progress' || row.status === 'REJECTED' || row.status === 'PENDING_RECOMPLIANCE') && this.isBranchUser,
+      visible: (row) => (row.status?.toUpperCase() === 'IN_PROGRESS' || row.status?.toUpperCase() === 'REJECTED' || row.status?.toUpperCase() === 'PENDING_RECOMPLIANCE') && this.isBranchUser,
       command: (row) => {
-        if (row.status === 'In_Progress' || row.status === 'REJECTED' || row.status === 'PENDING_RECOMPLIANCE') {
+        if (row.status?.toUpperCase() === 'IN_PROGRESS' || row.status?.toUpperCase() === 'REJECTED' || row.status?.toUpperCase() === 'PENDING_RECOMPLIANCE') {
           this.goToTasks(row.id);
         }
       }
@@ -236,7 +236,11 @@ export class AssignmentsComponent implements OnInit {
     {
       label: 'View Compliance',
       icon: 'pi pi-eye',
-      visible: (row) => (row.status === 'REVIEW_PENDING' || row.status === 'COMPLETED' || row.status === 'ESCALATED_TO_CCO') || (this.isReviewerUser && (row.status === 'In_Progress' || row.status === 'PENDING_RECOMPLIANCE')),
+      visible: (row) => {
+        const s = row.status?.toUpperCase();
+        return (s === 'REVIEW_PENDING' || s === 'COMPLETED' || s === 'ESCALATED_TO_CCO') ||
+          (this.isReviewerUser && (s === 'IN_PROGRESS' || s === 'PENDING_RECOMPLIANCE' || s === 'REJECTED'));
+      },
       command: (row) => {
         this.goToTasks(row.id);
       }

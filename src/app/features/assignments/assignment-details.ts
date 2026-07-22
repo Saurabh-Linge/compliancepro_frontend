@@ -73,17 +73,17 @@ import { DatePickerModule } from 'primeng/datepicker';
           <div class="flex items-center gap-2" style="display: flex; align-items: center; gap: 0.5rem;">
             <span class="px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider"
                   [ngClass]="{
-                    'bg-yellow-100 text-yellow-800': assignmentStatus() === 'Pending_Timeline' || assignmentStatus() === 'Timeline_Review',
-                    'bg-indigo-100 text-indigo-800': assignmentStatus() === 'In_Progress' || assignmentStatus() === 'PENDING_RECOMPLIANCE',
-                    'bg-orange-100 text-orange-800': assignmentStatus() === 'REVIEW_PENDING' || assignmentStatus() === 'ESCALATED_TO_CCO',
-                    'bg-green-100 text-green-800': assignmentStatus() === 'COMPLETED',
-                    'bg-red-100 text-red-800': assignmentStatus() === 'REJECTED'
+                    'bg-yellow-100 text-yellow-800': assignmentStatus()?.toUpperCase() === 'PENDING_TIMELINE' || assignmentStatus()?.toUpperCase() === 'TIMELINE_REVIEW',
+                    'bg-indigo-100 text-indigo-800': assignmentStatus()?.toUpperCase() === 'IN_PROGRESS' || assignmentStatus()?.toUpperCase() === 'PENDING_RECOMPLIANCE',
+                    'bg-orange-100 text-orange-800': assignmentStatus()?.toUpperCase() === 'REVIEW_PENDING' || assignmentStatus()?.toUpperCase() === 'ESCALATED_TO_CCO',
+                    'bg-green-100 text-green-800': assignmentStatus()?.toUpperCase() === 'COMPLETED',
+                    'bg-red-100 text-red-800': assignmentStatus()?.toUpperCase() === 'REJECTED'
                   }" style="font-size: 0.8rem; padding: 0.15rem 0.5rem;">
               {{ assignmentStatus() }}
             </span>
             <span class="text-xs font-bold text-indigo-600">
               {{ completedCount() }}/{{ tasks().length }}
-              {{ (assignmentStatus() === 'Pending_Timeline' || assignmentStatus() === 'Timeline_Review') ? 'Dates Set' : 'Done' }}
+              {{ (assignmentStatus()?.toUpperCase() === 'PENDING_TIMELINE' || assignmentStatus()?.toUpperCase() === 'TIMELINE_REVIEW') ? 'Dates Set' : 'Done' }}
             </span>
           </div>
           <div class="w-24 bg-gray-100 rounded-full h-1 overflow-hidden mt-1" style="width: 5rem; margin-top: 0.25rem;">
@@ -96,7 +96,7 @@ import { DatePickerModule } from 'primeng/datepicker';
     </div>
 
     <!-- Rejection Alert Banner -->
-    <div *ngIf="assignmentStatus() === 'REJECTED'" class="p-3 mb-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg shadow-sm">
+    <div *ngIf="assignmentStatus()?.toUpperCase() === 'REJECTED'" class="p-3 mb-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg shadow-sm">
       <div class="flex">
         <div class="flex-shrink-0">
           <i class="pi pi-exclamation-triangle text-red-500 text-lg"></i>
@@ -338,20 +338,6 @@ import { DatePickerModule } from 'primeng/datepicker';
                       
                       <!-- Left Sub-column: Upload PDF & Save Button -->
                       <div class="answer-field" style="display: flex; flex-direction: column; gap: 0.5rem;">
-                        
-                        <!-- Compliance Dropdown (Show only for CO/CCO during review, hide for Branch when complying) -->
-                        <div *ngIf="!canEditAssignment()">
-                          <label class="control-label">Compliance <span class="text-red-500">*</span></label>
-                          <p-select
-                            [(ngModel)]="t.temp_compliance_status"
-                            [options]="complianceOptions"
-                            optionLabel="label"
-                            optionValue="value"
-                            [disabled]="true"
-                            styleClass="answer-control w-full"
-                            placeholder="Select status..."
-                          />
-                        </div>
 
                         <!-- Upload PDF Button (Full Width) -->
                         <div *ngIf="canEditAssignment()">
@@ -411,6 +397,42 @@ import { DatePickerModule } from 'primeng/datepicker';
                     </div>
                   </ng-template>
                 </ng-container>
+
+                <!-- Iterative Remarks / History Timeline Feed -->
+                <details *ngIf="hasReviewerRemarks(t)" class="mt-3 bg-gray-50 border border-gray-100 rounded-lg w-full no-print" style="margin-top: 0.75rem; width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;" [open]="false">
+                  <summary class="cursor-pointer font-semibold text-gray-600 hover:bg-gray-100/50 transition-colors" style="font-size: 0.725rem; display: flex; align-items: center; justify-content: space-between; padding: 0.45rem 0.65rem; color: #4b5563; user-select: none; outline: none; list-style: none;">
+                    <span style="display: flex; align-items: center; gap: 0.3rem; white-space: nowrap;">
+                      <i class="pi pi-comments text-indigo-500" style="font-size: 0.8rem;"></i> Remarks ({{ t.remarks_history.length }})
+                    </span>
+                  </summary>
+                  <div style="display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem 1rem; border-top: 1px solid #f3f4f6; max-height: 250px; overflow-y: auto;">
+                    <div *ngFor="let h of t.remarks_history" 
+                         class="p-2 rounded border" 
+                         [ngClass]="{
+                           'bg-indigo-50/50 border-indigo-100': h.role === 'COMPLIER',
+                           'bg-amber-50/50 border-amber-100': h.role === 'REVIEWER'
+                         }" 
+                         style="padding: 0.5rem; border-radius: 6px; border: 1px solid; font-size: 0.75rem; text-align: left;">
+                      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                        <span class="font-bold" 
+                              [ngClass]="{
+                                'text-indigo-700': h.role === 'COMPLIER',
+                                'text-amber-700': h.role === 'REVIEWER'
+                              }">
+                          {{ h.username }} 
+                          <span style="font-weight: 400; color: #9ca3af;">({{ h.role === 'COMPLIER' ? 'Branch/Dept' : 'Reviewer' }})</span>
+                        </span>
+                        <span style="font-size: 0.65rem; color: #9ca3af;">
+                          {{ h.created_at | date:'dd-MM-yyyy HH:mm' }}
+                        </span>
+                      </div>
+                      <p class="m-0 line-height-3 text-gray-700" style="margin: 0; font-weight: 500;">
+                        {{ h.remark }}
+                      </p>
+                    </div>
+                  </div>
+                </details>
+
               </div>
             </ng-template>
 
@@ -536,8 +558,8 @@ export class AssignmentDetailsComponent implements OnInit {
       return false;
     }
 
-    const status = this.assignmentStatus();
-    return status === 'In_Progress' || status === 'REJECTED' || status === 'PENDING_RECOMPLIANCE';
+    const status = this.assignmentStatus()?.toUpperCase();
+    return status === 'IN_PROGRESS' || status === 'REJECTED' || status === 'PENDING_RECOMPLIANCE';
   }
 
   canEditTimeline(): boolean {
@@ -676,54 +698,60 @@ export class AssignmentDetailsComponent implements OnInit {
               temp_proposed_remark: t.proposed_remark || '',
               temp_timeline_review_remark: t.timeline_review_remark || '',
               has_evidence: false,
-              evidence_url: ''
+              evidence_url: '',
+              remarks_history: []
             };
           });
 
-          this.tasks.set(mappedTasks);
-
-          if (mappedTasks.length > 0) {
-            const first = mappedTasks[0];
-            this.assignmentStatus.set(first.assignment_status);
-            this.reviewRemark.set(first.assignment_review_remark || '');
-
-            // Populate rich header metadata
-            this.branchName.set(first.branch_name || '');
-            this.taskSetName.set(first.task_set_name || '');
-            this.proposedTimeline.set(first.proposed_timeline || '');
-            
-            if (first.proposed_timeline) {
-              this.tempAssignmentTimeline = first.proposed_timeline.split('T')[0];
-              this.tempAssignmentTimelineObj = new Date(first.proposed_timeline);
-            } else {
-              this.tempAssignmentTimelineObj = null;
-            }
-
-            const freqVal = first.frequency || '';
-            this.frequency.set(this.frequencyMap[freqVal] || freqVal || 'ONCE');
-            this.startDate.set(first.start_date || '');
-            this.endDate.set(first.endDate || first.end_date || '');
-            this.circularReferenceNo.set(first.circular_reference_no || '');
-            this.circularTitle.set(first.circular_title || '');
-            this.authorityName.set(first.authority_name || '');
-
-            console.log('Assignment status:', this.assignmentStatus(), 'Review remark:', this.reviewRemark());
-          } else {
-            this.assignmentStatus.set('');
-            this.reviewRemark.set('');
-            this.branchName.set('');
-            this.taskSetName.set('');
-            this.proposedTimeline.set('');
-            this.frequency.set('');
-            this.startDate.set('');
-            this.endDate.set('');
-            this.circularReferenceNo.set('');
-            this.circularTitle.set('');
-            this.authorityName.set('');
-          }
-
           // Fetch evidence urls linked to this assignment
-          this.loadEvidence();
+          this.api.getAssignmentEvidence(this.assignmentId!).subscribe({
+            next: (evidenceList) => {
+              mappedTasks.forEach(task => {
+                const evidence = evidenceList.find(e => e.task_id === task.task_id);
+                if (evidence) {
+                  task.has_evidence = true;
+                  task.evidence_url = this.api.getFileUrl(evidence.file_url);
+                }
+              });
+
+              // Fetch remarks history in parallel
+              let completedCount = 0;
+              if (mappedTasks.length === 0) {
+                this.tasks.set(mappedTasks);
+                this.groupTasks();
+                return;
+              }
+
+              mappedTasks.forEach(task => {
+                this.api.getTaskRemarksHistory(this.assignmentId!, task.assignment_task_id).subscribe({
+                  next: (history) => {
+                    task.remarks_history = history;
+                    completedCount++;
+                    if (completedCount === mappedTasks.length) {
+                      this.tasks.set(mappedTasks);
+                      this.populateMetadata(mappedTasks);
+                      this.groupTasks();
+                    }
+                  },
+                  error: (err) => {
+                    console.error('Failed to load remarks history for task:', task.assignment_task_id, err);
+                    completedCount++;
+                    if (completedCount === mappedTasks.length) {
+                      this.tasks.set(mappedTasks);
+                      this.populateMetadata(mappedTasks);
+                      this.groupTasks();
+                    }
+                  }
+                });
+              });
+            },
+            error: (err) => {
+              console.error('Failed to load assignment evidence:', err);
+              this.tasks.set(mappedTasks);
+              this.populateMetadata(mappedTasks);
+              this.groupTasks();
+            }
+          });
         },
         error: (err) => {
           console.error('API Error fetching tasks:', err);
@@ -733,28 +761,44 @@ export class AssignmentDetailsComponent implements OnInit {
     }
   }
 
-  loadEvidence() {
-    if (!this.assignmentId) return;
+  populateMetadata(mappedTasks: any[]) {
+    if (mappedTasks.length > 0) {
+      const first = mappedTasks[0];
+      this.assignmentStatus.set(first.assignment_status);
+      this.reviewRemark.set(first.assignment_review_remark || '');
 
-    this.api.getAssignmentEvidence(this.assignmentId).subscribe(evidenceList => {
-      console.log('Evidence documents found:', evidenceList);
+      // Populate rich header metadata
+      this.branchName.set(first.branch_name || '');
+      this.taskSetName.set(first.task_set_name || '');
+      this.proposedTimeline.set(first.proposed_timeline || '');
+      
+      if (first.proposed_timeline) {
+        this.tempAssignmentTimeline = first.proposed_timeline.split('T')[0];
+        this.tempAssignmentTimelineObj = new Date(first.proposed_timeline);
+      } else {
+        this.tempAssignmentTimelineObj = null;
+      }
 
-      const updatedTasks = this.tasks().map(task => {
-        // Find evidence linked to this specific assignment task
-        const evidence = evidenceList.find(e => e.task_id === task.task_id);
-        if (evidence) {
-          return {
-            ...task,
-            has_evidence: true,
-            evidence_url: this.api.getFileUrl(evidence.file_url)
-          };
-        }
-        return task;
-      });
-
-      this.tasks.set(updatedTasks);
-      this.groupTasks();
-    });
+      const freqVal = first.frequency || '';
+      this.frequency.set(this.frequencyMap[freqVal] || freqVal || 'ONCE');
+      this.startDate.set(first.start_date || '');
+      this.endDate.set(first.endDate || first.end_date || '');
+      this.circularReferenceNo.set(first.circular_reference_no || '');
+      this.circularTitle.set(first.circular_title || '');
+      this.authorityName.set(first.authority_name || '');
+    } else {
+      this.assignmentStatus.set('');
+      this.reviewRemark.set('');
+      this.branchName.set('');
+      this.taskSetName.set('');
+      this.proposedTimeline.set('');
+      this.frequency.set('');
+      this.startDate.set('');
+      this.endDate.set('');
+      this.circularReferenceNo.set('');
+      this.circularTitle.set('');
+      this.authorityName.set('');
+    }
   }
 
   groupTasks() {
@@ -780,6 +824,11 @@ export class AssignmentDetailsComponent implements OnInit {
     });
 
     this.taskGroups.set(groups);
+  }
+
+  hasReviewerRemarks(task: any): boolean {
+    if (!task.remarks_history || task.remarks_history.length === 0) return false;
+    return task.remarks_history.some((h: any) => h.role === 'REVIEWER');
   }
 
   goBack() {

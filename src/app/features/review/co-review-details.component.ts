@@ -107,10 +107,37 @@ export class CoReviewDetailsComponent implements OnInit {
           ...t,
           review_status: t.review_status || null,
           review_remark: t.review_remark || "",
-          evidence_url: t.evidence_url ? this.api.getFileUrl(t.evidence_url) : null
+          evidence_url: t.evidence_url ? this.api.getFileUrl(t.evidence_url) : null,
+          remarks_history: []
         }));
-        this.tasks.set(enriched);
-        this.groupTasks(enriched);
+
+        let completedCount = 0;
+        if (enriched.length === 0) {
+          this.tasks.set(enriched);
+          this.groupTasks(enriched);
+          return;
+        }
+
+        enriched.forEach(task => {
+          this.api.getTaskRemarksHistory(this.assignmentId!, task.assignment_task_id).subscribe({
+            next: (history) => {
+              task.remarks_history = history;
+              completedCount++;
+              if (completedCount === enriched.length) {
+                this.tasks.set(enriched);
+                this.groupTasks(enriched);
+              }
+            },
+            error: (err) => {
+              console.error("Failed to load remarks history for task:", task.assignment_task_id, err);
+              completedCount++;
+              if (completedCount === enriched.length) {
+                this.tasks.set(enriched);
+                this.groupTasks(enriched);
+              }
+            }
+          });
+        });
       },
       error: (err) => this.notification.error("Failed to load tasks: " + (err.message || err.statusText))
     });
@@ -126,37 +153,80 @@ export class CoReviewDetailsComponent implements OnInit {
     this.taskGroups.set(Array.from(groupsMap.entries()).map(([headerName, tasks]) => ({ headerName, tasks })));
   }
 
+  hasReviewerRemarks(task: any): boolean {
+    if (!task.remarks_history || task.remarks_history.length === 0) return false;
+    return task.remarks_history.some((h: any) => h.role === 'REVIEWER');
+  }
+
   setTaskReviewStatus(task: any, status: "APPROVED" | "NEEDS_REDO") {
-    if (!this.assignmentId) return;
     const newStatus = task.review_status === status ? null : status;
-    this.savingTaskId.set(task.assignment_task_id);
-    this.pendingStatus = newStatus || "";
-    if (newStatus === null) {
-      this.tasks.update(ts => ts.map(t => t.assignment_task_id === task.assignment_task_id ? { ...t, review_status: null, review_remark: "" } : t));
-      this.groupTasks(this.tasks());
-      setTimeout(() => { this.savingTaskId.set(null); this.pendingStatus = ""; });
+    this.tasks.update(ts => ts.map(t => t.assignment_task_id === task.assignment_task_id ? { ...t, review_status: newStatus } : t));
+    this.groupTasks(this.tasks());
+  }
+
+  saveTaskReview(task: any) {
+    if (!this.assignmentId) return;
+    if (!task.review_status) {
+      this.notification.warn("Please select Accept or Reject before saving.");
       return;
     }
-    this.api.reviewTaskStatus(this.assignmentId, task.assignment_task_id, newStatus, task.review_remark).subscribe({
+    this.savingTaskId.set(task.assignment_task_id);
+    this.api.reviewTaskStatus(this.assignmentId, task.assignment_task_id, task.review_status, task.review_remark).subscribe({
       next: () => {
-        this.tasks.update(ts => ts.map(t => t.assignment_task_id === task.assignment_task_id ? { ...t, review_status: newStatus } : t));
-        this.groupTasks(this.tasks());
         this.savingTaskId.set(null);
-        this.pendingStatus = "";
+        this.notification.success("Task review saved successfully!");
+        this.loadTasks();
       },
-      error: () => { this.savingTaskId.set(null); this.pendingStatus = ""; this.notification.error("Failed to update task review status."); }
+      error: (err) => {
+        this.savingTaskId.set(null);
+        this.notification.error("Failed to save task review: " + (err.message || err.statusText));
+      }
     });
   }
 
   openEvidence(url: string) { window.open(url, "_blank"); }
 
-  saveCoRemark(task: any) {
-    if (!this.assignmentId || task.review_status !== "NEEDS_REDO") return;
-    this.api.reviewTaskStatus(this.assignmentId, task.assignment_task_id, "NEEDS_REDO", task.review_remark).subscribe({ error: () => this.notification.error("Failed to save CO remark.") });
+  markAllApproved() {
+    if (!this.assignmentId) return;
+    this.tasks().forEach(t => { t.review_status = "APPROVED"; });
+    this.groupTasks(this.tasks());
+    this.submitting = true;
+    const obs = this.tasks().map(t => this.api.reviewTaskStatus(this.assignmentId!, t.assignment_task_id, "APPROVED", t.review_remark));
+    import('rxjs').then(rxjs => {
+      rxjs.forkJoin(obs).subscribe({
+        next: () => {
+          this.submitting = false;
+          this.notification.success("All tasks marked as Accepted!");
+          this.loadTasks();
+        },
+        error: (err) => {
+          this.submitting = false;
+          this.notification.error("Failed to save tasks: " + (err.message || err.statusText));
+        }
+      });
+    });
   }
 
-  markAllApproved() { this.tasks().forEach(t => { if (t.review_status !== "APPROVED") this.setTaskReviewStatus(t, "APPROVED"); }); }
-  markAllNeedsRedo() { this.tasks().forEach(t => { if (t.review_status !== "NEEDS_REDO") this.setTaskReviewStatus(t, "NEEDS_REDO"); }); }
+  markAllNeedsRedo() {
+    if (!this.assignmentId) return;
+    this.tasks().forEach(t => { t.review_status = "NEEDS_REDO"; });
+    this.groupTasks(this.tasks());
+    this.submitting = true;
+    const obs = this.tasks().map(t => this.api.reviewTaskStatus(this.assignmentId!, t.assignment_task_id, "NEEDS_REDO", t.review_remark));
+    import('rxjs').then(rxjs => {
+      rxjs.forkJoin(obs).subscribe({
+        next: () => {
+          this.submitting = false;
+          this.notification.warn("All tasks marked as Rejected!");
+          this.loadTasks();
+        },
+        error: (err) => {
+          this.submitting = false;
+          this.notification.error("Failed to save tasks: " + (err.message || err.statusText));
+        }
+      });
+    });
+  }
 
   submitReview(action: "ACCEPT" | "REJECT" | "ESCALATE") {
     if (!this.assignmentId) return;

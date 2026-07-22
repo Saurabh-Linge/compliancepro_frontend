@@ -352,6 +352,10 @@ export class ComplianceApiService {
     return this.http.patch<any>(`${this.baseUrl}/assignments/${assignmentId}/tasks/${taskId}/complete`, { compliance_status: complianceStatus, remarks });
   }
 
+  getTaskRemarksHistory(assignmentId: number, taskId: number) {
+    return this.http.get<any[]>(`${this.baseUrl}/assignments/${assignmentId}/tasks/${taskId}/remarks-history`);
+  }
+
   updateAssignmentStatus(assignmentId: number, status: string) {
     return this.http.put<any>(`${this.baseUrl}/assignments/${assignmentId}/status`, { status });
   }

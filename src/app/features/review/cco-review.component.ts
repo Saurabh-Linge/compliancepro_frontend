@@ -50,35 +50,35 @@ export class CcoReviewComponent implements OnInit {
   rawAssignments = signal<any[]>([]);
   searchQuery = signal<string>('');
   selectedStatusFilter = signal<string | null>(null);
-  
+
   private config: any = inject(APP_CONFIG);
 
   tableColumns: TableColumn[] = [
     { field: 'task_set_name', header: 'Task Set Name', width: '40%' },
-    { field: 'branch_name', header: 'Branch', width: '30%' },
+    { field: 'branch_name', header: 'Dept/Branch', width: '30%' },
     { field: 'status', header: 'Status', type: 'status', width: '20%' }
   ];
 
   statusFilterOptions = [
-    { label: 'Escalated to CCO',  value: 'ESCALATED_TO_CCO' },
-    { label: 'Timeline Review',   value: 'Timeline_Review' },
-    { label: 'Completed',         value: 'COMPLETED' },
-    { label: 'Rejected',          value: 'REJECTED' }
+    { label: 'Escalated to CCO', value: 'ESCALATED_TO_CCO' },
+    { label: 'Timeline Review', value: 'Timeline_Review' },
+    { label: 'Completed', value: 'COMPLETED' },
+    { label: 'Rejected', value: 'Rejected' }
   ];
 
   assignments = computed(() => {
     let list = this.rawAssignments();
-    
+
     // Filter by status selection
     const status = this.selectedStatusFilter();
     if (status) {
-      list = list.filter((a: any) => a.status === status);
+      list = list.filter((a: any) => a.status?.toUpperCase() === status?.toUpperCase());
     }
 
     // Filter by search query
     const query = this.searchQuery().trim().toLowerCase();
     if (query) {
-      list = list.filter((a: any) => 
+      list = list.filter((a: any) =>
         (a.branch_name && a.branch_name.toLowerCase().includes(query)) ||
         (a.task_set_name && a.task_set_name.toLowerCase().includes(query))
       );
@@ -88,21 +88,21 @@ export class CcoReviewComponent implements OnInit {
   });
 
   tableActions: TableAction[] = [
-    { 
-      label: "Review Timeline", 
-      icon: "pi pi-calendar", 
-      visible: (row: any) => row.status === 'Timeline_Review',
-      command: (row: any) => this.router.navigate(["/assignments", row.id]) 
+    {
+      label: "Review Timeline",
+      icon: "pi pi-calendar",
+      visible: (row: any) => row.status?.toUpperCase() === 'TIMELINE_REVIEW',
+      command: (row: any) => this.router.navigate(["/assignments", row.id])
     },
-    { 
-      label: "View Tasks", 
-      icon: "pi pi-search", 
-      visible: (row: any) => ['In_Progress', 'ESCALATED_TO_CCO', 'COMPLETED', 'REJECTED'].includes(row.status),
-      command: (row: any) => this.router.navigate(["/cco-review", row.id]) 
+    {
+      label: "View Tasks",
+      icon: "pi pi-search",
+      visible: (row: any) => ['IN_PROGRESS', 'ESCALATED_TO_CCO', 'COMPLETED', 'REJECTED'].includes(row.status?.toUpperCase()),
+      command: (row: any) => this.router.navigate(["/cco-review", row.id])
     }
   ];
 
-  constructor(private http: HttpClient, public router: Router, private notification: NotificationService) {}
+  constructor(private http: HttpClient, public router: Router, private notification: NotificationService) { }
 
   ngOnInit() { this.loadAssignments(); }
 
