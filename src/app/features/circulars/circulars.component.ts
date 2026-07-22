@@ -68,12 +68,15 @@ export class CircularsComponent implements OnInit, OnDestroy {
 
   // Dynamic filter state
   activeFilters = signal<{ authority: boolean; dateRange: boolean; institution: boolean }>({
-    authority: false,
-    dateRange: false,
-    institution: false
+    authority: true,
+    dateRange: true,
+    institution: true
   });
 
-  selectedDateRange = signal<Date[] | null>(null);
+  selectedDateRange = signal<Date[] | null>([
+    new Date(new Date().getFullYear(), new Date().getMonth(), 1, 0, 0, 0, 0),
+    new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 0, 0, 0, 0)
+  ]);
   selectedInstitution = signal<string>('');
   private filterInitialized = false;
 
@@ -402,15 +405,13 @@ export class CircularsComponent implements OnInit, OnDestroy {
       params.search = this.searchQuery;
     }
 
-    if (this.activeFilters().authority) {
-      const authId = this.selectedAuthorityFilter();
-      if (authId !== null && authId !== undefined) {
-        params.authority_id = authId;
-      }
+    const authId = this.selectedAuthorityFilter();
+    if (authId !== null && authId !== undefined) {
+      params.authority_id = authId;
     }
 
     const dates = this.selectedDateRange();
-    if (this.activeFilters().dateRange && dates && dates.length > 0) {
+    if (dates && dates.length > 0) {
       const startDate = dates[0];
       const endDate = dates[1];
       if (startDate) {

@@ -164,6 +164,7 @@
             [rows]="5"
             [dataKey]="'id'"
             [showAddButton]="false"
+            (onActionClick)="onTaskTableAction($event)"
             style="flex: 1; display: flex; flex-direction: column; overflow: hidden;"
           >
             <div toolbar-actions class="flex align-items-center ml-2">

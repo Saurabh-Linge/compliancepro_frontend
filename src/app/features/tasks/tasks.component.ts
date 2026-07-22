@@ -18,10 +18,12 @@ import { ToastModule } from 'primeng/toast';
 import { TagModule } from 'primeng/tag';
 import { MessageService } from 'primeng/api';
 
+import { FileUploadModule } from 'primeng/fileupload';
+
 @Component({
   selector: 'app-tasks',
   standalone: true,
-  imports: [CommonModule, FormsModule, DialogModule, DrawerModule, ButtonModule, TabsModule, PageComponent, TableComponent, TextareaFieldComponent, SelectFieldComponent, SelectModule, TableModule, ToastModule, TagModule],
+  imports: [CommonModule, FormsModule, DialogModule, DrawerModule, ButtonModule, TabsModule, PageComponent, TableComponent, TextareaFieldComponent, SelectFieldComponent, SelectModule, TableModule, ToastModule, TagModule, FileUploadModule],
   providers: [MessageService],
   template: `
     @if (currentCircular()) {
@@ -222,7 +224,7 @@ import { MessageService } from 'primeng/api';
                   </app-select-field>
                 </div>
                 
-                <div class="field col-12 md:col-6">
+                <div class="field col-12">
                   <app-select-field
                     label="Priority"
                     [virtualScroll]="false"
@@ -234,53 +236,6 @@ import { MessageService } from 'primeng/api';
                   </app-select-field>
                 </div>
 
-                <div class="field col-12 md:col-6">
-                  <app-select-field
-                    label="Risk Category"
-                    [virtualScroll]="false"
-                    [field]="editTaskRiskCategory"
-                    [options]="riskCategoryOptions"
-                    optionLabel="label"
-                    optionValue="value"
-                    placeholder="Select Risk Category">
-                  </app-select-field>
-                </div>
-
-                <div class="field col-12 md:col-6">
-                  <app-select-field
-                    label="Business Risk"
-                    [virtualScroll]="false"
-                    [field]="editTaskBusinessRisk"
-                    [options]="businessRiskOptions"
-                    optionLabel="label"
-                    optionValue="value"
-                    placeholder="Select Business Risk">
-                  </app-select-field>
-                </div>
-
-                <div class="field col-12 md:col-6">
-                  <app-select-field
-                    label="Control Risk"
-                    [virtualScroll]="false"
-                    [field]="editTaskControlRisk"
-                    [options]="controlRiskOptions"
-                    optionLabel="label"
-                    optionValue="value"
-                    placeholder="Select Control Risk">
-                  </app-select-field>
-                </div>
-
-                <div class="field col-12">
-                  <app-select-field
-                    label="Audit Area Mapping"
-                    [field]="editTaskAuditAreaId"
-                    [options]="auditAreas()"
-                    optionLabel="name"
-                    optionValue="id"
-                    placeholder="Please select broader area of audit non-compliance">
-                  </app-select-field>
-                </div>
-
                 <div class="field col-12">
                   <app-textarea-field
                     label="Description"
@@ -289,6 +244,62 @@ import { MessageService } from 'primeng/api';
                     [autoResize]="true"
                     [required]="true">
                   </app-textarea-field>
+                </div>
+
+                <div class="field col-12">
+                  <label class="font-semibold text-sm text-gray-700 block mb-2">
+                    Attachment (Optional) <span class="text-gray-400 text-xs font-normal">(CSV, Excel, PDF)</span>
+                  </label>
+
+                  <div *ngIf="editTaskFileUrl() && editTaskFileUrl() !== '__REMOVE__'; else editFileUpload" class="flex align-items-center justify-content-between p-3 border-round border-1 border-300 mb-2 bg-surface-card w-full gap-2">
+                    <div class="flex align-items-center gap-3 min-width-0 flex-1">
+                      <span class="inline-flex align-items-center justify-content-center bg-indigo-100 text-indigo-600 border-round" style="width: 2.5rem; height: 2.5rem; flex: 0 0 auto;">
+                        <i class="pi pi-file text-xl"></i>
+                      </span>
+                      <div class="min-width-0 flex-1">
+                        <div class="font-semibold text-900 text-sm" style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 280px;" [title]="editTaskFileName() || 'Attached Task Document'">
+                          {{ editTaskFileName() || 'Attached Task Document' }}
+                        </div>
+                        <a [href]="getFileUrl(editTaskFileUrl())" target="_blank" class="text-xs text-indigo-600 hover:underline">View Document</a>
+                      </div>
+                    </div>
+                    <button pButton pRipple type="button" icon="pi pi-times" class="p-button-text p-button-rounded p-button-danger p-button-sm" (click)="removeTaskFile('EDIT')"></button>
+                  </div>
+
+                  <ng-template #editFileUpload>
+                    <p-fileupload
+                      name="editTaskFile"
+                      accept=".pdf,.csv,.xlsx,.xls"
+                      [multiple]="false"
+                      [customUpload]="true"
+                      [showUploadButton]="false"
+                      [showCancelButton]="false"
+                      chooseLabel="Choose File (CSV, Excel, PDF)"
+                      chooseIcon="pi pi-upload"
+                      styleClass="circular-file-upload"
+                      (onSelect)="onTaskFileSelected($event, 'EDIT')"
+                      (onRemove)="removeTaskFile('EDIT')"
+                      (onClear)="removeTaskFile('EDIT')">
+                      <ng-template pTemplate="file" let-file let-index="index" let-removeFileCallback="removeFileCallback">
+                        <div class="flex align-items-center justify-content-between p-3 border-round border-1 border-300 mb-2 bg-surface-card w-full gap-2">
+                          <div class="flex align-items-center gap-3 min-width-0 flex-1">
+                            <span class="inline-flex align-items-center justify-content-center bg-indigo-100 text-indigo-600 border-round animate-fadein" style="width: 2.5rem; height: 2.5rem; flex: 0 0 auto;">
+                              <i class="pi pi-file text-xl"></i>
+                            </span>
+                            <div class="min-width-0 flex-1">
+                              <div class="font-semibold text-900 text-sm" style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 280px;" [title]="file.name">{{ file.name }}</div>
+                              <div class="text-xs text-600 mt-1" *ngIf="file.size">{{ (file.size / 1024 / 1024).toFixed(3) }} MB</div>
+                            </div>
+                          </div>
+                          <div class="flex align-items-center gap-3 flex-shrink-0">
+                            <span *ngIf="uploadingTaskFile()" class="bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-1 border-round">Uploading...</span>
+                            <span *ngIf="!uploadingTaskFile() && editTaskFileUrl()" class="bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 border-round">Uploaded</span>
+                            <button pButton pRipple type="button" icon="pi pi-times" class="p-button-text p-button-rounded p-button-danger p-button-sm" (click)="removeFileCallback($event, index); removeTaskFile('EDIT')"></button>
+                          </div>
+                        </div>
+                      </ng-template>
+                    </p-fileupload>
+                  </ng-template>
                 </div>
               </div>
             </section>
@@ -392,6 +403,45 @@ import { MessageService } from 'primeng/api';
                     [required]="true"
                     placeholder="Enter task description">
                   </app-textarea-field>
+                </div>
+
+                <div class="field col-12">
+                  <label class="font-semibold text-sm text-gray-700 block mb-2">
+                    Attachment (Optional) <span class="text-gray-400 text-xs font-normal">(CSV, Excel, PDF)</span>
+                  </label>
+
+                  <p-fileupload
+                    name="manualTaskFile"
+                    accept=".pdf,.csv,.xlsx,.xls"
+                    [multiple]="false"
+                    [customUpload]="true"
+                    [showUploadButton]="false"
+                    [showCancelButton]="false"
+                    chooseLabel="Choose File (CSV, Excel, PDF)"
+                    chooseIcon="pi pi-upload"
+                    styleClass="circular-file-upload"
+                    (onSelect)="onTaskFileSelected($event, 'MANUAL')"
+                    (onRemove)="removeTaskFile('MANUAL')"
+                    (onClear)="removeTaskFile('MANUAL')">
+                    <ng-template pTemplate="file" let-file let-index="index" let-removeFileCallback="removeFileCallback">
+                      <div class="flex align-items-center justify-content-between p-3 border-round border-1 border-300 mb-2 bg-surface-card w-full gap-2">
+                        <div class="flex align-items-center gap-3 min-width-0 flex-1">
+                          <span class="inline-flex align-items-center justify-content-center bg-indigo-100 text-indigo-600 border-round animate-fadein" style="width: 2.5rem; height: 2.5rem; flex: 0 0 auto;">
+                            <i class="pi pi-file text-xl"></i>
+                          </span>
+                          <div class="min-width-0 flex-1">
+                            <div class="font-semibold text-900 text-sm" style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 280px;" [title]="file.name">{{ file.name }}</div>
+                            <div class="text-xs text-600 mt-1" *ngIf="file.size">{{ (file.size / 1024 / 1024).toFixed(3) }} MB</div>
+                          </div>
+                        </div>
+                        <div class="flex align-items-center gap-3 flex-shrink-0">
+                          <span *ngIf="uploadingTaskFile()" class="bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-1 border-round">Uploading...</span>
+                          <span *ngIf="!uploadingTaskFile() && manualTaskFileUrl()" class="bg-green-100 text-green-700 text-xs font-semibold px-2 py-1 border-round">Uploaded</span>
+                          <button pButton pRipple type="button" icon="pi pi-times" class="p-button-text p-button-rounded p-button-danger p-button-sm" (click)="removeFileCallback($event, index); removeTaskFile('MANUAL')"></button>
+                        </div>
+                      </div>
+                    </ng-template>
+                  </p-fileupload>
                 </div>
               </div>
             </section>
@@ -863,6 +913,8 @@ export class TasksComponent implements OnInit {
   editTaskBusinessRisk = signal<string | null>(null);
   editTaskControlRisk = signal<string | null>(null);
   editTaskAuditAreaId = signal<number | null>(null);
+  editTaskFileUrl = signal<string | null>(null);
+  editTaskFileName = signal<string>('');
 
   taskHeaders = signal<any[]>([]);
   auditAreas = signal<any[]>([]);
@@ -885,7 +937,6 @@ export class TasksComponent implements OnInit {
   newHeaderName = '';
   activeHeaderTarget: 'MANUAL' | 'EDIT' = 'MANUAL';
 
-
   // Manual Task Modal State
   showManualTaskModal = signal(false);
   manualTaskDescription = signal('');
@@ -896,6 +947,44 @@ export class TasksComponent implements OnInit {
   manualTaskBusinessRisk = signal<string | null>(null);
   manualTaskControlRisk = signal<string | null>(null);
   manualTaskAuditAreaId = signal<number | null>(null);
+  manualTaskFileUrl = signal<string | null>(null);
+  manualTaskFileName = signal<string>('');
+  uploadingTaskFile = signal<boolean>(false);
+
+  onTaskFileSelected(event: any, target: 'EDIT' | 'MANUAL') {
+    const files = event.currentFiles || event.files || (event.target?.files ? Array.from(event.target.files) : []);
+    const file = files[0];
+    if (!file) return;
+
+    this.uploadingTaskFile.set(true);
+    this.api.uploadTaskFile(file).subscribe({
+      next: (res) => {
+        if (target === 'EDIT') {
+          this.editTaskFileUrl.set(res.file_url);
+          this.editTaskFileName.set(res.filename);
+        } else {
+          this.manualTaskFileUrl.set(res.file_url);
+          this.manualTaskFileName.set(res.filename);
+        }
+        this.uploadingTaskFile.set(false);
+        this.messageService.add({ severity: 'success', summary: 'Success', detail: 'File uploaded successfully' });
+      },
+      error: (err) => {
+        this.uploadingTaskFile.set(false);
+        this.messageService.add({ severity: 'error', summary: 'Upload Error', detail: err.error?.message || 'Failed to upload file' });
+      }
+    });
+  }
+
+  removeTaskFile(target: 'EDIT' | 'MANUAL') {
+    if (target === 'EDIT') {
+      this.editTaskFileUrl.set('__REMOVE__');
+      this.editTaskFileName.set('');
+    } else {
+      this.manualTaskFileUrl.set(null);
+      this.manualTaskFileName.set('');
+    }
+  }
   circulars = signal<any[]>([]);
   parentPage: number | null = null;
   parentLimit: number | null = null;
@@ -1026,6 +1115,13 @@ export class TasksComponent implements OnInit {
     this.editTaskBusinessRisk.set(task.business_risk || null);
     this.editTaskControlRisk.set(task.control_risk || null);
     this.editTaskAuditAreaId.set(task.audit_area_id || null);
+    this.editTaskFileUrl.set(task.file_url || null);
+    if (task.file_url) {
+      const parts = task.file_url.split('/');
+      this.editTaskFileName.set(parts[parts.length - 1] || 'Attached File');
+    } else {
+      this.editTaskFileName.set('');
+    }
     this.showEditModal.set(true);
   }
 
@@ -1038,7 +1134,8 @@ export class TasksComponent implements OnInit {
         risk_category: this.editTaskRiskCategory() || undefined,
         business_risk: this.editTaskBusinessRisk() || undefined,
         control_risk: this.editTaskControlRisk() || undefined,
-        audit_area_id: this.editTaskAuditAreaId() || undefined
+        audit_area_id: this.editTaskAuditAreaId() || undefined,
+        file_url: this.editTaskFileUrl() || null
       };
       this.api.updateTaskDescription(this.editingTaskId, payload).subscribe(() => {
         this.showEditModal.set(false);
@@ -1046,10 +1143,6 @@ export class TasksComponent implements OnInit {
       });
     }
   }
-
-
-
-
 
   openCreateManualTaskModal() {
     this.manualTaskDescription.set('');
@@ -1059,6 +1152,8 @@ export class TasksComponent implements OnInit {
     this.manualTaskBusinessRisk.set(null);
     this.manualTaskControlRisk.set(null);
     this.manualTaskAuditAreaId.set(null);
+    this.manualTaskFileUrl.set(null);
+    this.manualTaskFileName.set('');
     this.manualTaskCircularId.set(this.selectedCircularId);
     this.showManualTaskModal.set(true);
   }
@@ -1076,7 +1171,8 @@ export class TasksComponent implements OnInit {
       risk_category: this.manualTaskRiskCategory() || undefined,
       business_risk: this.manualTaskBusinessRisk() || undefined,
       control_risk: this.manualTaskControlRisk() || undefined,
-      audit_area_id: this.manualTaskAuditAreaId() || undefined
+      audit_area_id: this.manualTaskAuditAreaId() || undefined,
+      file_url: this.manualTaskFileUrl() || null
     };
 
     this.api.createManualTask(payload).subscribe(() => {

@@ -57,7 +57,7 @@ export interface ComplianceTask {
 @Injectable({ providedIn: 'root' })
 export class ComplianceApiService {
   private config = inject(APP_CONFIG);
-  private baseUrl = this.config.apiUrl;
+  public baseUrl = this.config.apiUrl;
 
   constructor(private http: HttpClient) {}
 
@@ -86,7 +86,8 @@ export class ComplianceApiService {
     }
     // Remove leading slash if present to avoid double slashes
     const cleanPath = path.startsWith('/') ? path.substring(1) : path;
-    return `${this.baseUrl}/${cleanPath}`;
+    const serverUrl = this.baseUrl.replace(/\/api\/?$/, '');
+    return `${serverUrl}/${cleanPath}`;
   }
 
   getCirculars(params?: any) {
@@ -215,12 +216,18 @@ export class ComplianceApiService {
     return this.http.patch<ComplianceTask>(`${this.baseUrl}/tasks/${id}/approve`, {});
   }
 
-  updateTaskDescription(id: number, payload: Partial<ComplianceTask> & { header_id?: number | null }) {
+  updateTaskDescription(id: number, payload: Partial<ComplianceTask> & { header_id?: number | null; file_url?: string | null }) {
     return this.http.put<ComplianceTask>(`${this.baseUrl}/tasks/${id}`, payload);
   }
 
-  createManualTask(payload: Partial<ComplianceTask> & { circular_id: number, header_id?: number | null }) {
+  createManualTask(payload: Partial<ComplianceTask> & { circular_id: number; header_id?: number | null; file_url?: string | null }) {
     return this.http.post<ComplianceTask>(`${this.baseUrl}/tasks/manual`, payload);
+  }
+
+  uploadTaskFile(file: File) {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    return this.http.post<{ file_url: string; filename: string }>(`${this.baseUrl}/tasks/upload`, formData);
   }
 
   // Audit Areas
@@ -295,8 +302,15 @@ export class ComplianceApiService {
     return this.http.patch<any>(`${this.baseUrl}/assignments/${id}/propose-timeline`, { date });
   }
 
-  proposeSingleTaskTimeline(assignmentId: number, assignmentTaskId: number, proposedDueDate: string) {
-    return this.http.patch<any>(`${this.baseUrl}/assignments/${assignmentId}/tasks/${assignmentTaskId}/propose-timeline`, { proposed_due_date: proposedDueDate });
+  proposeSingleTaskTimeline(assignmentId: number, assignmentTaskId: number, proposedDueDate: string, proposedRemark?: string) {
+    return this.http.patch<any>(`${this.baseUrl}/assignments/${assignmentId}/tasks/${assignmentTaskId}/propose-timeline`, { 
+      proposed_due_date: proposedDueDate,
+      proposed_remark: proposedRemark 
+    });
+  }
+
+  reviewSingleTaskTimeline(assignmentId: number, assignmentTaskId: number, status: 'APPROVED' | 'REJECTED', remark?: string) {
+    return this.http.patch<any>(`${this.baseUrl}/assignments/${assignmentId}/tasks/${assignmentTaskId}/review-timeline`, { status, remark });
   }
 
   proposeCustomTimeline(id: number, date: string, taskTimelines: { assignment_task_id: number; proposed_due_date: string }[]) {

@@ -9,11 +9,12 @@ import { SelectModule } from 'primeng/select';
 import { Textarea } from 'primeng/textarea';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
+import { DatePickerModule } from 'primeng/datepicker';
 
 @Component({
   selector: 'app-assignment-details',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, SelectModule, Textarea, TagModule, TooltipModule],
+  imports: [CommonModule, FormsModule, ButtonModule, SelectModule, Textarea, TagModule, TooltipModule, DatePickerModule],
   styleUrls: ['../../shared/styles/checklist-shared.css'],
   template: `
     <!-- Compact Premium Dashboard Header -->
@@ -32,7 +33,7 @@ import { TooltipModule } from 'primeng/tooltip';
         </div>
         <h1 class="text-lg font-bold text-gray-900 m-0 mt-1" style="margin-top: 0.15rem;">{{ taskSetName() }}</h1>
         <span class="text-xs text-gray-500 font-medium" *ngIf="startDate() && endDate()">
-          Period: {{ startDate() | date:'dd-MM-yyyy' }} to {{ endDate() | date:'dd-MM-yyyy' }}
+          Period: {{ startDate() | date:'dd/MM/yyyy' }} to {{ endDate() | date:'dd/MM/yyyy' }}
         </span>
       </div>
 
@@ -55,7 +56,7 @@ import { TooltipModule } from 'primeng/tooltip';
             <span class="text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200 px-2 py-1 rounded" style="font-size: 0.8rem;">
               <i class="pi pi-calendar"></i> Suggest Assignment Due:
             </span>
-            <input type="date" [(ngModel)]="tempAssignmentTimeline" class="p-1 border rounded text-xs font-semibold" style="width: 125px; border: 1px solid var(--surface-border); border-radius: 4px;">
+            <p-datepicker [(ngModel)]="tempAssignmentTimelineObj" (ngModelChange)="tempAssignmentTimeline = formatDateForBackend($event)" dateFormat="dd-mm-yy" appendTo="body" styleClass="w-32" [inputStyleClass]="'p-1 border rounded text-xs font-semibold'"></p-datepicker>
           </div>
           <ng-template #viewDueDate>
             <span class="text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded flex items-center gap-1" style="font-size: 0.8rem;">
@@ -147,122 +148,269 @@ import { TooltipModule } from 'primeng/tooltip';
                 <p class="font-semibold text-gray-800 m-0" style="line-height: 1.45; font-size: 0.95rem;">
                   {{ t.description }}
                 </p>
+
+                <!-- Task Attachment Download Link -->
+                <div *ngIf="t.file_url" class="mt-2" style="margin-top: 0.5rem;">
+                  <a [href]="getFileUrl(t.file_url)" target="_blank" class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-md text-xs font-semibold border border-indigo-200 no-underline transition-colors" title="Download Task Attachment" style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.6rem; background-color: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; border-radius: 6px; text-decoration: none; font-size: 0.75rem; font-weight: 600;">
+                    <i class="pi pi-file text-indigo-500"></i>
+                    <span>Attached Task Document</span>
+                    <i class="pi pi-download text-xs text-indigo-400" style="margin-left: 0.25rem;"></i>
+                  </a>
+                </div>
               </div>
             </div>
 
             <!-- Right Column: Answer Form or Timeline Proposing -->
             <div class="answer-form" *ngIf="assignmentStatus() === 'Pending_Timeline' || assignmentStatus() === 'Timeline_Review'; else complianceForm" style="display: flex; flex-direction: column; align-items: stretch; justify-content: center; width: 100%;">
-              <div style="display: flex; flex-direction: column; gap: 0.35rem; width: 100%; min-width: 250px;">
-                <label class="control-label font-bold text-gray-700" style="font-size: 0.75rem;">{{ getTimelineLabel() }}</label>
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                  <input type="date" 
-                         [(ngModel)]="t.temp_proposed_due_date" 
-                         [disabled]="!canEditTimeline()" 
-                         class="answer-control p-2 border rounded w-full" 
-                         style="font-size: 0.85rem; padding: 0.4rem; border: 1px solid var(--surface-border); border-radius: 6px;">
-                  <span class="text-xs text-indigo-600 font-bold bg-indigo-50 border border-indigo-200 px-2 py-1 rounded-full whitespace-nowrap" *ngIf="t.due_date && t.proposed_due_date && t.due_date !== t.proposed_due_date">
-                    Revised
-                  </span>
+              
+              <!-- If Branch is proposing/editing timeline -->
+              <ng-container *ngIf="!isReviewer()">
+                <div style="display: flex; flex-direction: column; gap: 0.35rem; width: 100%; min-width: 250px;">
+                  <div class="flex items-center justify-between" style="display: flex; align-items: center; justify-content: space-between;">
+                    <label class="control-label font-bold text-gray-700" style="font-size: 0.75rem;">{{ getTimelineLabel() }}</label>
+                    <span class="text-xs text-red-600 font-bold bg-red-50 border border-red-200 px-2 py-0.5 rounded-full" *ngIf="t.review_status === 'REJECTED'">
+                      Rejected
+                    </span>
+                    <span class="text-xs text-green-600 font-bold bg-green-50 border border-green-200 px-2 py-0.5 rounded-full" *ngIf="t.review_status === 'APPROVED'">
+                      Approved
+                    </span>
+                  </div>
+
+                  <!-- Reviewer's Feedback (Show to Branch if rejected/approved) -->
+                  <div class="text-xs text-red-700 font-medium bg-red-50 border border-red-200 p-2 rounded mb-2" *ngIf="t.review_status === 'REJECTED' && t.timeline_review_remark">
+                    <strong>Reviewer Feedback:</strong> "{{ t.timeline_review_remark }}"
+                  </div>
+                  <div class="text-xs text-green-700 font-medium bg-green-50 border border-green-200 p-2 rounded mb-2" *ngIf="t.review_status === 'APPROVED' && t.timeline_review_remark">
+                    <strong>Reviewer Remarks:</strong> "{{ t.timeline_review_remark }}"
+                  </div>
+
+                  <div style="display: flex; align-items: center; gap: 0.5rem;" *ngIf="canEditTimeline()">
+                    <p-datepicker 
+                      [(ngModel)]="t.temp_proposed_due_date_obj" 
+                      (ngModelChange)="t.temp_proposed_due_date = formatDateForBackend($event)" 
+                      [disabled]="!canEditTimeline()" 
+                      dateFormat="dd-mm-yy" 
+                      appendTo="body" 
+                      styleClass="w-full" 
+                      [inputStyleClass]="'answer-control p-2 border rounded w-full text-sm font-medium'">
+                    </p-datepicker>
+                  </div>
+                  
+                  <div class="text-xs text-gray-500 font-medium mt-1" *ngIf="t.due_date">
+                    Default Task Due Date: <strong class="text-gray-700">{{ t.due_date | date:'dd-MM-yyyy' }}</strong>
+                  </div>
+
+                  <!-- Proposed Remark for Branch to fill -->
+                  <div class="mt-2" *ngIf="canEditTimeline()">
+                    <label class="control-label font-bold text-gray-600 block mb-1" style="font-size: 0.7rem;">Propose Date Remark / Justification</label>
+                    <textarea pTextarea
+                              [(ngModel)]="t.temp_proposed_remark"
+                              [disabled]="!canEditTimeline()"
+                              class="answer-control w-full p-2 border rounded text-xs"
+                              style="resize: none; height: 3rem; font-size: 0.75rem;"
+                              placeholder="Explain why you are proposing this due date..."></textarea>
+                  </div>
+                  <div class="text-xs text-indigo-600 font-medium bg-indigo-50 border border-indigo-100 p-2 rounded mt-1" *ngIf="!canEditTimeline() && t.proposed_remark">
+                    <strong>Propose Remark:</strong> "{{ t.proposed_remark }}"
+                  </div>
+
+                  <p-button *ngIf="canEditTimeline()"
+                            label="Save Date"
+                            [loading]="!!rowSavingMap()[t.assignment_task_id]"
+                            loadingIcon="pi pi-spinner pi-spin"
+                            icon="pi pi-save"
+                            iconPos="left"
+                            [disabled]="!t.temp_proposed_due_date"
+                            (click)="saveSingleTaskTimeline(t)"
+                            styleClass="w-full save-row-btn mt-2"
+                            size="small" />
                 </div>
-                <div class="text-xs text-gray-400 mt-1" *ngIf="t.due_date">
-                  Default Task Due Date: {{ t.due_date | date:'dd-MM-yyyy' }}
+              </ng-container>
+
+              <!-- If CO/CCO/Admin is reviewing timeline -->
+              <ng-container *ngIf="isReviewer()">
+                <div style="display: flex; flex-direction: column; gap: 0.35rem; width: 100%; min-width: 250px;">
+                  <div class="flex items-center justify-between" style="display: flex; align-items: center; justify-content: space-between;">
+                    <label class="control-label font-bold text-gray-700" style="font-size: 0.75rem;">{{ getTimelineLabel() }}</label>
+                    <span class="text-xs text-green-600 font-bold bg-green-50 border border-green-200 px-2 py-0.5 rounded-full" *ngIf="t.review_status === 'APPROVED'">
+                      Accepted
+                    </span>
+                    <span class="text-xs text-red-600 font-bold bg-red-50 border border-red-200 px-2 py-0.5 rounded-full" *ngIf="t.review_status === 'REJECTED'">
+                      Rejected
+                    </span>
+                  </div>
+
+                  <!-- Branch Proposed Date & Remark Display -->
+                  <div class="text-xs text-indigo-700 font-bold bg-indigo-50 border border-indigo-200 p-2.5 rounded mb-2">
+                    <div class="flex items-center justify-between mb-1">
+                      <span><strong>{{ (t.temp_proposed_due_date || t.proposed_due_date) | date:'dd-MM-yyyy' }}</strong></span>
+                      <span class="text-xs text-indigo-600 font-bold bg-indigo-100 px-2 py-0.5 rounded-full" *ngIf="t.due_date && t.proposed_due_date && t.due_date !== t.proposed_due_date">
+                        Revised
+                      </span>
+                    </div>
+                    <div class="mt-1 font-medium text-indigo-600" *ngIf="t.proposed_remark">
+                      <strong>Branch Remark:</strong> "{{ t.proposed_remark }}"
+                    </div>
+                    <div class="mt-1 font-medium text-indigo-400 italic" *ngIf="!t.proposed_remark">
+                      No remarks provided by branch.
+                    </div>
+                  </div>
+
+                  <!-- Reviewer Remark Textarea -->
+                  <div class="mt-1" *ngIf="canEditTimeline() && t.review_status !== 'APPROVED' && t.review_status !== 'REJECTED'">
+                    <label class="control-label font-bold text-gray-600 block mb-1" style="font-size: 0.7rem;">Review Remarks / Feedback <span class="text-red-500">*</span></label>
+                    <textarea pTextarea
+                              [(ngModel)]="t.temp_timeline_review_remark"
+                              class="answer-control w-full p-2 border rounded text-xs"
+                              style="resize: none; height: 3rem; font-size: 0.75rem;"
+                              placeholder="Remarks for Accept/Reject..."></textarea>
+                  </div>
+                  <div class="text-xs text-gray-600 font-medium bg-gray-50 border border-gray-200 p-2 rounded mt-1" *ngIf="(t.review_status === 'APPROVED' || t.review_status === 'REJECTED' || !canEditTimeline()) && t.timeline_review_remark">
+                    <strong>Reviewer Remarks:</strong> "{{ t.timeline_review_remark }}"
+                  </div>
+
+                  <div class="text-xs text-gray-500 font-medium mt-1" *ngIf="t.due_date">
+                    Default Task Due Date: <strong class="text-gray-700">{{ t.due_date | date:'dd-MM-yyyy' }}</strong>
+                  </div>
+
+                  <!-- Accept and Reject Buttons for CO/CCO -->
+                  <div class="flex gap-2 mt-2" *ngIf="canEditTimeline() && t.review_status !== 'APPROVED' && t.review_status !== 'REJECTED'">
+                    <p-button label="Accept"
+                              [loading]="!!rowSavingMap()[t.assignment_task_id]"
+                              loadingIcon="pi pi-spinner pi-spin"
+                              icon="pi pi-check"
+                              severity="success"
+                              outlined
+                              (click)="reviewSingleTaskTimeline(t, 'APPROVED')"
+                              styleClass="flex-1"
+                              size="small" />
+                    <p-button label="Reject"
+                              [loading]="!!rowSavingMap()[t.assignment_task_id]"
+                              loadingIcon="pi pi-spinner pi-spin"
+                              icon="pi pi-times"
+                              severity="danger"
+                              outlined
+                              (click)="reviewSingleTaskTimeline(t, 'REJECTED')"
+                              styleClass="flex-1"
+                              size="small" />
+                  </div>
                 </div>
-                <p-button *ngIf="canEditTimeline()"
-                          label="Save Date"
-                          [loading]="!!rowSavingMap()[t.assignment_task_id]"
-                          loadingIcon="pi pi-spinner pi-spin"
-                          icon="pi pi-save"
-                          iconPos="left"
-                          [disabled]="!t.temp_proposed_due_date"
-                          (click)="saveSingleTaskTimeline(t)"
-                          styleClass="w-full save-row-btn mt-2"
-                          size="small" />
-              </div>
+              </ng-container>
             </div>
 
             <ng-template #complianceForm>
               <div class="answer-form" style="display: flex; flex-direction: column; align-items: stretch; justify-content: center; width: 100%;">
                 <div class="text-xs text-gray-500 font-bold mb-2 flex items-center gap-1" style="font-size: 0.75rem; width: 100%; display: flex; align-items: center;">
                   <i class="pi pi-calendar-times text-indigo-500"></i> Task Due Date: 
-                  <span class="text-gray-900 font-extrabold">{{ (t.due_date ? (t.due_date | date:'dd-MM-yyyy') : (proposedTimeline() | date:'dd-MM-yyyy')) }}</span>
+                  <span class="text-gray-900 font-extrabold">{{ (t.due_date ? (t.due_date | date:'dd/MM/yyyy') : (proposedTimeline() | date:'dd/MM/yyyy')) }}</span>
                 </div>
-                <div class="answer-form-grid">
-                  
-                  <!-- Left Sub-column: Dropdown & File Uploader & Save Button (Stacked) -->
-                  <div class="answer-field" style="display: flex; flex-direction: column; gap: 0.5rem;">
-                    <div>
-                      <label class="control-label">Compliance <span class="text-red-500">*</span></label>
-                      <p-select
-                        [(ngModel)]="t.temp_compliance_status"
-                        [options]="complianceOptions"
-                        optionLabel="label"
-                        optionValue="value"
-                        [disabled]="!canEditAssignment()"
-                        styleClass="answer-control w-full"
-                        [ngClass]="{
-                          'border-green-500': t.temp_compliance_status === 'COMPLIED',
-                          'border-red-500': t.temp_compliance_status === 'NOT_COMPLIED'
-                        }"
-                        placeholder="Select status..."
-                      />
-                    </div>
 
-                    <!-- Upload PDF Button (Full Width) -->
-                    <div *ngIf="canEditAssignment()">
-                      <label class="upload-btn cursor-pointer"
-                             [ngClass]="{'upload-btn-attached': getSelectedFileName(t.assignment_task_id)}">
-                        <input type="file" 
-                               (change)="onFileSelected($event, t.assignment_task_id)" 
-                               accept="application/pdf" 
-                               class="hidden">
-                        <i class="pi pi-upload mr-1"></i> 
-                        {{ getSelectedFileName(t.assignment_task_id) ? 'Change PDF' : 'Upload PDF' }}
-                      </label>
+                <!-- Only show compliance block if branch is currently complying or has already submitted responses -->
+                <ng-container *ngIf="canEditAssignment() || (t.compliance_status && t.compliance_status !== 'PENDING') || t.remarks || t.has_evidence">
+                  <!-- If CO/CCO has completed/approved the assignment, hide form inputs and show read-only details -->
+                  <div *ngIf="assignmentStatus() === 'COMPLETED'; else activeComplianceForm" class="flex flex-column gap-2 p-3 bg-gray-50 border border-gray-100 rounded-lg w-full">
+                    <div class="flex items-center justify-between" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                      <span class="text-xs font-bold text-gray-500">Compliance Status:</span>
+                      <span class="px-2.5 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-green-100 text-green-800" *ngIf="t.compliance_status === 'COMPLIED'">
+                        Complied
+                      </span>
+                      <span class="px-2.5 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-red-100 text-red-800" *ngIf="t.compliance_status === 'NOT_COMPLIED'">
+                        Not Complied
+                      </span>
+                      <span class="px-2.5 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-gray-100 text-gray-800" *ngIf="t.compliance_status !== 'COMPLIED' && t.compliance_status !== 'NOT_COMPLIED'">
+                        {{ t.compliance_status || 'Pending Declaration' }}
+                      </span>
                     </div>
-
+                    <div class="text-xs text-gray-700 font-medium mt-1" *ngIf="t.remarks">
+                      <strong>Remarks / Explanation:</strong> "{{ t.remarks }}"
+                    </div>
                     <!-- View PDF link -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; min-height: 1.25rem; margin-top: -0.15rem; margin-bottom: -0.15rem;">
-                      <div>
-                        <a *ngIf="t.has_evidence && t.evidence_url"
-                           [href]="t.evidence_url"
-                           target="_blank"
-                           class="evidence-link">
-                          <i class="pi pi-file-pdf" style="color: #ef4444;"></i> View PDF
-                        </a>
-                      </div>
-                      <small *ngIf="getSelectedFileName(t.assignment_task_id)"
-                             class="text-indigo-600 font-medium"
-                             style="font-size: 0.65rem;"
-                             [pTooltip]="getSelectedFileName(t.assignment_task_id)">
-                        Attached: {{ getSelectedFileName(t.assignment_task_id) | slice:0:18 }}…
-                      </small>
+                    <div class="mt-1.5" *ngIf="t.has_evidence && t.evidence_url">
+                      <a [href]="t.evidence_url" target="_blank" class="evidence-link">
+                        <i class="pi pi-file-pdf" style="color: #ef4444;"></i> View PDF
+                      </a>
                     </div>
-
-                    <!-- Save Row button -->
-                    <p-button *ngIf="canEditAssignment()"
-                              label="Save Task"
-                              [loading]="!!rowSavingMap()[t.assignment_task_id]"
-                              loadingIcon="pi pi-spinner pi-spin"
-                              icon="pi pi-save"
-                              iconPos="left"
-                              [disabled]="rowSavingMap()[t.assignment_task_id] || t.temp_compliance_status === 'PENDING' || !t.temp_remarks?.trim()"
-                              (click)="saveSingleTask(t)"
-                              styleClass="w-full save-row-btn"
-                              size="small" />
                   </div>
 
-                  <!-- Right Sub-column: Remarks textarea -->
-                  <div class="answer-field" style="display: flex; flex-direction: column; height: 100%;">
-                    <label class="control-label">Remarks / Explanation <span class="text-red-500">*</span></label>
-                    <textarea pTextarea
-                              [(ngModel)]="t.temp_remarks"
-                              [disabled]="!canEditAssignment()"
-                              class="answer-control"
-                              style="flex: 1; resize: none; min-height: 3.8rem; height: 3.8rem;"
-                              placeholder="Add compliance remarks or explanation..."></textarea>
-                  </div>
+                  <!-- Active compliance form (during In_Progress or review) -->
+                  <ng-template #activeComplianceForm>
+                    <div class="answer-form-grid">
+                      
+                      <!-- Left Sub-column: Upload PDF & Save Button -->
+                      <div class="answer-field" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        
+                        <!-- Compliance Dropdown (Show only for CO/CCO during review, hide for Branch when complying) -->
+                        <div *ngIf="!canEditAssignment()">
+                          <label class="control-label">Compliance <span class="text-red-500">*</span></label>
+                          <p-select
+                            [(ngModel)]="t.temp_compliance_status"
+                            [options]="complianceOptions"
+                            optionLabel="label"
+                            optionValue="value"
+                            [disabled]="true"
+                            styleClass="answer-control w-full"
+                            placeholder="Select status..."
+                          />
+                        </div>
 
-                </div>
+                        <!-- Upload PDF Button (Full Width) -->
+                        <div *ngIf="canEditAssignment()">
+                          <label class="upload-btn cursor-pointer"
+                                 [ngClass]="{'upload-btn-attached': getSelectedFileName(t.assignment_task_id)}">
+                            <input type="file" 
+                                   (change)="onFileSelected($event, t.assignment_task_id)" 
+                                   accept="application/pdf" 
+                                   class="hidden">
+                            <i class="pi pi-upload mr-1"></i> 
+                            {{ getSelectedFileName(t.assignment_task_id) ? 'Change PDF' : 'Upload PDF' }}
+                          </label>
+                        </div>
+
+                        <!-- View PDF link -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; min-height: 1.25rem; margin-top: -0.15rem; margin-bottom: -0.15rem;">
+                          <div>
+                            <a *ngIf="t.has_evidence && t.evidence_url"
+                               [href]="t.evidence_url"
+                               target="_blank"
+                               class="evidence-link">
+                              <i class="pi pi-file-pdf" style="color: #ef4444;"></i> View PDF
+                            </a>
+                          </div>
+                          <small *ngIf="getSelectedFileName(t.assignment_task_id)"
+                                 class="text-indigo-600 font-medium"
+                                 style="font-size: 0.65rem;"
+                                 [pTooltip]="getSelectedFileName(t.assignment_task_id)">
+                            Attached: {{ getSelectedFileName(t.assignment_task_id) | slice:0:18 }}…
+                          </small>
+                        </div>
+
+                        <!-- Save Row button -->
+                        <p-button *ngIf="canEditAssignment()"
+                                  label="Save Task"
+                                  [loading]="!!rowSavingMap()[t.assignment_task_id]"
+                                  loadingIcon="pi pi-spinner pi-spin"
+                                  icon="pi pi-save"
+                                  iconPos="left"
+                                  [disabled]="rowSavingMap()[t.assignment_task_id] || !t.temp_remarks?.trim()"
+                                  (click)="saveSingleTask(t)"
+                                  styleClass="w-full save-row-btn"
+                                  size="small" />
+                      </div>
+
+                      <!-- Right Sub-column: Remarks textarea -->
+                      <div class="answer-field" style="display: flex; flex-direction: column; height: 100%;">
+                        <label class="control-label">Remarks / Explanation <span class="text-red-500">*</span></label>
+                        <textarea pTextarea
+                                  [(ngModel)]="t.temp_remarks"
+                                  [disabled]="!canEditAssignment()"
+                                  class="answer-control"
+                                  style="flex: 1; resize: none; min-height: 3.8rem; height: 3.8rem;"
+                                  placeholder="Add compliance remarks or explanation..."></textarea>
+                      </div>
+
+                    </div>
+                  </ng-template>
+                </ng-container>
               </div>
             </ng-template>
 
@@ -334,6 +482,7 @@ export class AssignmentDetailsComponent implements OnInit {
   // Customizable due dates state
   userRole = signal<string>('');
   tempAssignmentTimeline: string = '';
+  tempAssignmentTimelineObj: Date | null = null;
 
   // Options for the p-select compliance status dropdown
   complianceOptions = [
@@ -403,6 +552,20 @@ export class AssignmentDetailsComponent implements OnInit {
     return false;
   }
 
+  isReviewer(): boolean {
+    const role = this.userRole();
+    return role === 'cco' || role === 'co' || role === 'admin';
+  }
+
+  formatDateForBackend(d: any): string {
+    if (!d) return '';
+    if (typeof d === 'string') return d;
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   canApproveTimeline(): boolean {
     const role = this.userRole();
     const status = this.assignmentStatus();
@@ -425,11 +588,12 @@ export class AssignmentDetailsComponent implements OnInit {
   }
 
   saveSingleTaskTimeline(task: any) {
-    if (!this.assignmentId || !task.temp_proposed_due_date) return;
+    const dateStr = task.temp_proposed_due_date || (task.temp_proposed_due_date_obj ? this.formatDateForBackend(task.temp_proposed_due_date_obj) : '');
+    if (!this.assignmentId || !dateStr) return;
 
     this.rowSavingMap.update(map => ({ ...map, [task.assignment_task_id]: true }));
 
-    this.api.proposeSingleTaskTimeline(this.assignmentId, task.assignment_task_id, task.temp_proposed_due_date).subscribe({
+    this.api.proposeSingleTaskTimeline(this.assignmentId, task.assignment_task_id, dateStr, task.temp_proposed_remark).subscribe({
       next: () => {
         this.rowSavingMap.update(map => ({ ...map, [task.assignment_task_id]: false }));
         this.notification.success('Task due date updated successfully.');
@@ -438,6 +602,34 @@ export class AssignmentDetailsComponent implements OnInit {
       error: (err) => {
         this.rowSavingMap.update(map => ({ ...map, [task.assignment_task_id]: false }));
         this.notification.error('Failed to update task due date: ' + (err.message || err.statusText));
+      }
+    });
+  }
+
+  reviewSingleTaskTimeline(task: any, status: 'APPROVED' | 'REJECTED') {
+    if (!this.assignmentId) return;
+
+    if (!task.temp_timeline_review_remark || !task.temp_timeline_review_remark.trim()) {
+      this.notification.error('Please enter review remarks/feedback before taking action.');
+      return;
+    }
+
+    this.rowSavingMap.update(map => ({ ...map, [task.assignment_task_id]: true }));
+
+    this.api.reviewSingleTaskTimeline(
+      this.assignmentId,
+      task.assignment_task_id,
+      status,
+      task.temp_timeline_review_remark
+    ).subscribe({
+      next: () => {
+        this.rowSavingMap.update(map => ({ ...map, [task.assignment_task_id]: false }));
+        this.notification.success(`Task timeline proposal ${status.toLowerCase()} successfully.`);
+        this.loadTasks();
+      },
+      error: (err) => {
+        this.rowSavingMap.update(map => ({ ...map, [task.assignment_task_id]: false }));
+        this.notification.error('Failed to review task timeline: ' + (err.message || err.statusText));
       }
     });
   }
@@ -473,14 +665,20 @@ export class AssignmentDetailsComponent implements OnInit {
           console.log('API Response data received:', data);
 
           // Map backend tasks to hold temporary form values for clean binding
-          const mappedTasks = data.map(t => ({
-            ...t,
-            temp_compliance_status: t.compliance_status || 'PENDING',
-            temp_remarks: t.remarks || '',
-            temp_proposed_due_date: t.proposed_due_date ? t.proposed_due_date.split('T')[0] : (t.due_date ? t.due_date.split('T')[0] : ''),
-            has_evidence: false,
-            evidence_url: ''
-          }));
+          const mappedTasks = data.map(t => {
+            const rawDate = t.proposed_due_date || t.due_date;
+            return {
+              ...t,
+              temp_compliance_status: t.compliance_status && t.compliance_status !== 'PENDING' ? t.compliance_status : 'COMPLIED',
+              temp_remarks: t.remarks || '',
+              temp_proposed_due_date: rawDate ? rawDate.split('T')[0] : '',
+              temp_proposed_due_date_obj: rawDate ? new Date(rawDate) : null,
+              temp_proposed_remark: t.proposed_remark || '',
+              temp_timeline_review_remark: t.timeline_review_remark || '',
+              has_evidence: false,
+              evidence_url: ''
+            };
+          });
 
           this.tasks.set(mappedTasks);
 
@@ -496,6 +694,9 @@ export class AssignmentDetailsComponent implements OnInit {
             
             if (first.proposed_timeline) {
               this.tempAssignmentTimeline = first.proposed_timeline.split('T')[0];
+              this.tempAssignmentTimelineObj = new Date(first.proposed_timeline);
+            } else {
+              this.tempAssignmentTimelineObj = null;
             }
 
             const freqVal = first.frequency || '';
@@ -603,10 +804,6 @@ export class AssignmentDetailsComponent implements OnInit {
   // Save a single task row declaration and/or upload evidence
   async saveSingleTask(task: any, showNotification: boolean = true): Promise<boolean> {
     if (!this.assignmentId) return false;
-    if (task.temp_compliance_status === 'PENDING') {
-      this.notification.warn('Please select a compliance declaration (Complied or Not Complied).');
-      return false;
-    }
     if (!task.temp_remarks?.trim()) {
       this.notification.warn('Remarks / Explanation is required.');
       return false;
@@ -712,10 +909,6 @@ export class AssignmentDetailsComponent implements OnInit {
 
     // 1. Validate all tasks are filled
     for (const t of this.tasks()) {
-      if (t.temp_compliance_status === 'PENDING') {
-        this.notification.warn('Please select a compliance declaration (Complied or Not Complied) for all checklist items before submitting.');
-        return;
-      }
       if (!t.temp_remarks?.trim()) {
         this.notification.warn('Remarks / Explanation are required for all checklist items before submitting.');
         return;
@@ -746,5 +939,9 @@ export class AssignmentDetailsComponent implements OnInit {
       this.submitting = false;
       this.notification.error('Some checklist items failed to save. Please review the responses and try again.');
     }
+  }
+
+  getFileUrl(url: string | null | undefined): string {
+    return this.api.getFileUrl(url);
   }
 }

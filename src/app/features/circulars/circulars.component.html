@@ -21,89 +21,26 @@
         [actionsWidth]="'14rem'"
     >
       <div toolbar-actions class="flex align-items-center gap-2 ml-2 flex-shrink-0" style="flex-wrap: nowrap;">
-        <!-- Add Filter Dropdown Button -->
-        <button
-          pButton
-          pRipple
-          type="button"
-          icon="pi pi-filter"
-          label="Add Filter"
-          class="p-button-outlined p-button-secondary p-button-sm"
-          style="height: 2.5rem; white-space: nowrap; flex-shrink: 0;"
-          (click)="filterMenu.toggle($event)"
-        ></button>
-        <p-menu #filterMenu [model]="filterMenuItems" [popup]="true" appendTo="body"></p-menu>
+        <!-- Filter: Authority -->
+        <app-select-field
+          [field]="selectedAuthorityFilter"
+          [options]="authorities()"
+          optionLabel="name"
+          optionValue="id"
+          [hideLabel]="true"
+          [showClear]="true"
+          placeholder="Select Authority"
+          (onChange)="handleAuthorityFilterChange()"
+          class="w-20rem flex-shrink-0 toolbar-filter-select"
+        ></app-select-field>
 
-        <!-- Active Filter: Authority -->
-        @if (activeFilters().authority) {
-          <div class="flex align-items-center gap-1 animate-fadein" style="flex-shrink: 0;">
-            <app-select-field
-              [field]="selectedAuthorityFilter"
-              [options]="authorities()"
-              optionLabel="name"
-              optionValue="id"
-              [hideLabel]="true"
-              [showClear]="false"
-              placeholder="Select Authority"
-              (onChange)="handleAuthorityFilterChange()"
-              class="w-14rem flex-shrink-0 animate-fadein toolbar-filter-select"
-            ></app-select-field>
-            <button
-              pButton
-              pRipple
-              type="button"
-              icon="pi pi-times"
-              class="p-button-text p-button-secondary p-button-sm flex-shrink-0 animate-fadein"
-              style="width: 2rem; height: 2.5rem; padding: 0;"
-              (click)="removeFilter('authority')"
-              pTooltip="Remove Authority Filter"
-              tooltipPosition="top"
-            ></button>
-          </div>
-        }
-
-        <!-- Active Filter: Date Range -->
-        @if (activeFilters().dateRange) {
-          <div class="flex align-items-center gap-1 animate-fadein" style="flex-shrink: 0;">
-            <app-date-range-field
-              [field]="selectedDateRange"
-              [defaultToToday]="false"
-              placeholder="Select Date Range"
-              class="flex-shrink-0 animate-fadein"
-            ></app-date-range-field>
-            <button
-              pButton
-              pRipple
-              type="button"
-              icon="pi pi-times"
-              class="p-button-text p-button-secondary p-button-sm flex-shrink-0 animate-fadein"
-              style="width: 2rem; height: 2.5rem; padding: 0;"
-              (click)="removeFilter('dateRange')"
-              pTooltip="Remove Date Filter"
-              tooltipPosition="top"
-            ></button>
-          </div>
-        }
-
-        <!-- Active Filter: Institution (Mocked) -->
-        @if (activeFilters().institution) {
-          <div class="flex align-items-center gap-1 px-3 bg-surface-card border-round animate-fadein" style="border: 1px solid var(--surface-border); border-radius: 6px; height: 2.5rem; opacity: 0.85; flex-shrink: 0;">
-            <i class="pi pi-university text-primary text-xs mr-1"></i>
-            <span class="text-xs font-semibold mr-2 text-600">Institution:</span>
-            <span class="text-xs text-500 italic mr-2">All Institutions</span>
-            <button
-              pButton
-              pRipple
-              type="button"
-              icon="pi pi-times"
-              class="p-button-text p-button-secondary p-button-sm ml-2"
-              style="width: 1.5rem; height: 1.5rem; padding: 0;"
-              (click)="removeFilter('institution')"
-              pTooltip="Remove Institution Filter"
-              tooltipPosition="top"
-            ></button>
-          </div>
-        }
+        <!-- Filter: Date Range -->
+        <app-date-range-field
+          [field]="selectedDateRange"
+          [defaultToToday]="false"
+          placeholder="Select Date Range"
+          class="flex-shrink-0"
+        ></app-date-range-field>
       </div>
     </app-table>
   </div>

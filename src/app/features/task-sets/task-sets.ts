@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -264,7 +264,7 @@ export class TaskSetsComponent implements OnInit {
   targetTasks: any[] = [];
   taskColumns: TableColumn[] = [
     { field: 'description', header: 'Description', type: 'text' },
-    { field: 'risk_category', header: 'Risk', type: 'badge' },
+    // { field: 'risk_category', header: 'Risk', type: 'badge' },
     { field: 'priority', header: 'Priority', type: 'badge' },
     { field: 'due_date', header: 'Proposed Due Date', type: 'date_input', width: '160px' }
   ];
@@ -278,7 +278,52 @@ export class TaskSetsComponent implements OnInit {
   cameFromCirculars = signal<boolean>(false);
   cameFromTasks = signal<boolean>(false);
 
-  constructor(private api: ComplianceApiService, private messageService: MessageService, private confirmationService: ConfirmationService, private route: ActivatedRoute, private router: Router) { }
+  constructor(private api: ComplianceApiService, private messageService: MessageService, private confirmationService: ConfirmationService, private route: ActivatedRoute, private router: Router) {
+    effect(() => {
+      const reportingDate = this.newTaskSetReportingDate();
+      this.validateTaskDueDates(reportingDate);
+    });
+  }
+
+  validateTaskDueDates(reportingDate: Date | null): boolean {
+    if (!reportingDate) return true;
+    const repTime = new Date(reportingDate.getFullYear(), reportingDate.getMonth(), reportingDate.getDate()).getTime();
+    let hasViolation = false;
+    for (const t of this.targetTasks) {
+      if (t.due_date) {
+        const dueTime = new Date(t.due_date).getTime();
+        if (dueTime > repTime) {
+          hasViolation = true;
+          t.due_date = null;
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Validation Error',
+            detail: `Task "${t.description.substring(0, 30)}..." Proposed Due Date cannot be greater than Reporting Date (${this.formatDate(reportingDate)}). It has been cleared.`
+          });
+        }
+      }
+    }
+    return !hasViolation;
+  }
+
+  onTaskTableAction(event: any) {
+    if (event.name === 'due_date_change') {
+      const row = event.row;
+      const reportingDate = this.newTaskSetReportingDate();
+      if (reportingDate && row.due_date) {
+        const repTime = new Date(reportingDate.getFullYear(), reportingDate.getMonth(), reportingDate.getDate()).getTime();
+        const dueTime = new Date(row.due_date).getTime();
+        if (dueTime > repTime) {
+          row.due_date = null;
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Validation Error',
+            detail: `Proposed Due Date cannot be greater than Reporting Date (${this.formatDate(reportingDate)}). It has been cleared.`
+          });
+        }
+      }
+    }
+  }
 
   goBackToCirculars() {
     const queryParams: any = {};
@@ -385,6 +430,11 @@ export class TaskSetsComponent implements OnInit {
 
   }
 
+  getFrequencyKeyByLabel(label: string): string {
+    const entry = Object.entries(this.frequencyMap).find(([_, val]) => val === label);
+    return entry ? entry[0] : label;
+  }
+
   openFormDrawer(row: any) {
     this.isEditMode = true;
     this.selectedTaskSet = row;
@@ -394,7 +444,7 @@ export class TaskSetsComponent implements OnInit {
     this.newTaskSetDueDate.set(row.default_due_date ? new Date(row.default_due_date) : null);
     this.newTaskSetStartDate.set(row.start_date ? new Date(row.start_date) : null);
     this.newTaskSetEndDate.set(row.end_date ? new Date(row.end_date) : null);
-    this.newTaskSetFrequency.set(row.frequency || '');
+    this.newTaskSetFrequency.set(this.getFrequencyKeyByLabel(row.frequency || ''));
     this.newTaskSetReportingDate.set(row.reporting_date ? new Date(row.reporting_date) : null);
     this.selectedBranches = [];
     this.showBranchAssignment.set(true);
@@ -416,13 +466,13 @@ export class TaskSetsComponent implements OnInit {
       const mappedBranchIds = new Set((details.branches || []).map((b: any) => b.id));
 
       this.api.getApprovedTasks({ limit: 1000 }).subscribe(res => {
-        this.rawTasks.set(res.data);
-        this.targetTasks = res.data
-          .filter((t: any) => mappedIds.has(t.id))
-          .map((t: any) => ({
-            ...t,
-            due_date: dateMap.get(t.id) || null
-          }));
+        const mappedRawTasks = res.data.map((t: any) => ({
+          ...t,
+          due_date: dateMap.get(t.id) || null
+        }));
+        this.rawTasks.set(mappedRawTasks);
+
+        this.targetTasks = mappedRawTasks.filter((t: any) => mappedIds.has(t.id));
         this.selectedBranches = this.branches().filter((b: any) => mappedBranchIds.has(b.id));
         this.showFormDrawer.set(true);
       });
@@ -439,6 +489,11 @@ export class TaskSetsComponent implements OnInit {
 
   saveTaskSet() {
     if (!this.newTaskSetName()) return;
+
+    const reportingDate = this.newTaskSetReportingDate();
+    if (reportingDate && !this.validateTaskDueDates(reportingDate)) {
+      return;
+    }
 
     const payload = {
       name: this.newTaskSetName(),
