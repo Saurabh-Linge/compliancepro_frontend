@@ -1,0 +1,178 @@
+<p-drawer
+  [visible]="visible()"
+  (visibleChange)="visibleChange.emit($event)"
+  position="right"
+  [style]="{ width: '920px', maxWidth: '96vw' }"
+  [modal]="true"
+  [dismissible]="true"
+  [showCloseIcon]="false"
+  styleClass="bulk-upload-drawer"
+  appendTo="body"
+>
+  <ng-template pTemplate="header">
+    <div class="drawer-header-row">
+      <div class="drawer-title-wrap">
+        <span class="drawer-title-icon">
+          <i class="pi pi-upload"></i>
+        </span>
+        <div>
+          <div class="text-900 font-semibold text-xl">Bulk Upload Tasks</div>
+          <div class="text-600 text-sm mt-1">Upload tasks in bulk via a CSV file</div>
+        </div>
+      </div>
+      <button pButton pRipple type="button" icon="pi pi-times" class="p-button-text p-button-rounded" (click)="visibleChange.emit(false)"></button>
+    </div>
+  </ng-template>
+
+  <ng-template pTemplate="content">
+    @if (visible()) {
+      <div class="drawer-content-shell">
+        <section class="drawer-section">
+          <div class="section-heading">
+            <span class="section-kicker">Upload Configuration</span>
+            <span class="section-line"></span>
+          </div>
+
+          <div class="grid formgrid p-fluid drawer-form-grid">
+            <div class="field col-12">
+              <app-select-field
+                label="Select Target Circular"
+                [field]="circularId"
+                [options]="circulars()"
+                optionLabel="title"
+                optionValue="id"
+                filterBy="title"
+                [required]="true"
+                [virtualScroll]="true"
+                placeholder="Select Circular to associate tasks with">
+              </app-select-field>
+            </div>
+          </div>
+
+          <div class="surface-100 border-round p-3 mb-4 text-sm line-height-3 text-700 mt-2">
+            <div>• Upload only CSV files (.csv)</div>
+            <div>• Required columns: <strong>Task</strong> (description)</div>
+            <div>• Priority can be: <em>Critical, High, Medium, Low</em></div>
+          </div>
+
+          <div class="border-2 border-dashed border-300 border-round p-4 text-center mt-3 cursor-pointer" (click)="fileInput.click()">
+            <input
+              #fileInput
+              type="file"
+              accept=".csv"
+              hidden
+              (change)="onFileSelect($event)"
+            />
+            <i class="pi pi-file-excel text-500 text-3xl block mb-2"></i>
+            <button
+              pButton
+              type="button"
+              icon="pi pi-upload"
+              label="Choose CSV File"
+              class="p-button-outlined p-button-sm mb-2"
+            ></button>
+            @if (selectedFileName().length > 0) {
+              <div class="mt-2 text-sm font-semibold text-primary">
+                {{ selectedFileName() }}
+              </div>
+            } @else {
+              <div class="text-500 text-sm">Or drag and drop CSV file here</div>
+            }
+          </div>
+
+          <div class="flex justify-content-between align-items-center mt-4 gap-3 flex-wrap">
+            <button
+              pButton
+              type="button"
+              icon="pi pi-download"
+              label="Download Sample CSV"
+              class="p-button-outlined p-button-secondary"
+              (click)="downloadSample()"
+            ></button>
+
+            <p-button
+              icon="pi pi-shield"
+              label="Validate CSV"
+              [disabled]="!selectedFile() || !circularId() || validating()"
+              [loading]="validating()"
+              (click)="validateCsv()">
+            </p-button>
+          </div>
+        </section>
+
+        @if (previewRows().length > 0) {
+          <section class="drawer-section mt-3">
+            <div class="section-heading">
+              <span class="section-kicker">Validation Results</span>
+              <span class="section-line"></span>
+            </div>
+
+            @if (hasErrors()) {
+              <div class="surface-100 border-left-3 border-red-500 p-3 mb-3 text-sm border-round-right">
+                <div class="font-semibold text-red-600 mb-2">Validation Errors Found ({{ errorCount() }} errors)</div>
+                <div class="text-700">Please fix the issues highlighted in red before uploading.</div>
+              </div>
+            } @else {
+              <div class="surface-100 border-left-3 border-green-500 p-3 mb-3 text-sm border-round-right">
+                <div class="font-semibold text-green-700 mb-1">CSV validated successfully!</div>
+                <div class="text-700">
+                  {{ validRows().length }} tasks are ready to upload.
+                </div>
+              </div>
+            }
+
+            <p-table
+              [value]="previewRows()"
+              styleClass="p-datatable-sm"
+              [scrollable]="true"
+              scrollHeight="350px"
+            >
+              <ng-template pTemplate="header">
+                <tr>
+                  <th style="width: 60px">Row</th>
+                  <th>Header</th>
+                  <th>Task Description</th>
+                  <th>Priority</th>
+                  <th style="width: 100px">Status</th>
+                  <th>Message</th>
+                </tr>
+              </ng-template>
+
+              <ng-template pTemplate="body" let-row>
+                <tr>
+                  <td>{{ row.rowNumber }}</td>
+                  <td>{{ row.headerName || '-' }}</td>
+                  <td>{{ row.description || '-' }}</td>
+                  <td>{{ row.priority || '-' }}</td>
+                  <td>
+                    <span
+                      [class]="
+                        row.status === 'VALID'
+                          ? 'text-green-600 font-semibold'
+                          : 'text-red-500 font-semibold'
+                      "
+                    >
+                      {{ row.status }}
+                    </span>
+                  </td>
+                  <td [class.text-red-500]="row.status === 'ERROR'">{{ row.message }}</td>
+                </tr>
+              </ng-template>
+            </p-table>
+
+            <div class="flex justify-content-end mt-4 mb-2">
+              <p-button
+                label="Upload Tasks"
+                icon="pi pi-check"
+                severity="success"
+                [disabled]="hasErrors() || !validRows().length || uploading()"
+                [loading]="uploading()"
+                (click)="uploadRows()">
+              </p-button>
+            </div>
+          </section>
+        }
+      </div>
+    }
+  </ng-template>
+</p-drawer>
