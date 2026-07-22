@@ -167,7 +167,7 @@
 .task-description {
   font-size: 0.92rem; 
   font-weight: 600;
-  color: #0f172a; // slate-900
+  color: #0f172a; /* slate-900 */
   margin: 0; 
   line-height: 1.5;
 }

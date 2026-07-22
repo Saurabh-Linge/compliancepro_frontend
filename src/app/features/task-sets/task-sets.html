@@ -22,6 +22,9 @@
           <i class="pi pi-file-pdf"></i><span>Download PDF</span>
         </a>
       }
+      @if (cameFromTasks()) {
+        <button pButton pRipple type="button" icon="pi pi-arrow-left" label="Back to Tasks" class="p-button-outlined p-button-primary p-button-sm" (click)="goBackToTasks()"></button>
+      }
       <button pButton pRipple type="button" icon="pi pi-arrow-left" label="Back to Circulars" class="p-button-outlined p-button-secondary p-button-sm" (click)="goBackToCirculars()"></button>
     </div>
   </div>

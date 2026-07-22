@@ -8,7 +8,7 @@
         <div><div class="review-header-label">Authority</div><div class="review-header-value">{{ assignmentMeta()?.authority_name || '—' }}</div></div>
         <div>
           <div class="review-header-label">Status</div>
-          <p-tag value="REVIEW PENDING" severity="warn" [rounded]="true" />
+          <p-tag [value]="getFormattedStatus()" [severity]="getStatusSeverity()" [rounded]="true" />
         </div>
       </div>
       <button pButton type="button" icon="pi pi-arrow-left" label="Back" severity="secondary" outlined size="small" class="p-button-sm no-print" (click)="goBack()"></button>
@@ -64,7 +64,7 @@
   </div>
 
   <!-- Bulk Actions Bar -->
-  <div class="bulk-actions-bar">
+  <div class="bulk-actions-bar" *ngIf="isReviewActive()">
     <span class="bulk-label">Quick Actions:</span>
     <p-button label="Mark All Approved" icon="pi pi-check-circle"
               severity="success" [outlined]="true" size="small"
@@ -145,13 +145,13 @@
                         [severity]="t.review_status === 'APPROVED' ? 'success' : 'secondary'"
                         [outlined]="t.review_status !== 'APPROVED'"
                         [loading]="savingTaskId() === t.assignment_task_id && pendingStatus === 'APPROVED'"
-                        [disabled]="savingTaskId() === t.assignment_task_id"
+                        [disabled]="savingTaskId() === t.assignment_task_id || !isReviewActive()"
                         (click)="setTaskReviewStatus(t, 'APPROVED')" />
               <p-button label="Needs Redo" icon="pi pi-refresh" size="small"
                         [severity]="t.review_status === 'NEEDS_REDO' ? 'warn' : 'secondary'"
                         [outlined]="t.review_status !== 'NEEDS_REDO'"
                         [loading]="savingTaskId() === t.assignment_task_id && pendingStatus === 'NEEDS_REDO'"
-                        [disabled]="savingTaskId() === t.assignment_task_id"
+                        [disabled]="savingTaskId() === t.assignment_task_id || !isReviewActive()"
                         (click)="setTaskReviewStatus(t, 'NEEDS_REDO')" />
             </div>
 
@@ -162,6 +162,7 @@
                         placeholder="Explain what needs to be redone..."
                         class="co-remark-input"
                         rows="2"
+                        [disabled]="!isReviewActive()"
                         (blur)="saveCoRemark(t)"></textarea>
             </div>
           </div>
@@ -172,7 +173,7 @@
   </div>
 
   <!-- Final Review Decision Panel -->
-  <div class="decision-panel">
+  <div class="decision-panel" *ngIf="isReviewActive()">
     <div class="decision-panel-header">
       <i class="pi pi-shield" style="color: #4f46e5; font-size: 1.2rem;"></i>
       CCO Final Decision

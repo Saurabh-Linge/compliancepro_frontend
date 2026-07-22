@@ -135,7 +135,7 @@
         </div>
         <p class="text-600 text-xs mb-2">Upload a revised version of this circular to identify compliance changes.</p>
         
-        <div class="flex flex-column gap-2">
+        <div class="flex flex-column gap-2" style="position: relative;">
           
           <!-- Search Input -->
           <div class="flex flex-column gap-1">
@@ -145,7 +145,8 @@
                 type="text"
                 pInputText
                 [ngModel]="searchQuery()"
-                (ngModelChange)="searchQuery.set($event); searchOtherCirculars()"
+                (ngModelChange)="onSearchQueryChange($event)"
+                (focus)="showDropdown.set(true)"
                 placeholder="Search other circulars..."
                 class="w-full text-xs p-2 border-1 border-round surface-border text-color bg-surface-card"
                 style="padding-left: 1.6rem !important; border-style: solid; outline: none;"
@@ -154,30 +155,77 @@
             </div>
           </div>
 
-          <div class="flex flex-column gap-1 mb-1">
-            <select
-              [ngModel]="selectedTargetId()"
-              (ngModelChange)="selectedTargetId.set($event)"
-              class="w-full text-xs p-2 border-1 border-round surface-border text-color bg-surface-card"
-              style="border-style: solid; outline: none; max-width: 100%; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;"
-              [disabled]="isComparing() || isTyping()"
+          <!-- Selection dropdown trigger (looks like p-dropdown) -->
+          <div class="flex flex-column gap-1 mb-1" style="position: relative;">
+            <div 
+              class="w-full text-xs p-2 border-1 border-round surface-border text-color bg-surface-card flex align-items-center justify-content-between cursor-pointer"
+              style="border-style: solid; min-height: 2.25rem; user-select: none;"
+              (click)="showDropdown.set(!showDropdown())"
             >
-              @if (searchQuery().trim()) {
-                <option value="">-- Search Results ({{ searchResults().length }}) --</option>
-                @for (c of searchResults(); track c.id) {
-                  <option [value]="c.id">
-                    {{ c.reference_no || 'No Ref' }} - {{ c.title }}
-                  </option>
+              <span class="text-overflow-ellipsis overflow-hidden white-space-nowrap pr-2" style="max-width: 200px;">
+                @if (selectedTargetCircular()) {
+                  <span class="font-bold text-primary mr-1">{{ selectedTargetCircular().reference_no || 'No Ref' }}</span>
+                  <span class="text-600">{{ selectedTargetCircular().title }}</span>
+                } @else {
+                  <span class="text-500">-- Select Circular to Compare --</span>
                 }
-              } @else {
-                <option value="">-- Compare Stored Revision --</option>
-                @for (lc of linkedCirculars(); track lc.id) {
-                  <option [value]="lc.id">
-                    {{ lc.reference_no || 'No Ref' }} - {{ lc.title }}
-                  </option>
+              </span>
+              <div class="flex align-items-center gap-1">
+                @if (selectedTargetCircular()) {
+                  <i 
+                    class="pi pi-times text-400 hover:text-700 cursor-pointer text-xs mr-1"
+                    (click)="clearSelectedTarget(); $event.stopPropagation()"
+                  ></i>
                 }
-              }
-            </select>
+                <i [class]="showDropdown() ? 'pi pi-chevron-up text-500 text-xs' : 'pi pi-chevron-down text-500 text-xs'"></i>
+              </div>
+            </div>
+
+            <!-- Autocomplete / Selection Dropdown list overlay -->
+            @if (showDropdown() && (searchQuery().trim() || linkedCirculars().length > 0)) {
+              <div class="search-dropdown-overlay">
+                @if (searchQuery().trim()) {
+                  <div class="dropdown-section-header">
+                    Search Results ({{ searchResults().length }})
+                  </div>
+                  @if (isSearching()) {
+                    <div class="p-3 text-xs text-500 text-center"><i class="pi pi-spin pi-spinner mr-1"></i> Searching...</div>
+                  } @else if (searchResults().length === 0) {
+                    <div class="p-3 text-xs text-500 text-center">No results found</div>
+                  } @else {
+                    @for (c of searchResults(); track c.id) {
+                      <div 
+                        class="dropdown-item"
+                        [class.active-item]="isTargetSelected(c.id)"
+                        (click)="selectCircular(c)"
+                      >
+                        <span class="font-bold text-primary mr-1" style="display: block; font-size: 0.72rem;">{{ c.reference_no || 'No Ref' }}</span>
+                        <span style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;">{{ c.title }}</span>
+                      </div>
+                    }
+                  }
+                } @else {
+                  <div class="dropdown-section-header">
+                    Suggested Revisions ({{ linkedCirculars().length }})
+                  </div>
+                  @if (linkedCirculars().length === 0) {
+                    <div class="p-3 text-xs text-500 text-center">No suggested revisions</div>
+                  } @else {
+                    @for (lc of linkedCirculars(); track lc.id) {
+                      <div 
+                        class="dropdown-item"
+                        [class.active-item]="isTargetSelected(lc.id)"
+                        (click)="selectCircular(lc)"
+                      >
+                        <span class="font-bold text-primary mr-1" style="display: block; font-size: 0.72rem;">{{ lc.reference_no || 'No Ref' }}</span>
+                        <span style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;">{{ lc.title }}</span>
+                      </div>
+                    }
+                  }
+                }
+              </div>
+            }
+
             <button
               pButton
               pRipple
@@ -185,7 +233,7 @@
               icon="pi pi-sync"
               label="Compare Stored"
               class="p-button-primary p-button-sm w-full mt-1"
-              (click)="compareStored(selectedTargetId()); selectedTargetId.set('')"
+              (click)="compareStored(selectedTargetId())"
               [disabled]="isComparing() || isTyping() || !selectedTargetId()"
             ></button>
           </div>

@@ -80,7 +80,10 @@ import { TooltipModule } from 'primeng/tooltip';
                   }" style="font-size: 0.8rem; padding: 0.15rem 0.5rem;">
               {{ assignmentStatus() }}
             </span>
-            <span class="text-xs font-bold text-indigo-600">{{ completedCount() }}/{{ tasks().length }} Done</span>
+            <span class="text-xs font-bold text-indigo-600">
+              {{ completedCount() }}/{{ tasks().length }}
+              {{ (assignmentStatus() === 'Pending_Timeline' || assignmentStatus() === 'Timeline_Review') ? 'Dates Set' : 'Done' }}
+            </span>
           </div>
           <div class="w-24 bg-gray-100 rounded-full h-1 overflow-hidden mt-1" style="width: 5rem; margin-top: 0.25rem;">
             <div class="bg-indigo-600 h-1 rounded-full transition-all duration-300" [style.width.%]="progressPercentage()"></div>
@@ -150,7 +153,7 @@ import { TooltipModule } from 'primeng/tooltip';
             <!-- Right Column: Answer Form or Timeline Proposing -->
             <div class="answer-form" *ngIf="assignmentStatus() === 'Pending_Timeline' || assignmentStatus() === 'Timeline_Review'; else complianceForm" style="display: flex; flex-direction: column; align-items: stretch; justify-content: center; width: 100%;">
               <div style="display: flex; flex-direction: column; gap: 0.35rem; width: 100%; min-width: 250px;">
-                <label class="control-label font-bold text-gray-700" style="font-size: 0.75rem;">Suggested Task Due Date</label>
+                <label class="control-label font-bold text-gray-700" style="font-size: 0.75rem;">{{ getTimelineLabel() }}</label>
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                   <input type="date" 
                          [(ngModel)]="t.temp_proposed_due_date" 
@@ -164,6 +167,16 @@ import { TooltipModule } from 'primeng/tooltip';
                 <div class="text-xs text-gray-400 mt-1" *ngIf="t.due_date">
                   Default Task Due Date: {{ t.due_date | date:'dd-MM-yyyy' }}
                 </div>
+                <p-button *ngIf="canEditTimeline()"
+                          label="Save Date"
+                          [loading]="!!rowSavingMap()[t.assignment_task_id]"
+                          loadingIcon="pi pi-spinner pi-spin"
+                          icon="pi pi-save"
+                          iconPos="left"
+                          [disabled]="!t.temp_proposed_due_date"
+                          (click)="saveSingleTaskTimeline(t)"
+                          styleClass="w-full save-row-btn mt-2"
+                          size="small" />
               </div>
             </div>
 
@@ -269,19 +282,8 @@ import { TooltipModule } from 'primeng/tooltip';
         (click)="submitAllCompliance()" />
     </div>
 
-    <!-- Submit Timeline for Approval (Branch user planning) -->
-    <div class="flex justify-content-center mt-4 mb-5" *ngIf="assignmentStatus() === 'Pending_Timeline' && canEditTimeline()" style="display: flex; justify-content: center;">
-      <p-button
-        label="Submit Timeline for Approval"
-        icon="pi pi-send"
-        severity="primary"
-        [loading]="submitting"
-        loadingIcon="pi pi-spinner pi-spin"
-        (click)="submitCustomTimeline()" />
-    </div>
-
     <!-- Approve Timeline with changes (CCO/CO reviewing) -->
-    <div class="flex justify-content-center mt-4 mb-5" *ngIf="assignmentStatus() === 'Timeline_Review' && canEditTimeline()" style="display: flex; justify-content: center;">
+    <div class="flex justify-content-center mt-4 mb-5" *ngIf="canApproveTimeline()" style="display: flex; justify-content: center;">
       <p-button
         label="Approve Timeline"
         icon="pi pi-check"
@@ -369,7 +371,13 @@ export class AssignmentDetailsComponent implements OnInit {
     });
   }
 
-  completedCount = computed(() => this.tasks().filter(t => t.status === 'COMPLETED').length);
+  completedCount = computed(() => {
+    const status = this.assignmentStatus();
+    if (status === 'Pending_Timeline' || status === 'Timeline_Review') {
+      return this.tasks().filter(t => t.proposed_due_date !== null && t.proposed_due_date !== undefined && t.proposed_due_date !== '').length;
+    }
+    return this.tasks().filter(t => t.compliance_status === 'COMPLIED' || t.compliance_status === 'NOT_COMPLIED').length;
+  });
   progressPercentage = computed(() => this.tasks().length ? Math.round((this.completedCount() / this.tasks().length) * 100) : 0);
 
   canEditAssignment(): boolean {
@@ -386,7 +394,7 @@ export class AssignmentDetailsComponent implements OnInit {
   canEditTimeline(): boolean {
     const role = this.userRole();
     const status = this.assignmentStatus();
-    if (status === 'Pending_Timeline' && (role === 'branch' || role === 'branch_user')) {
+    if ((status === 'Pending_Timeline' || status === 'Timeline_Review') && (role === 'branch' || role === 'branch_user')) {
       return true;
     }
     if (status === 'Timeline_Review' && (role === 'cco' || role === 'co' || role === 'admin')) {
@@ -395,30 +403,41 @@ export class AssignmentDetailsComponent implements OnInit {
     return false;
   }
 
-  submitCustomTimeline() {
-    if (!this.assignmentId) return;
+  canApproveTimeline(): boolean {
+    const role = this.userRole();
+    const status = this.assignmentStatus();
+    return status === 'Timeline_Review' && (role === 'cco' || role === 'co' || role === 'admin');
+  }
 
-    const dateStr = this.tempAssignmentTimeline;
-    if (!dateStr) {
-      this.notification.warn('Assignment due date is required.');
-      return;
+  getTimelineLabel(): string {
+    const role = this.userRole();
+    const status = this.assignmentStatus();
+    if (status === 'Pending_Timeline') {
+      return 'Propose Task Due Date';
     }
+    if (status === 'Timeline_Review') {
+      if (role === 'cco' || role === 'co' || role === 'admin') {
+        return 'Branch Proposed Due Date';
+      }
+      return 'Proposed Due Date (Awaiting Approval)';
+    }
+    return 'Suggested Task Due Date';
+  }
 
-    const taskTimelines = this.tasks().map(t => ({
-      assignment_task_id: t.assignment_task_id,
-      proposed_due_date: t.temp_proposed_due_date || dateStr
-    }));
+  saveSingleTaskTimeline(task: any) {
+    if (!this.assignmentId || !task.temp_proposed_due_date) return;
 
-    this.submitting = true;
-    this.api.proposeCustomTimeline(this.assignmentId, dateStr, taskTimelines).subscribe({
+    this.rowSavingMap.update(map => ({ ...map, [task.assignment_task_id]: true }));
+
+    this.api.proposeSingleTaskTimeline(this.assignmentId, task.assignment_task_id, task.temp_proposed_due_date).subscribe({
       next: () => {
-        this.submitting = false;
-        this.notification.success('Timeline successfully proposed and submitted for approval.');
+        this.rowSavingMap.update(map => ({ ...map, [task.assignment_task_id]: false }));
+        this.notification.success('Task due date updated successfully.');
         this.loadTasks();
       },
       error: (err) => {
-        this.submitting = false;
-        this.notification.error('Failed to submit timeline proposal: ' + (err.message || err.statusText));
+        this.rowSavingMap.update(map => ({ ...map, [task.assignment_task_id]: false }));
+        this.notification.error('Failed to update task due date: ' + (err.message || err.statusText));
       }
     });
   }

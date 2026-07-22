@@ -22,7 +22,7 @@ export interface TableColumn {
   /** Header label */
   header: string;
   /** Data type for formatting */
-  type?: 'text' | 'number' | 'date' | 'boolean' | 'currency' | 'status' | 'status_inv' | 'badge' | 'action' | 'boolean_action' | 'boolean_toggle';
+  type?: 'text' | 'number' | 'date' | 'boolean' | 'currency' | 'status' | 'status_inv' | 'badge' | 'action' | 'boolean_action' | 'boolean_toggle' | 'date_input';
   /** Action icon (for action type only) */
   actionIcon?: string;
   /** Action name (default is field name) */

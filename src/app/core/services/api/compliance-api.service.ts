@@ -266,8 +266,8 @@ export class ComplianceApiService {
     return this.http.patch<any>(`${this.baseUrl}/task-sets/${id}`, data);
   }
 
-  updateTaskSetMapping(setId: number, taskIds: number[]) {
-    return this.http.post<any>(`${this.baseUrl}/task-sets/${setId}/tasks`, { taskIds });
+  updateTaskSetMapping(setId: number, taskIds: number[], taskTimelines?: { task_id: number; due_date: string | null }[]) {
+    return this.http.post<any>(`${this.baseUrl}/task-sets/${setId}/tasks`, { taskIds, taskTimelines });
   }
 
   reopenTaskSet(setId: number) {
@@ -293,6 +293,10 @@ export class ComplianceApiService {
 
   proposeTimeline(id: number, date: string) {
     return this.http.patch<any>(`${this.baseUrl}/assignments/${id}/propose-timeline`, { date });
+  }
+
+  proposeSingleTaskTimeline(assignmentId: number, assignmentTaskId: number, proposedDueDate: string) {
+    return this.http.patch<any>(`${this.baseUrl}/assignments/${assignmentId}/tasks/${assignmentTaskId}/propose-timeline`, { proposed_due_date: proposedDueDate });
   }
 
   proposeCustomTimeline(id: number, date: string, taskTimelines: { assignment_task_id: number; proposed_due_date: string }[]) {

@@ -182,7 +182,7 @@ export class CircularsComponent implements OnInit, OnDestroy {
   tableColumns: TableColumn[] = [
     { field: 'reference_no', header: 'Reference No.', width: '120px' },
     { field: 'authority_name', header: 'Authority', width: '120px' },
-    { field: 'title', header: 'Circular Title', width: '35%' },
+    { field: 'title', header: 'Circular Title', width: '380px' },
     { field: 'published_date', header: 'Circular Date', type: 'date', width: '100px' },
     { field: 'circular_nature', header: 'Nature', type: 'badge', width: '160px' },
     { field: 'task_count', header: 'Tasks', type: 'number', width: '75px', align: 'center', headerAlign: 'center', sortable: true },

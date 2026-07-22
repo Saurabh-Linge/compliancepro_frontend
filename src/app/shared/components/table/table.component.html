@@ -118,12 +118,12 @@
 
         <tr>
           <!-- Selection Checkbox Header -->
-          <th *ngIf="selectable()" style="width: 3rem; text-align: center">
+          <th *ngIf="selectable()" style="width: 3rem; min-width: 3rem; text-align: center">
             <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
           </th>
 
           <!-- Expansion Toggler Header -->
-          <th *ngIf="rowExpansionTemplate" style="width: 3rem"></th>
+          <th *ngIf="rowExpansionTemplate" style="width: 3rem; min-width: 3rem"></th>
 
           <!-- Actions Column Header -->
           @if (actions().length) {
@@ -141,6 +141,7 @@
             *ngFor="let col of actionColumns()"
             [pSortableColumn]="col.sortable !== false ? col.sortField || col.field : undefined"
             [style.width]="col.width || 'auto'"
+            [style.min-width]="col.width || 'auto'"
             [style.text-align]="getAlignment(col, true)"
             [class]="col.cssClass || ''"
           >
@@ -174,7 +175,7 @@
           </th>
 
           <!-- Serial Number Header -->
-          <th *ngIf="showSerialNumber()" style="width: 4rem; text-align: center">Sr No</th>
+          <th *ngIf="showSerialNumber()" style="width: 4rem; min-width: 4rem; text-align: center">Sr No</th>
 
           <!-- Data Columns -->
           <th
@@ -254,12 +255,12 @@
       >
         <tr [style.height.px]="virtualScroll() ? virtualScrollItemSize() : 'auto'" [class]="getRowClass(rowData)">
           <!-- Selection Checkbox Cell -->
-          <td *ngIf="selectable()" style="text-align: center">
+          <td *ngIf="selectable()" style="width: 3rem; min-width: 3rem; text-align: center">
             <p-tableCheckbox [value]="rowData"></p-tableCheckbox>
           </td>
 
           <!-- Expansion Toggler Cell -->
-          <td *ngIf="rowExpansionTemplate">
+          <td *ngIf="rowExpansionTemplate" style="width: 3rem; min-width: 3rem">
             <button
               type="button"
               pButton
@@ -329,6 +330,7 @@
             <td
               *ngFor="let col of actionColumns()"
               [style.width]="col.width || 'auto'"
+              [style.min-width]="col.width || 'auto'"
               [style.text-align]="getAlignment(col, false)"
             >
               <!-- ✅ CUSTOM PRINT COLUMN -->
@@ -367,7 +369,7 @@
             </td>
 
             <!-- Serial Number Cell -->
-            <td *ngIf="showSerialNumber()" style="text-align: center">{{ rowIndex + 1 }}</td>
+            <td *ngIf="showSerialNumber()" style="width: 4rem; min-width: 4rem; text-align: center">{{ rowIndex + 1 }}</td>
 
             <td
               *ngFor="let col of dataColumns()"
@@ -430,6 +432,21 @@
 
 
                 
+                <!-- Date Input Editor Type -->
+                <ng-container *ngSwitchCase="'date_input'">
+                  <div class="flex justify-content-center align-items-center w-full">
+                    <input
+                      type="date"
+                      [(ngModel)]="rowData[col.field]"
+                      [ngModelOptions]="{standalone: true}"
+                      (change)="onActionClick.emit({ name: col.actionName || col.field + '_change', row: rowData })"
+                      (click)="$event.stopPropagation()"
+                      class="p-1 border rounded text-xs"
+                      style="width: 130px; border: 1px solid var(--surface-border); border-radius: 4px;"
+                    />
+                  </div>
+                </ng-container>
+
                 <!-- Default Text -->
                 <ng-container *ngSwitchDefault>
                   {{ formatValue(rowData[col.field], col) }}

@@ -34,6 +34,37 @@ export class CcoReviewDetailsComponent implements OnInit {
   needsRedoCount = computed(() => this.tasks().filter(t => t.review_status === "NEEDS_REDO").length);
   unreviewedCount = computed(() => this.tasks().filter(t => !t.review_status).length);
 
+  isReviewActive(): boolean {
+    return this.assignmentMeta()?.assignment_status === 'ESCALATED_TO_CCO';
+  }
+
+  getFormattedStatus(): string {
+    const status = this.assignmentMeta()?.assignment_status;
+    if (!status) return '—';
+    return status.replace(/_/g, ' ').toUpperCase();
+  }
+
+  getStatusSeverity(): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {
+    const status = this.assignmentMeta()?.assignment_status;
+    switch (status) {
+      case 'Pending_Timeline':
+      case 'Timeline_Review':
+        return 'info';
+      case 'In_Progress':
+      case 'PENDING_RECOMPLIANCE':
+        return 'secondary';
+      case 'REVIEW_PENDING':
+      case 'ESCALATED_TO_CCO':
+        return 'warn';
+      case 'COMPLETED':
+        return 'success';
+      case 'REJECTED':
+        return 'danger';
+      default:
+        return 'secondary';
+    }
+  }
+
   // Filtered view for decision-summary and header chip clicks
   filteredTaskGroups = computed(() => {
     const filter = this.activeFilter();

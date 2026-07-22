@@ -96,9 +96,9 @@ export class CoReviewComponent implements OnInit {
       command: (row: any) => this.router.navigate(["/assignments", row.id]) 
     },
     { 
-      label: "Review Evidence", 
+      label: "View Tasks", 
       icon: "pi pi-search", 
-      visible: (row: any) => row.status !== 'Timeline_Review',
+      visible: (row: any) => ['In_Progress', 'REVIEW_PENDING', 'COMPLETED', 'REJECTED'].includes(row.status),
       command: (row: any) => this.router.navigate(["/co-review", row.id]) 
     }
   ];

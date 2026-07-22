@@ -371,7 +371,7 @@ import { MessageService } from 'primeng/api';
                   </app-select-field>
                 </div>
 
-                <div class="field col-12 md:col-6">
+                <div class="field col-12">
                   <app-select-field
                     label="Priority"
                     [field]="manualTaskPriority"
@@ -380,53 +380,6 @@ import { MessageService } from 'primeng/api';
                     optionValue="value"
                     placeholder="Select Priority"
                     [virtualScroll]="false">
-                  </app-select-field>
-                </div>
-
-                <div class="field col-12 md:col-6">
-                  <app-select-field
-                    label="Risk Category"
-                    [field]="manualTaskRiskCategory"
-                    [options]="riskCategoryOptions"
-                    optionLabel="label"
-                    optionValue="value"
-                    placeholder="Select Risk Category"
-                    [virtualScroll]="false">
-                  </app-select-field>
-                </div>
-
-                <div class="field col-12 md:col-6">
-                  <app-select-field
-                    label="Business Risk"
-                    [field]="manualTaskBusinessRisk"
-                    [options]="businessRiskOptions"
-                    optionLabel="label"
-                    optionValue="value"
-                    placeholder="Select Business Risk"
-                    [virtualScroll]="false">
-                  </app-select-field>
-                </div>
-
-                <div class="field col-12 md:col-6">
-                  <app-select-field
-                    label="Control Risk"
-                    [field]="manualTaskControlRisk"
-                    [options]="controlRiskOptions"
-                    optionLabel="label"
-                    optionValue="value"
-                    placeholder="Select Control Risk"
-                    [virtualScroll]="false">
-                  </app-select-field>
-                </div>
-
-                <div class="field col-12">
-                  <app-select-field
-                    label="Broader Area of Audit Non-Compliance"
-                    [field]="manualTaskAuditAreaId"
-                    [options]="auditAreas()"
-                    optionLabel="name"
-                    optionValue="id"
-                    placeholder="Please select broader area of audit non-compliance">
                   </app-select-field>
                 </div>
 
@@ -970,7 +923,7 @@ export class TasksComponent implements OnInit {
   }
 
   goToTaskSets() {
-    const queryParams: any = {};
+    const queryParams: any = { came_from_tasks: true };
     if (this.selectedCircularId) {
       queryParams.circular_id = this.selectedCircularId;
     }

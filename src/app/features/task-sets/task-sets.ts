@@ -265,7 +265,8 @@ export class TaskSetsComponent implements OnInit {
   taskColumns: TableColumn[] = [
     { field: 'description', header: 'Description', type: 'text' },
     { field: 'risk_category', header: 'Risk', type: 'badge' },
-    { field: 'priority', header: 'Priority', type: 'badge' }
+    { field: 'priority', header: 'Priority', type: 'badge' },
+    { field: 'due_date', header: 'Proposed Due Date', type: 'date_input', width: '160px' }
   ];
 
   // Assigning
@@ -275,6 +276,7 @@ export class TaskSetsComponent implements OnInit {
   parentPage: number | null = null;
   parentLimit: number | null = null;
   cameFromCirculars = signal<boolean>(false);
+  cameFromTasks = signal<boolean>(false);
 
   constructor(private api: ComplianceApiService, private messageService: MessageService, private confirmationService: ConfirmationService, private route: ActivatedRoute, private router: Router) { }
 
@@ -291,6 +293,21 @@ export class TaskSetsComponent implements OnInit {
       queryParams.limit = this.parentLimit;
     }
     this.router.navigate(['/circulars'], { queryParams });
+  }
+
+  goBackToTasks() {
+    const queryParams: any = {};
+    const circularId = this.selectedCircularFilter();
+    if (circularId) {
+      queryParams.circular_id = circularId;
+    }
+    if (this.parentPage) {
+      queryParams.parent_page = this.parentPage;
+    }
+    if (this.parentLimit) {
+      queryParams.parent_limit = this.parentLimit;
+    }
+    this.router.navigate(['/tasks'], { queryParams });
   }
 
   ngOnInit() {
@@ -320,6 +337,10 @@ export class TaskSetsComponent implements OnInit {
     const parentLimit = this.route.snapshot.queryParamMap.get('parent_limit');
     if (parentLimit) {
       this.parentLimit = +parentLimit;
+    }
+    const cameFromTasks = this.route.snapshot.queryParamMap.get('came_from_tasks');
+    if (cameFromTasks === 'true') {
+      this.cameFromTasks.set(true);
     }
   }
 
@@ -385,12 +406,23 @@ export class TaskSetsComponent implements OnInit {
 
 
     this.api.getTaskSet(row.id).subscribe(details => {
+      const dateMap = new Map<number, string | null>();
+      (details.tasks || []).forEach((t: any) => {
+        const d = t.due_date ? t.due_date.split('T')[0] : null;
+        dateMap.set(t.id, d);
+      });
+
       const mappedIds = new Set((details.tasks || []).map((t: any) => t.id));
       const mappedBranchIds = new Set((details.branches || []).map((b: any) => b.id));
 
       this.api.getApprovedTasks({ limit: 1000 }).subscribe(res => {
         this.rawTasks.set(res.data);
-        this.targetTasks = res.data.filter((t: any) => mappedIds.has(t.id));
+        this.targetTasks = res.data
+          .filter((t: any) => mappedIds.has(t.id))
+          .map((t: any) => ({
+            ...t,
+            due_date: dateMap.get(t.id) || null
+          }));
         this.selectedBranches = this.branches().filter((b: any) => mappedBranchIds.has(b.id));
         this.showFormDrawer.set(true);
       });
@@ -422,8 +454,12 @@ export class TaskSetsComponent implements OnInit {
       // Map tasks
       const taskIds = this.targetTasks.map(t => t.id);
       const branchIds = this.selectedBranches.map(b => b.id);
+      const taskTimelines = this.targetTasks.map(t => ({
+        task_id: t.id,
+        due_date: t.due_date ? t.due_date : null
+      }));
 
-      this.api.updateTaskSetMapping(setId, taskIds).subscribe(() => {
+      this.api.updateTaskSetMapping(setId, taskIds, taskTimelines).subscribe(() => {
         this.api.updateTaskSetBranches(setId, branchIds).subscribe(() => {
           this.showFormDrawer.set(false);
           this.loadData();

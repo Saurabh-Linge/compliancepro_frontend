@@ -7,6 +7,7 @@ import {
   ElementRef,
   ViewChild,
   AfterViewChecked,
+  HostListener,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -91,10 +92,13 @@ export class CircularChatComponent implements OnInit, OnDestroy, AfterViewChecke
   isComparing = signal<boolean>(false);
   linkedCirculars = signal<any[]>([]);
   selectedTargetId = signal<string>('');
+  selectedTargetCircular = signal<any | null>(null);
+  showDropdown = signal<boolean>(false);
 
   searchQuery = signal<string>('');
   searchResults = signal<any[]>([]);
   isSearching = signal<boolean>(false);
+  private searchTimeout: any = null;
 
   readonly suggestedPrompts = SUGGESTED_PROMPTS;
 
@@ -321,6 +325,42 @@ export class CircularChatComponent implements OnInit, OnDestroy, AfterViewChecke
     this.selectedRevisedFile.set(null);
   }
 
+  onSearchQueryChange(value: string): void {
+    this.searchQuery.set(value);
+    this.showDropdown.set(true);
+
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+    }
+
+    this.searchTimeout = setTimeout(() => {
+      this.searchOtherCirculars();
+    }, 300);
+  }
+
+  selectCircular(c: any): void {
+    this.selectedTargetCircular.set(c);
+    this.selectedTargetId.set(String(c.id));
+    this.showDropdown.set(false);
+  }
+
+  clearSelectedTarget(): void {
+    this.selectedTargetCircular.set(null);
+    this.selectedTargetId.set('');
+  }
+
+  isTargetSelected(id: number): boolean {
+    return this.selectedTargetId() === String(id);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const el = event.target as HTMLElement;
+    if (!el.closest('.comparator-card')) {
+      this.showDropdown.set(false);
+    }
+  }
+
   searchOtherCirculars(): void {
     const query = this.searchQuery().trim();
     if (!query) {
@@ -392,6 +432,8 @@ export class CircularChatComponent implements OnInit, OnDestroy, AfterViewChecke
             },
           ]);
           this.shouldScrollToBottom = true;
+          this.clearSelectedTarget();
+          this.searchQuery.set('');
         },
         error: (err) => {
           const elapsed = Math.floor((Date.now() - startTime) / 1000);
