@@ -57,7 +57,7 @@ export class AppMenu implements OnInit {
     } else if (userRole === 'co') {
       // CO Review Queue
       complianceItems.push({ label: 'CO Review Queue', icon: 'pi pi-fw pi-check-circle', routerLink: ['/co-review'] });
-    } else if (['branch', 'branch_user'].includes(userRole)) {
+    } else if (['branch', 'branch_user', 'department'].includes(userRole)) {
       complianceItems.push({ label: 'My Assignments', icon: 'pi pi-fw pi-briefcase', routerLink: ['/assignments'] });
     }
 

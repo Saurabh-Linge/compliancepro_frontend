@@ -165,7 +165,7 @@ export class AssignmentsComponent implements OnInit {
   }
 
   get isBranchUser(): boolean {
-    return this.userRole === 'BRANCH' || this.userRole === 'BRANCH_USER';
+    return this.userRole === 'BRANCH' || this.userRole === 'BRANCH_USER' || this.userRole === 'DEPARTMENT';
   }
 
   get isReviewerUser(): boolean {
