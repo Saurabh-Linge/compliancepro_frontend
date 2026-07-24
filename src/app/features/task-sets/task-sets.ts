@@ -171,19 +171,19 @@ export class TaskSetsComponent implements OnInit {
       icon: 'pi pi-pencil',
       command: (row) => this.openFormDrawer(row)
     },
-    {
-      name: 'generate',
-      label: 'Auto-Generate Assignments',
-      icon: 'pi pi-cog',
-      command: (row) => this.triggerAssignmentGeneration(row),
-      styleClass: 'p-button-success'
-    },
-    {
-      label: 'Reopen For Recompliance',
-      icon: 'pi pi-refresh',
-      command: (row) => this.reopenTaskSet(row),
-      styleClass: 'p-button-warning'
-    },
+    // {
+    //   name: 'generate',
+    //   label: 'Auto-Generate Assignments',
+    //   icon: 'pi pi-cog',
+    //   command: (row) => this.triggerAssignmentGeneration(row),
+    //   styleClass: 'p-button-success'
+    // },
+    // {
+    //   label: 'Reopen For Recompliance',
+    //   icon: 'pi pi-refresh',
+    //   command: (row) => this.reopenTaskSet(row),
+    //   styleClass: 'p-button-warning'
+    // },
     {
       label: 'Delete',
       icon: 'pi pi-trash',

@@ -95,7 +95,7 @@
                 type="button"
                 class="demo-btn"
                 [disabled]="loading()"
-                (click)="quickLogin(u.username)"
+                (click)="quickLogin(u.username, u.password)"
                 [title]="'Login as ' + u.username"
               >
                 <i [class]="u.icon"></i>
