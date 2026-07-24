@@ -285,21 +285,58 @@ export class TaskSetsComponent implements OnInit {
     });
   }
 
+  private parseToDate(val: any): Date | null {
+    if (!val) return null;
+    if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+    if (typeof val === 'string') {
+      const parts = val.split('T')[0].split('-');
+      if (parts.length === 3 && parts[0].length === 4) {
+        return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      }
+      const d = new Date(val);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    return null;
+  }
+
+  onDueDateChange(dateVal: any) {
+    const dateObj = this.parseToDate(dateVal) || this.newTaskSetDueDate();
+    if (dateObj) {
+      const currentTasks = this.rawTasks();
+      if (currentTasks && currentTasks.length) {
+        currentTasks.forEach(t => {
+          if (!t.due_date) {
+            t.due_date = dateObj;
+          }
+        });
+        this.rawTasks.set([...currentTasks]);
+      }
+      this.targetTasks.forEach(t => {
+        if (!t.due_date) {
+          t.due_date = dateObj;
+        }
+      });
+    }
+  }
+
   validateTaskDueDates(reportingDate: Date | null): boolean {
     if (!reportingDate) return true;
     const repTime = new Date(reportingDate.getFullYear(), reportingDate.getMonth(), reportingDate.getDate()).getTime();
     let hasViolation = false;
     for (const t of this.targetTasks) {
       if (t.due_date) {
-        const dueTime = new Date(t.due_date).getTime();
-        if (dueTime > repTime) {
-          hasViolation = true;
-          t.due_date = null;
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Validation Error',
-            detail: `Task "${t.description.substring(0, 30)}..." Proposed Due Date cannot be greater than Reporting Date (${this.formatDate(reportingDate)}). It has been cleared.`
-          });
+        const dObj = this.parseToDate(t.due_date);
+        if (dObj) {
+          const dueTime = new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate()).getTime();
+          if (dueTime > repTime) {
+            hasViolation = true;
+            t.due_date = null;
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Validation Error',
+              detail: `Task "${t.description.substring(0, 30)}..." Proposed Due Date cannot be greater than Reporting Date (${this.formatDate(reportingDate)}). It has been cleared.`
+            });
+          }
         }
       }
     }
@@ -311,15 +348,18 @@ export class TaskSetsComponent implements OnInit {
       const row = event.row;
       const reportingDate = this.newTaskSetReportingDate();
       if (reportingDate && row.due_date) {
-        const repTime = new Date(reportingDate.getFullYear(), reportingDate.getMonth(), reportingDate.getDate()).getTime();
-        const dueTime = new Date(row.due_date).getTime();
-        if (dueTime > repTime) {
-          row.due_date = null;
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Validation Error',
-            detail: `Proposed Due Date cannot be greater than Reporting Date (${this.formatDate(reportingDate)}). It has been cleared.`
-          });
+        const dObj = this.parseToDate(row.due_date);
+        if (dObj) {
+          const repTime = new Date(reportingDate.getFullYear(), reportingDate.getMonth(), reportingDate.getDate()).getTime();
+          const dueTime = new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate()).getTime();
+          if (dueTime > repTime) {
+            row.due_date = null;
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Validation Error',
+              detail: `Task Proposed Due Date cannot be greater than Reporting Date (${this.formatDate(reportingDate)}). It has been cleared.`
+            });
+          }
         }
       }
     }
@@ -465,11 +505,15 @@ export class TaskSetsComponent implements OnInit {
       const mappedIds = new Set((details.tasks || []).map((t: any) => t.id));
       const mappedBranchIds = new Set((details.branches || []).map((b: any) => b.id));
 
+      const defaultDueObj = this.newTaskSetDueDate();
       this.api.getApprovedTasks({ limit: 1000 }).subscribe(res => {
-        const mappedRawTasks = res.data.map((t: any) => ({
-          ...t,
-          due_date: dateMap.get(t.id) || null
-        }));
+        const mappedRawTasks = res.data.map((t: any) => {
+          const rawVal = dateMap.get(t.id);
+          return {
+            ...t,
+            due_date: this.parseToDate(rawVal) || defaultDueObj || null
+          };
+        });
         this.rawTasks.set(mappedRawTasks);
 
         this.targetTasks = mappedRawTasks.filter((t: any) => mappedIds.has(t.id));
@@ -479,12 +523,19 @@ export class TaskSetsComponent implements OnInit {
     });
   }
 
-  private formatDate(date: Date | null): string | undefined {
+  private formatDate(date: any): string | undefined {
     if (!date) return undefined;
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    if (typeof date === 'string') {
+      if (date.includes('T')) return date.split('T')[0];
+      return date;
+    }
+    if (date instanceof Date && !isNaN(date.getTime())) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    return undefined;
   }
 
   saveTaskSet() {
@@ -511,18 +562,30 @@ export class TaskSetsComponent implements OnInit {
       const branchIds = this.selectedBranches.map(b => b.id);
       const taskTimelines = this.targetTasks.map(t => ({
         task_id: t.id,
-        due_date: t.due_date ? t.due_date : null
+        due_date: (t.due_date ? this.formatDate(t.due_date) : null) ?? null
       }));
 
       this.api.updateTaskSetMapping(setId, taskIds, taskTimelines).subscribe(() => {
         this.api.updateTaskSetBranches(setId, branchIds).subscribe(() => {
-          this.showFormDrawer.set(false);
-          this.loadData();
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Success',
-            detail: 'Task set and mappings updated. Assignments will generate based on schedule.'
-          });
+          if (branchIds && branchIds.length > 0) {
+            this.api.generateAssignments(setId).subscribe(() => {
+              this.showFormDrawer.set(false);
+              this.loadData();
+              this.messageService.add({
+                severity: 'success',
+                summary: 'Success',
+                detail: 'Task set saved and assignments generated for selected units.'
+              });
+            });
+          } else {
+            this.showFormDrawer.set(false);
+            this.loadData();
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Success',
+              detail: 'Task set and mappings updated.'
+            });
+          }
         });
       });
     };

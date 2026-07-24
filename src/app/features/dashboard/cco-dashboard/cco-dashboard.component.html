@@ -51,7 +51,67 @@
 
 <!-- CCO Detail Grid -->
 <div class="dashboard-grid-2col">
+  <!-- Awaiting Action Queue -->
+  <div class="dashboard-panel table-panel">
+    <div class="panel-header">
+      <div>
+        <h3>Awaiting Action Queue</h3>
+        <span class="panel-subtitle">All assignments for review tracking</span>
+      </div>
+      <span class="text-xs text-orange-600 font-bold bg-orange-50 border border-orange-200 px-3 py-1 rounded-full flex items-center gap-1"
+            *ngIf="stats?.ccoMetrics?.awaitingActionQueue?.length > 0">
+        <i class="pi pi-list"></i> {{ stats?.ccoMetrics?.awaitingActionQueue?.length }} Total
+      </span>
+    </div>
+    <div class="panel-body">
+      <div *ngIf="stats?.ccoMetrics?.awaitingActionQueue?.length > 0; else noCCOActionQueue"
+           style="max-height: 320px; overflow-y: auto; overflow-x: auto;">
+        <table class="dashboard-table w-full">
+          <thead style="position: sticky; top: 0; z-index: 1; background: var(--surface-card, #fff);">
+            <tr>
+              <th>Branch / Dept</th>
+              <th>Task Set</th>
+              <th>Due Date</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of stats?.ccoMetrics?.awaitingActionQueue">
+              <td class="font-bold text-gray-900">{{ item.branch_name }}</td>
+              <td>{{ item.task_set_name }}</td>
+              <td class="font-semibold text-gray-600">{{ item.proposed_timeline | date:'dd/MM/yyyy' }}</td>
+              <td>
+                <span class="text-xs font-bold px-2 py-0.5 rounded"
+                  [ngClass]="{
+                    'text-green-700 bg-green-50': item.status === 'COMPLETED',
+                    'text-purple-700 bg-purple-50': item.status === 'REVIEW_PENDING',
+                    'text-amber-700 bg-amber-50': item.status === 'TIMELINE_REVIEW',
+                    'text-red-700 bg-red-50': item.status === 'ESCALATED_TO_CCO',
+                    'text-blue-700 bg-blue-50': item.status === 'IN_PROGRESS',
+                    'text-gray-600 bg-gray-100': !['COMPLETED','REVIEW_PENDING','TIMELINE_REVIEW','ESCALATED_TO_CCO','IN_PROGRESS'].includes(item.status)
+                  }">
+                  {{ item.status | titlecase }}
+                </span>
+              </td>
+              <td>
+                <a [routerLink]="['/cco-review', item.assignment_id]"
+                   class="text-indigo-600 hover:text-indigo-900 font-bold text-sm flex items-center gap-1 cursor-pointer">
+                  <i class="pi pi-chevron-right"></i> View
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <ng-template #noCCOActionQueue>
+        <div class="text-center py-6 text-gray-400 font-medium">No assignments found.</div>
+      </ng-template>
+    </div>
+  </div>
+
   <!-- Authority Performance Table -->
+
   <div class="dashboard-panel table-panel">
     <div class="panel-header">
       <h3>Authority Performance</h3>

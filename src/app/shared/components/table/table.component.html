@@ -434,16 +434,17 @@
                 
                 <!-- Date Input Editor Type -->
                 <ng-container *ngSwitchCase="'date_input'">
-                  <div class="flex justify-content-center align-items-center w-full">
-                    <input
-                      type="date"
+                  <div class="flex justify-content-center align-items-center w-full" (click)="$event.stopPropagation()">
+                    <p-datepicker
                       [(ngModel)]="rowData[col.field]"
                       [ngModelOptions]="{standalone: true}"
-                      (change)="onActionClick.emit({ name: col.actionName || col.field + '_change', row: rowData })"
-                      (click)="$event.stopPropagation()"
-                      class="p-1 border rounded text-xs"
-                      style="width: 130px; border: 1px solid var(--surface-border); border-radius: 4px;"
-                    />
+                      dateFormat="dd/mm/yy"
+                      appendTo="body"
+                      (ngModelChange)="onActionClick.emit({ name: col.actionName || col.field + '_change', row: rowData })"
+                      styleClass="w-full"
+                      [inputStyleClass]="'p-1 border rounded text-xs w-full font-medium text-center'"
+                      [style]="{ width: '135px' }"
+                    ></p-datepicker>
                   </div>
                 </ng-container>
 

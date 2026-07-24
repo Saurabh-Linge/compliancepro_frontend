@@ -35,7 +35,8 @@ export class CcoReviewDetailsComponent implements OnInit {
   unreviewedCount = computed(() => this.tasks().filter(t => !t.review_status).length);
 
   isReviewActive(): boolean {
-    return this.assignmentMeta()?.assignment_status === 'ESCALATED_TO_CCO';
+    const status = this.assignmentMeta()?.assignment_status?.toUpperCase();
+    return !!status && status !== 'COMPLETED';
   }
 
   getFormattedStatus(): string {
@@ -106,6 +107,7 @@ export class CcoReviewDetailsComponent implements OnInit {
         const enriched = data.map(t => ({
           ...t,
           review_status: t.review_status || null,
+          saved_review_status: t.review_status || null,
           review_remark: t.review_remark || "",
           evidence_url: t.evidence_url ? this.api.getFileUrl(t.evidence_url) : null,
           remarks_history: []
@@ -144,8 +146,18 @@ export class CcoReviewDetailsComponent implements OnInit {
   }
 
   groupTasks(tasks: any[]) {
+    const filter = this.activeFilter();
+    let filteredTasks = tasks;
+    if (filter === 'APPROVED') {
+      filteredTasks = tasks.filter(t => t.review_status === 'APPROVED');
+    } else if (filter === 'NEEDS_REDO') {
+      filteredTasks = tasks.filter(t => t.review_status === 'NEEDS_REDO');
+    } else if (filter === 'UNREVIEWED') {
+      filteredTasks = tasks.filter(t => !t.review_status);
+    }
+
     const groupsMap = new Map<string, any[]>();
-    for (const t of tasks) {
+    for (const t of filteredTasks) {
       const key = t.header_name || "General Task";
       if (!groupsMap.has(key)) groupsMap.set(key, []);
       groupsMap.get(key)!.push(t);
@@ -158,7 +170,16 @@ export class CcoReviewDetailsComponent implements OnInit {
     return task.remarks_history.some((h: any) => h.role === 'REVIEWER');
   }
 
-  setTaskReviewStatus(task: any, status: "APPROVED" | "NEEDS_REDO") {
+  isTaskSavedByDept(task: any): boolean {
+    if (!task) return false;
+    return task.compliance_status === 'COMPLIED' ||
+           task.compliance_status === 'NOT_COMPLIED' ||
+           (task.remarks && task.remarks.trim().length > 0) ||
+           task.has_evidence ||
+           task.status === 'COMPLETED';
+  }
+
+  setTaskReviewStatus(task: any, status: "APPROVED" | "NEEDS_REDO" | "ESCALATED") {
     const newStatus = task.review_status === status ? null : status;
     this.tasks.update(ts => ts.map(t => t.assignment_task_id === task.assignment_task_id ? { ...t, review_status: newStatus } : t));
     this.groupTasks(this.tasks());
@@ -174,7 +195,7 @@ export class CcoReviewDetailsComponent implements OnInit {
     this.api.reviewTaskStatus(this.assignmentId, task.assignment_task_id, task.review_status, task.review_remark).subscribe({
       next: () => {
         this.savingTaskId.set(null);
-        this.notification.success("Task review saved successfully!");
+        this.notification.success("Task review submitted successfully!");
         this.loadTasks();
       },
       error: (err) => {
@@ -230,8 +251,19 @@ export class CcoReviewDetailsComponent implements OnInit {
 
   submitReview(action: "ACCEPT" | "REJECT" | "ESCALATE") {
     if (!this.assignmentId) return;
-    if ((action === "REJECT" || action === "ESCALATE") && !this.overallRemark.trim()) {
-      this.notification.warn("Please provide an overall remark explaining the " + (action === "REJECT" ? "rejection." : "escalation."));
+
+    if (this.unreviewedCount() > 0) {
+      this.notification.warn(`Cannot proceed: There are ${this.unreviewedCount()} unreviewed task(s) remaining. Please review all tasks (Accept or Reject) before submitting.`);
+      return;
+    }
+
+    if (action === "ACCEPT" && this.needsRedoCount() > 0) {
+      this.notification.warn("Cannot 'Accept & Complete' when tasks are marked as Rejected. Please click 'Reject & Request Re-compliance' instead.");
+      return;
+    }
+
+    if (!this.overallRemark || !this.overallRemark.trim()) {
+      this.notification.warn("Please provide Overall Review Remarks before submitting.");
       return;
     }
     this.submitting = true;
@@ -240,7 +272,7 @@ export class CcoReviewDetailsComponent implements OnInit {
       next: () => {
         this.submitting = false;
         if (action === "ACCEPT") this.notification.success("Assignment accepted and marked as Completed!");
-        if (action === "REJECT") this.notification.warn("Assignment rejected. Branch will be notified for re-compliance.");
+        if (action === "REJECT") this.notification.warn("Assignment rejected. Department will be notified for re-compliance.");
         if (action === "ESCALATE") this.notification.info("Assignment escalated to CCO for final review.");
         this.goBack();
       },
@@ -250,9 +282,13 @@ export class CcoReviewDetailsComponent implements OnInit {
 
   toggleFilter(status: string) {
     this.activeFilter.set(this.activeFilter() === status ? "" : status);
+    this.groupTasks(this.tasks());
   }
 
-  clearFilter() { this.activeFilter.set(""); }
+  clearFilter() {
+    this.activeFilter.set("");
+    this.groupTasks(this.tasks());
+  }
 
   goBack() { this.router.navigate(["/cco-review"]); }
 }

@@ -48,6 +48,13 @@ import { BulkUploadComponent } from './bulk-upload/bulk-upload.component';
               <i class="pi pi-file-pdf"></i><span>Download PDF</span>
             </a>
           }
+          <button *ngIf="pendingCount() > 0"
+                  pButton pRipple type="button" 
+                  icon="pi pi-check-circle" 
+                  [label]="'Approve All (' + pendingCount() + ')'" 
+                  class="p-button-success p-button-sm" 
+                  [loading]="approvingAll()"
+                  (click)="approveAllPendingTasks()"></button>
           <button pButton pRipple type="button" icon="pi pi-list-check" label="Go to Task Set Master" class="p-button-outlined p-button-success p-button-sm" (click)="goToTaskSets()"></button>
           <button pButton pRipple type="button" icon="pi pi-arrow-left" label="Back to Circulars" class="p-button-outlined p-button-secondary p-button-sm" (click)="goBackToCirculars()"></button>
         </div>
@@ -156,6 +163,17 @@ import { BulkUploadComponent } from './bulk-upload/bulk-upload.component';
                   [virtualScrollItemSize]="38"
                   styleClass="w-20rem h-2.5rem flex align-items-center"
                 ></p-select>
+                <button
+                  *ngIf="pendingCount() > 0"
+                  pButton
+                  type="button"
+                  icon="pi pi-check-circle"
+                  [label]="'Approve All (' + pendingCount() + ')'"
+                  class="p-button-success h-2.5rem flex align-items-center"
+                  style="white-space: nowrap;"
+                  [loading]="approvingAll()"
+                  (click)="approveAllPendingTasks()"
+                ></button>
                 <button
                   *ngIf="isCcoOrAdmin"
                   pButton
@@ -916,9 +934,35 @@ export class TasksComponent implements OnInit {
     });
   }
 
+  approvingAll = signal<boolean>(false);
+
   approveTask(id: number) {
     this.api.approveTask(id).subscribe(() => {
       this.loadTasks();
+    });
+  }
+
+  approveAllPendingTasks() {
+    const circularId = this.selectedCircularFilter || this.selectedCircularId;
+    this.approvingAll.set(true);
+    this.api.approveAllTasks(circularId).subscribe({
+      next: (res: any) => {
+        this.approvingAll.set(false);
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: `Successfully approved ${res?.count ?? 'all'} pending tasks!`
+        });
+        this.loadTasks();
+      },
+      error: (err: any) => {
+        this.approvingAll.set(false);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Failed to approve tasks: ' + (err.message || err.statusText)
+        });
+      }
     });
   }
 

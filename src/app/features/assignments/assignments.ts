@@ -261,8 +261,7 @@ export class AssignmentsComponent implements OnInit {
     this.loadAssignments();
     this.loadTaskSets();
     this.api.getBranches().subscribe(data => {
-      // Keep real branch units and tolerate legacy payloads without a type field.
-      this.branches.set(data.filter((b: any) => !b.type || b.type === 'BRANCH'));
+      this.branches.set(data);
     });
   }
 

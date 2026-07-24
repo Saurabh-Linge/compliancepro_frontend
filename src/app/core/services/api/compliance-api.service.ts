@@ -216,6 +216,14 @@ export class ComplianceApiService {
     return this.http.patch<ComplianceTask>(`${this.baseUrl}/tasks/${id}/approve`, {});
   }
 
+  approveAllTasks(circularId?: number | null) {
+    let httpParams = new HttpParams();
+    if (circularId !== undefined && circularId !== null) {
+      httpParams = httpParams.set('circularId', String(circularId));
+    }
+    return this.http.patch<{ count: number }>(`${this.baseUrl}/tasks/approve-all`, {}, { params: httpParams });
+  }
+
   updateTaskDescription(id: number, payload: Partial<ComplianceTask> & { header_id?: number | null; file_url?: string | null }) {
     return this.http.put<ComplianceTask>(`${this.baseUrl}/tasks/${id}`, payload);
   }
@@ -345,7 +353,7 @@ export class ComplianceApiService {
     return this.http.put(`${this.baseUrl}/assignments/${assignmentId}/review`, { action, remark });
   }
 
-  reviewTaskStatus(assignmentId: number, taskId: number, reviewStatus: 'APPROVED' | 'NEEDS_REDO', reviewRemark?: string) {
+  reviewTaskStatus(assignmentId: number, taskId: number, reviewStatus: 'APPROVED' | 'NEEDS_REDO' | 'ESCALATED', reviewRemark?: string) {
     return this.http.patch<any>(`${this.baseUrl}/assignments/${assignmentId}/tasks/${taskId}/review-status`, {
       review_status: reviewStatus,
       review_remark: reviewRemark

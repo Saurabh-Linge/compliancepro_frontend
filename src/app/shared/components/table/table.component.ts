@@ -14,7 +14,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { MenuItem } from 'primeng/api';
 import { ExportService } from '../../../core/services/export/export.service';
 import { ToggleSwitch } from 'primeng/toggleswitch';
-
+import { DatePickerModule } from 'primeng/datepicker';
 
 export interface TableColumn {
   /** Field name in the data object */
@@ -107,7 +107,8 @@ export interface TableStyleConfig {
     MessageModule,
     TooltipModule,
     ToggleSwitch,
-    MenuModule
+    MenuModule,
+    DatePickerModule
   ],
   templateUrl: './table.component.html',
   styleUrls: ['./table.component.scss'],
@@ -517,7 +518,7 @@ export class TableComponent implements OnDestroy {
       case 'date':
         try {
           const date = new Date(value);
-          const format = col.pipeFormat || 'dd-MM-yyyy';
+          const format = col.pipeFormat || 'dd/MM/yyyy';
           // Check if it's a custom pattern like dd-MM-yyyy or dd-MM-yyyy HH:mm
           if (format.includes('dd') || format.includes('MM') || format.includes('yyyy') || format.includes('HH') || format.includes('mm')) {
             return this.formatCustomDate(date, format);

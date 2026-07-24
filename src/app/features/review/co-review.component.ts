@@ -91,14 +91,20 @@ export class CoReviewComponent implements OnInit {
   tableActions: TableAction[] = [
     {
       label: "Review Timeline",
-      icon: "pi pi-calendar",
+      icon: "pi pi-calendar-plus",
       visible: (row: any) => row.status?.toUpperCase() === 'TIMELINE_REVIEW',
-      command: (row: any) => this.router.navigate(["/assignments", row.id])
+      command: (row: any) => this.router.navigate(["/co-review", row.id])
     },
     {
-      label: "View Tasks",
-      icon: "pi pi-search",
-      visible: (row: any) => ['IN_PROGRESS', 'REVIEW_PENDING', 'COMPLETED', 'REJECTED'].includes(row.status?.toUpperCase()),
+      label: "Review Compliance",
+      icon: "pi pi-shield",
+      visible: (row: any) => ['REVIEW_PENDING', 'ESCALATED_TO_CCO'].includes(row.status?.toUpperCase()),
+      command: (row: any) => this.router.navigate(["/co-review", row.id])
+    },
+    {
+      label: "View Compliance",
+      icon: "pi pi-eye",
+      visible: (row: any) => ['IN_PROGRESS', 'COMPLETED', 'REJECTED', 'PENDING_RECOMPLIANCE'].includes(row.status?.toUpperCase()),
       command: (row: any) => this.router.navigate(["/co-review", row.id])
     }
   ];

@@ -142,9 +142,20 @@ import { DatePickerModule } from 'primeng/datepicker';
                 {{ i + 1 }}
               </div>
               <div>
-                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-0.5" style="font-size: 0.65rem; letter-spacing: 0.05em;">
-                  {{ t.circular_title }}
-                </span>
+                <div class="flex items-center gap-2 mb-1" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                  <span class="text-xs font-bold text-gray-400 uppercase tracking-wider block" style="font-size: 0.65rem; letter-spacing: 0.05em;">
+                    {{ t.circular_title }}
+                  </span>
+                  <span *ngIf="t.review_status === 'APPROVED'" style="padding: 0.15rem 0.55rem; background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.25rem;">
+                    <i class="pi pi-check-circle" style="font-size: 0.65rem;"></i> Accepted
+                  </span>
+                  <span *ngIf="t.review_status === 'NEEDS_REDO'" style="padding: 0.15rem 0.55rem; background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.25rem;">
+                    <i class="pi pi-times-circle" style="font-size: 0.65rem;"></i> Rejected
+                  </span>
+                  <span *ngIf="t.review_status === 'ESCALATED'" style="padding: 0.15rem 0.55rem; background: #fef3c7; color: #b45309; border: 1px solid #fde68a; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.25rem;">
+                    <i class="pi pi-exclamation-triangle" style="font-size: 0.65rem;"></i> Escalated to CCO
+                  </span>
+                </div>
                 <p class="font-semibold text-gray-800 m-0" style="line-height: 1.45; font-size: 0.95rem;">
                   {{ t.description }}
                 </p>
@@ -240,59 +251,37 @@ import { DatePickerModule } from 'primeng/datepicker';
                     </span>
                   </div>
 
-                  <!-- Branch Proposed Date & Remark Display -->
-                  <div class="text-xs text-indigo-700 font-bold bg-indigo-50 border border-indigo-200 p-2.5 rounded mb-2">
-                    <div class="flex items-center justify-between mb-1">
-                      <span><strong>{{ (t.temp_proposed_due_date || t.proposed_due_date) | date:'dd-MM-yyyy' }}</strong></span>
-                      <span class="text-xs text-indigo-600 font-bold bg-indigo-100 px-2 py-0.5 rounded-full" *ngIf="t.due_date && t.proposed_due_date && t.due_date !== t.proposed_due_date">
-                        Revised
-                      </span>
-                    </div>
-                    <div class="mt-1 font-medium text-indigo-600" *ngIf="t.proposed_remark">
-                      <strong>Branch Remark:</strong> "{{ t.proposed_remark }}"
-                    </div>
-                    <div class="mt-1 font-medium text-indigo-400 italic" *ngIf="!t.proposed_remark">
-                      No remarks provided by branch.
-                    </div>
+                  <div class="text-xs text-gray-800 font-bold bg-gray-50 border border-gray-200 p-2 rounded">
+                    Proposed: {{ (t.proposed_due_date || t.due_date) | date:'dd/MM/yyyy' }}
                   </div>
 
-                  <!-- Reviewer Remark Textarea -->
-                  <div class="mt-1" *ngIf="canEditTimeline() && t.review_status !== 'APPROVED' && t.review_status !== 'REJECTED'">
-                    <label class="control-label font-bold text-gray-600 block mb-1" style="font-size: 0.7rem;">Review Remarks / Feedback <span class="text-red-500">*</span></label>
+                  <!-- Propose Date Remark from Branch -->
+                  <div class="text-xs text-indigo-700 font-medium bg-indigo-50 border border-indigo-100 p-2 rounded" *ngIf="t.proposed_remark">
+                    <strong>Branch Justification:</strong> "{{ t.proposed_remark }}"
+                  </div>
+
+                  <div *ngIf="canApproveTimeline()" style="display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.25rem;">
                     <textarea pTextarea
                               [(ngModel)]="t.temp_timeline_review_remark"
                               class="answer-control w-full p-2 border rounded text-xs"
-                              style="resize: none; height: 3rem; font-size: 0.75rem;"
-                              placeholder="Remarks for Accept/Reject..."></textarea>
-                  </div>
-                  <div class="text-xs text-gray-600 font-medium bg-gray-50 border border-gray-200 p-2 rounded mt-1" *ngIf="(t.review_status === 'APPROVED' || t.review_status === 'REJECTED' || !canEditTimeline()) && t.timeline_review_remark">
-                    <strong>Reviewer Remarks:</strong> "{{ t.timeline_review_remark }}"
-                  </div>
-
-                  <div class="text-xs text-gray-500 font-medium mt-1" *ngIf="t.due_date">
-                    Default Task Due Date: <strong class="text-gray-700">{{ t.due_date | date:'dd-MM-yyyy' }}</strong>
-                  </div>
-
-                  <!-- Accept and Reject Buttons for CO/CCO -->
-                  <div class="flex gap-2 mt-2" *ngIf="canEditTimeline() && t.review_status !== 'APPROVED' && t.review_status !== 'REJECTED'">
-                    <p-button label="Accept"
-                              [loading]="!!rowSavingMap()[t.assignment_task_id]"
-                              loadingIcon="pi pi-spinner pi-spin"
-                              icon="pi pi-check"
-                              severity="success"
-                              outlined
-                              (click)="reviewSingleTaskTimeline(t, 'APPROVED')"
-                              styleClass="flex-1"
-                              size="small" />
-                    <p-button label="Reject"
-                              [loading]="!!rowSavingMap()[t.assignment_task_id]"
-                              loadingIcon="pi pi-spinner pi-spin"
-                              icon="pi pi-times"
-                              severity="danger"
-                              outlined
-                              (click)="reviewSingleTaskTimeline(t, 'REJECTED')"
-                              styleClass="flex-1"
-                              size="small" />
+                              style="resize: none; height: 2.5rem; font-size: 0.75rem;"
+                              placeholder="Reviewer Remark (Optional)..."></textarea>
+                    
+                    <div style="display: flex; gap: 0.35rem;">
+                      <p-button label="Accept"
+                                icon="pi pi-check"
+                                severity="success"
+                                (click)="reviewSingleTaskTimeline(t, 'APPROVED')"
+                                styleClass="flex-1"
+                                size="small" />
+                      <p-button label="Reject"
+                                icon="pi pi-times"
+                                severity="danger"
+                                outlined
+                                (click)="reviewSingleTaskTimeline(t, 'REJECTED')"
+                                styleClass="flex-1"
+                                size="small" />
+                    </div>
                   </div>
                 </div>
               </ng-container>
@@ -305,9 +294,46 @@ import { DatePickerModule } from 'primeng/datepicker';
                   <span class="text-gray-900 font-extrabold">{{ (t.due_date ? (t.due_date | date:'dd/MM/yyyy') : (proposedTimeline() | date:'dd/MM/yyyy')) }}</span>
                 </div>
 
-                <!-- Only show compliance block if branch is currently complying or has already submitted responses -->
-                <ng-container *ngIf="canEditAssignment() || (t.compliance_status && t.compliance_status !== 'PENDING') || t.remarks || t.has_evidence">
-                  <!-- If CO/CCO has completed/approved the assignment, hide form inputs and show read-only details -->
+                <!-- Per-Task Review Status Banner for Department View -->
+                <div *ngIf="t.review_status" class="mb-2 w-full">
+                  <div *ngIf="t.review_status === 'APPROVED'" style="padding: 0.5rem 0.75rem; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; font-size: 0.75rem; color: #166534; display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span style="display: flex; align-items: center; gap: 0.35rem; font-weight: 600;">
+                      <i class="pi pi-check-circle text-green-600"></i>
+                      <span>Approved by Reviewer (No Re-compliance Needed)</span>
+                    </span>
+                    <span style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; background: #dcfce7; color: #15803d; padding: 0.15rem 0.5rem; border-radius: 4px;">Accepted</span>
+                  </div>
+
+                  <div *ngIf="t.review_status === 'NEEDS_REDO'" style="padding: 0.5rem 0.75rem; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; font-size: 0.75rem; color: #991b1b; margin-bottom: 0.5rem;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; font-weight: 600;">
+                      <span style="display: flex; align-items: center; gap: 0.35rem;">
+                        <i class="pi pi-exclamation-circle text-red-600"></i>
+                        <span>Needs Re-compliance</span>
+                      </span>
+                      <span style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; background: #fee2e2; color: #b91c1c; padding: 0.15rem 0.5rem; border-radius: 4px;">Rejected</span>
+                    </div>
+                    <div *ngIf="t.review_remark" style="font-size: 0.725rem; font-weight: 500; color: #7f1d1d; margin-top: 0.25rem;">
+                      <strong>Reviewer Feedback:</strong> "{{ t.review_remark }}"
+                    </div>
+                  </div>
+
+                  <div *ngIf="t.review_status === 'ESCALATED'" style="padding: 0.5rem 0.75rem; background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; font-size: 0.75rem; color: #92400e; margin-bottom: 0.5rem;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; font-weight: 600;">
+                      <span style="display: flex; align-items: center; gap: 0.35rem;">
+                        <i class="pi pi-exclamation-triangle text-amber-600"></i>
+                        <span>Escalated to CCO for Final Review</span>
+                      </span>
+                      <span style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; background: #fef3c7; color: #b45309; padding: 0.15rem 0.5rem; border-radius: 4px;">Escalated to CCO</span>
+                    </div>
+                    <div *ngIf="t.review_remark" style="font-size: 0.725rem; font-weight: 500; color: #78350f; margin-top: 0.25rem;">
+                      <strong>CO Remarks:</strong> "{{ t.review_remark }}"
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Compliance block for task -->
+                <ng-container>
+                  <!-- If assignment is completed, hide form inputs and show read-only details -->
                   <div *ngIf="assignmentStatus() === 'COMPLETED'; else activeComplianceForm" class="flex flex-column gap-2 p-3 bg-gray-50 border border-gray-100 rounded-lg w-full">
                     <div class="flex items-center justify-between" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                       <span class="text-xs font-bold text-gray-500">Compliance Status:</span>
@@ -340,7 +366,7 @@ import { DatePickerModule } from 'primeng/datepicker';
                       <div class="answer-field" style="display: flex; flex-direction: column; gap: 0.5rem;">
 
                         <!-- Upload PDF Button (Full Width) -->
-                        <div *ngIf="canEditAssignment()">
+                        <div *ngIf="canEditTaskAssignment(t)">
                           <label class="upload-btn cursor-pointer"
                                  [ngClass]="{'upload-btn-attached': getSelectedFileName(t.assignment_task_id)}">
                             <input type="file" 
@@ -371,7 +397,7 @@ import { DatePickerModule } from 'primeng/datepicker';
                         </div>
 
                         <!-- Save Row button -->
-                        <p-button *ngIf="canEditAssignment()"
+                        <p-button *ngIf="canEditTaskAssignment(t)"
                                   label="Save Task"
                                   [loading]="!!rowSavingMap()[t.assignment_task_id]"
                                   loadingIcon="pi pi-spinner pi-spin"
@@ -388,7 +414,7 @@ import { DatePickerModule } from 'primeng/datepicker';
                         <label class="control-label">Remarks / Explanation <span class="text-red-500">*</span></label>
                         <textarea pTextarea
                                   [(ngModel)]="t.temp_remarks"
-                                  [disabled]="!canEditAssignment()"
+                                  [disabled]="!canEditTaskAssignment(t)"
                                   class="answer-control"
                                   style="flex: 1; resize: none; min-height: 3.8rem; height: 3.8rem;"
                                   placeholder="Add compliance remarks or explanation..."></textarea>
@@ -552,20 +578,35 @@ export class AssignmentDetailsComponent implements OnInit {
   progressPercentage = computed(() => this.tasks().length ? Math.round((this.completedCount() / this.tasks().length) * 100) : 0);
 
   canEditAssignment(): boolean {
-    const role = this.userRole();
-    // Only branch users / branch managers are permitted to enter compliance details
-    if (role !== 'branch' && role !== 'branch_user') {
+    const status = this.assignmentStatus()?.toUpperCase();
+    if (status === 'REVIEW_PENDING' || status === 'COMPLETED') {
+      return false;
+    }
+    const hasNeedsRedoTask = this.tasks().some(t => t.review_status === 'NEEDS_REDO');
+    return status === 'IN_PROGRESS' || status === 'REJECTED' || status === 'PENDING_RECOMPLIANCE' || status === 'ESCALATED_TO_CCO' || hasNeedsRedoTask;
+  }
+
+  canEditTaskAssignment(task: any): boolean {
+    const status = this.assignmentStatus()?.toUpperCase();
+
+    // When submitted for review or completed, lock all tasks
+    if (status === 'REVIEW_PENDING' || status === 'COMPLETED') {
       return false;
     }
 
-    const status = this.assignmentStatus()?.toUpperCase();
-    return status === 'IN_PROGRESS' || status === 'REJECTED' || status === 'PENDING_RECOMPLIANCE';
+    // If reviewer explicitly accepted or escalated this single task point, hide Save Task button & lock inputs for this task
+    if (task?.review_status === 'APPROVED' || task?.review_status === 'ESCALATED') {
+      return false;
+    }
+
+    // In compliance phase (IN_PROGRESS, ESCALATED_TO_CCO, REJECTED, PENDING_RECOMPLIANCE), enable unaccepted/unsaved task remarks & attachments
+    return status === 'IN_PROGRESS' || status === 'ESCALATED_TO_CCO' || status === 'REJECTED' || status === 'PENDING_RECOMPLIANCE';
   }
 
   canEditTimeline(): boolean {
     const role = this.userRole();
     const status = this.assignmentStatus();
-    if ((status === 'Pending_Timeline' || status === 'Timeline_Review') && (role === 'branch' || role === 'branch_user')) {
+    if ((status === 'Pending_Timeline' || status === 'Timeline_Review') && (role === 'branch' || role === 'branch_user' || role === 'department')) {
       return true;
     }
     if (status === 'Timeline_Review' && (role === 'cco' || role === 'co' || role === 'admin')) {
@@ -956,10 +997,12 @@ export class AssignmentDetailsComponent implements OnInit {
   async submitAllCompliance() {
     if (!this.assignmentId) return;
 
-    // 1. Validate all tasks are filled
-    for (const t of this.tasks()) {
+    const tasksToSubmit = this.tasks().filter(t => this.canEditTaskAssignment(t));
+
+    // 1. Validate all pending tasks are filled
+    for (const t of tasksToSubmit) {
       if (!t.temp_remarks?.trim()) {
-        this.notification.warn('Remarks / Explanation are required for all checklist items before submitting.');
+        this.notification.warn('Remarks / Explanation are required for all pending re-compliance tasks before submitting.');
         return;
       }
     }
@@ -968,7 +1011,7 @@ export class AssignmentDetailsComponent implements OnInit {
     console.log(`Bulk submitting compliance declarations for assignmentId: ${this.assignmentId}...`);
 
     // 2. Run all save operations in parallel without individual success popups
-    const results = await Promise.all(this.tasks().map(t => this.saveSingleTask(t, false)));
+    const results = await Promise.all(tasksToSubmit.map(t => this.saveSingleTask(t, false)));
 
     const allSuccessful = results.every(res => res === true);
     if (allSuccessful) {

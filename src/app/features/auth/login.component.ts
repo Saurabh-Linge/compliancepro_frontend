@@ -35,7 +35,7 @@ export class LoginComponent {
   username = '';
   password = '';
   rememberMe = false;
-  
+
   loading = signal(false);
   error = signal<string | undefined>(undefined);
 
@@ -51,16 +51,24 @@ export class LoginComponent {
     await this.onLanguageChange(next);
   }
 
+  demoUsers = [
+    { label: 'CO', icon: 'pi pi-shield', username: 'co', color: '#4f46e5' },
+    { label: 'CCO', icon: 'pi pi-star', username: 'cco', color: '#0891b2' },
+    { label: 'Dept', icon: 'pi pi-building', username: 'advances_dept', color: '#059669' }
+  ];
+
   @HostListener('document:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {
     if (event.ctrlKey && event.key.toLowerCase() === 'k') {
       event.preventDefault();
-
-      this.username = 'ADMIN';
-      this.password = 'Emp@2024';
-
-      this.onLogin();
+      this.quickLogin('admin', 'password123');
     }
+  }
+
+  quickLogin(username: string, password: string = 'password123') {
+    this.username = username;
+    this.password = password;
+    this.onLogin();
   }
 
   onLogin() {

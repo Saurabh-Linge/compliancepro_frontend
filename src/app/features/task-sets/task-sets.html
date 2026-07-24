@@ -133,16 +133,16 @@
             <app-select-field label="Task Set Frequency" [field]="newTaskSetFrequency" [options]="frequencies" optionLabel="label" optionValue="value"></app-select-field>
           </div>
           <div class="field col-12 md:col-6">
-            <app-date-field label="Start Date" [field]="newTaskSetStartDate" dateFormat="yy-mm-dd"></app-date-field>
+            <app-date-field label="Start Date" [field]="newTaskSetStartDate" dateFormat="dd/mm/yy"></app-date-field>
           </div>
           <div class="field col-12 md:col-6">
-            <app-date-field label="End Date" [field]="newTaskSetEndDate" dateFormat="yy-mm-dd"></app-date-field>
+            <app-date-field label="End Date" [field]="newTaskSetEndDate" dateFormat="dd/mm/yy"></app-date-field>
           </div>
           <div class="field col-12 md:col-6">
-            <app-date-field label="Reporting Date" [field]="newTaskSetReportingDate" dateFormat="yy-mm-dd"></app-date-field>
+            <app-date-field label="Reporting Date" [field]="newTaskSetReportingDate" dateFormat="dd/mm/yy"></app-date-field>
           </div>
           <div class="field col-12 md:col-6">
-            <app-date-field label="Due Date [For Branch]" [field]="newTaskSetDueDate" dateFormat="yy-mm-dd"></app-date-field>
+            <app-date-field label="Due Date [For Branch]" [field]="newTaskSetDueDate" (onChange)="onDueDateChange($event)" dateFormat="dd/mm/yy"></app-date-field>
           </div>
         </div>
       </section>

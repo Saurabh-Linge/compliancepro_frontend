@@ -82,6 +82,31 @@
             ></button>
           </form>
 
+          <!-- Demo Login Buttons -->
+          <div class="demo-login-section animate-item delay-5">
+            <div class="demo-label">
+              <span class="demo-divider-line"></span>
+              <span class="demo-divider-text">Quick Login</span>
+              <span class="demo-divider-line"></span>
+            </div>
+            <div class="demo-buttons">
+              <button
+                *ngFor="let u of demoUsers"
+                type="button"
+                class="demo-btn"
+                [disabled]="loading()"
+                (click)="quickLogin(u.username)"
+                [title]="'Login as ' + u.username"
+              >
+                <i [class]="u.icon"></i>
+                <span>{{ u.label }}</span>
+              </button>
+            </div>
+            <p class="demo-hint">
+              <kbd>Ctrl</kbd><span>+</span><kbd>K</kbd> → Login as Admin
+            </p>
+          </div>
+
           <!-- Language Toggle -->
           <div class="lang-toggle-row animate-item delay-5">
             <button
