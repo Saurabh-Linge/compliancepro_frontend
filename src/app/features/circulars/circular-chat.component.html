@@ -96,12 +96,6 @@
                 ></p-tag>
               </div>
             }
-            @if (circular()!.circular_type_name) {
-              <div class="detail-row">
-                <span class="detail-label">Type</span>
-                <span class="detail-value text-sm">{{ circular()!.circular_type_name }}</span>
-              </div>
-            }
             @if (circular()!.pdf_url) {
               <div class="detail-row mt-1">
                 <a [href]="getFileUrl(circular()!.pdf_url)" target="_blank" class="view-pdf-link">
