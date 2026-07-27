@@ -80,6 +80,18 @@ export class ReportsComponent implements OnInit {
       route: '/reports/compliance-status-report',
       category: '3_advanced',
     },
+    {
+      srNo: 7,
+      name: 'Compliance Summary Report',
+      route: '/reports/compliance-summary-report',
+      category: '3_advanced',
+    },
+    {
+      srNo: 8,
+      name: 'Compliance Report',
+      route: '/reports/compliance-report',
+      category: '3_advanced',
+    },
   ];
 
   filteredReports: ReportItem[] = [];

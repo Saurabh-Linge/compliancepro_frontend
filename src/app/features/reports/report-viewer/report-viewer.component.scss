@@ -71,6 +71,59 @@
   }
 }
 
+.report-search-dropdown {
+  width: 100%;
+  min-height: 2.25rem;
+  font-size: 0.85rem;
+  border: 1px solid #cbd8e5;
+  border-radius: 5px;
+  background: #fff;
+  
+  ::ng-deep .p-select-label,
+  ::ng-deep .p-dropdown-label {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.85rem;
+    color: #102a43;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+::ng-deep .report-search-dropdown-panel {
+  max-width: 580px !important;
+
+  .p-dropdown-header,
+  .p-select-header {
+    padding: 0.4rem 0.5rem !important;
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+
+    .p-dropdown-filter,
+    .p-select-filter {
+      padding: 0.35rem 0.5rem !important;
+      font-size: 0.85rem !important;
+      width: 100% !important;
+      border-radius: 4px !important;
+      border: 1px solid #cbd8e5 !important;
+    }
+  }
+
+  .p-dropdown-items,
+  .p-select-list {
+    padding: 0.25rem 0 !important;
+  }
+
+  .p-dropdown-item,
+  .p-select-option {
+    white-space: normal !important;
+    word-break: break-word !important;
+    font-size: 0.85rem !important;
+    padding: 0.5rem 0.75rem !important;
+    line-height: 1.35 !important;
+  }
+}
+
 .filter-actions {
   grid-column: 1 / -1;
   display: flex;
@@ -138,6 +191,64 @@
 
   tr:last-child td {
     border-bottom: none;
+  }
+}
+
+/* Compliance Summary Report Specific Styles */
+.summary-meta-card {
+  border: 1px solid #cbd8e5;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.summary-meta-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+
+  th {
+    background-color: #f8fafc;
+    color: #0f172a;
+    font-weight: 700;
+    padding: 0.6rem 0.85rem;
+    border-bottom: 1px solid #cbd8e5;
+  }
+
+  td {
+    padding: 0.55rem 0.85rem;
+    border-bottom: 1px solid #e2e8f0;
+    border-right: 1px solid #e2e8f0;
+    vertical-align: top;
+  }
+
+  td:last-child {
+    border-right: none;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.dept-band-header {
+  background-color: #f1f5f9;
+  color: #0f172a;
+  font-weight: 700;
+  font-size: 0.825rem;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid #cbd8e5;
+  border-bottom: none;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.summary-dept-table {
+  td {
+    vertical-align: top;
+    font-size: 0.825rem;
   }
 }
 

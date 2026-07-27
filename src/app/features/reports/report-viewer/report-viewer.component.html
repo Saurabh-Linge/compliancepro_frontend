@@ -14,12 +14,24 @@
       <div class="field" *ngIf="showFilter(filter)">
         <label>{{ filter.label }}</label>
         
-        <!-- Select Dropdown -->
-        <select *ngIf="filter.type === 'select'" [(ngModel)]="filters()[filter.key]">
-          <option *ngFor="let option of filter.options" [value]="option.value">
-            {{ option.label }}
-          </option>
-        </select>
+        <!-- Searchable Select Dropdown -->
+        <p-select 
+          *ngIf="filter.type === 'select'"
+          [options]="filter.options" 
+          [(ngModel)]="filters()[filter.key]" 
+          optionLabel="label" 
+          optionValue="value" 
+          [filter]="(filter.options?.length || 0) > 5" 
+          filterBy="label" 
+          [showClear]="false"
+          [virtualScroll]="(filter.options?.length || 0) > 10"
+          [virtualScrollItemSize]="38"
+          scrollHeight="250px"
+          placeholder="Select..."
+          appendTo="body"
+          styleClass="w-full report-search-dropdown"
+          panelStyleClass="report-search-dropdown-panel">
+        </p-select>
 
         <!-- Date Input -->
         <input *ngIf="filter.type === 'date'" type="date" [(ngModel)]="filters()[filter.key]" />
@@ -32,7 +44,7 @@
     <!-- Filter Actions -->
     <div class="filter-actions">
       <button pButton type="button" icon="pi pi-search" label="Find" [loading]="loading()" (click)="findReport()"></button>
-      <button pButton type="button" icon="pi pi-filter" label="Apply Filter" severity="success" *ngIf="reportSlug() === 'compliance-status-report' && initialDataLoaded()" [loading]="loading()" (click)="applyFilter()"></button>
+      <button pButton type="button" icon="pi pi-filter" label="Apply Filter" severity="success" *ngIf="['compliance-status-report', 'compliance-report', 'cco-compliance-report', 'compliance-circulars-report'].includes(reportSlug()) && initialDataLoaded()" [loading]="loading()" (click)="applyFilter()"></button>
       <button pButton type="button" icon="pi pi-refresh" label="Reset" severity="secondary" outlined (click)="reset()"></button>
       <button pButton type="button" icon="pi pi-print" label="Print" severity="secondary" outlined [disabled]="rows().length === 0" (click)="print()"></button>
       <button pButton type="button" icon="pi pi-file-excel" label="Excel" severity="success" outlined [disabled]="rows().length === 0" (click)="exportExcel()"></button>
@@ -72,8 +84,8 @@
       </div>
     </div>
 
-    <!-- Official Report Data Table -->
-    <div class="official-report-table-wrap">
+    <!-- Official Report Data Table (For standard tabular reports) -->
+    <div class="official-report-table-wrap" *ngIf="reportSlug() !== 'compliance-summary-report'">
       <table class="official-report-table">
         <thead>
           <tr>
@@ -97,6 +109,11 @@
                   <p-tag [value]="row[col.key]" [severity]="statusSeverity(row, col)" styleClass="text-xs font-bold px-2 py-1"></p-tag>
                 </ng-container>
                 
+                <!-- Date Field -->
+                <ng-container *ngSwitchCase="'date'">
+                  {{ formatDate(row[col.key]) }}
+                </ng-container>
+
                 <!-- Default Column -->
                 <ng-container *ngSwitchDefault>
                   {{ row[col.key] ?? '-' }}
@@ -107,6 +124,83 @@
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- Structured Compliance Summary Report View -->
+    <div class="summary-report-container" *ngIf="reportSlug() === 'compliance-summary-report'">
+      <div class="summary-report-group mb-5" *ngFor="let group of rows()">
+        
+        <!-- Circular & Task Set Metadata Table -->
+        <div class="summary-meta-card mb-4">
+          <table class="summary-meta-table">
+            <thead>
+              <tr>
+                <th colspan="2" class="text-center font-bold text-base py-2">Circular Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="font-bold w-12rem text-gray-700 bg-gray-50">Circular Authority</td>
+                <td>{{ group.circular_authority }}</td>
+              </tr>
+              <tr>
+                <td class="font-bold w-12rem text-gray-700 bg-gray-50">Circular Name</td>
+                <td>{{ group.circular_name }}</td>
+              </tr>
+              <tr>
+                <td class="font-bold w-12rem text-gray-700 bg-gray-50">Circular Description</td>
+                <td>{{ group.circular_description }}</td>
+              </tr>
+              <tr>
+                <td class="font-bold w-12rem text-gray-700 bg-gray-50">Circular Date</td>
+                <td>{{ formatDate(group.circular_date) }}</td>
+              </tr>
+              <tr>
+                <td colspan="2" class="text-center font-bold text-base py-2 bg-gray-100">Task Set: {{ group.task_set_name }}</td>
+              </tr>
+              <tr>
+                <td class="font-bold w-12rem text-gray-700 bg-gray-50">Task Set Description</td>
+                <td class="text-gray-800 line-height-3">{{ group.task_set_description }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Department Wise Tables -->
+        <div class="dept-summary-block mb-4" *ngFor="let dept of group.departments">
+          
+          <!-- Department Header Band -->
+          <div class="dept-band-header py-2 px-3 bg-gray-100 border-1 border-gray-300 font-bold text-center uppercase tracking-wide text-sm text-gray-800">
+            {{ dept.department_name }} - ( BR. {{ dept.branch_code }} ) | {{ dept.frequency }} | Period: {{ dept.compliance_period }}
+          </div>
+
+          <!-- Task Items Table -->
+          <div class="official-report-table-wrap">
+            <table class="official-report-table summary-dept-table">
+              <thead>
+                <tr>
+                  <th style="width: 4rem;" class="text-center">Sr. No.</th>
+                  <th style="width: 16rem;">Header</th>
+                  <th style="width: 24rem;">Observations</th>
+                  <th style="width: 24rem;">Compliance</th>
+                  <th style="width: 24rem;">Reviewer Comment</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let task of dept.tasks">
+                  <td class="text-center font-semibold">{{ task.sr_no }}</td>
+                  <td class="font-semibold text-gray-800">{{ task.header }}</td>
+                  <td class="text-gray-700 line-height-3">{{ task.observations }}</td>
+                  <td class="text-gray-800 line-height-3 white-space-pre-line">{{ task.compliance || '-' }}</td>
+                  <td class="text-gray-800 line-height-3 white-space-pre-line">{{ task.reviewer_comment || '-' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+
+      </div>
     </div>
 
   </div>
