@@ -155,6 +155,11 @@ export class CircularChatComponent implements OnInit, OnDestroy, AfterViewChecke
   messages = signal<ChatMessage[]>([]);
   isTyping = signal<boolean>(false);
   inputText = '';
+  sidebarCollapsed = signal<boolean>(false);
+
+  toggleSidebar() {
+    this.sidebarCollapsed.update(v => !v);
+  }
   elapsedSeconds = signal<number>(0);
   thinkingText = signal<string>('');
 

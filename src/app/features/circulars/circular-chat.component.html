@@ -12,6 +12,16 @@
         class="p-button-outlined p-button-secondary p-button-sm bg-white"
         (click)="goBack()"
       ></button>
+      <button
+        pButton
+        pRipple
+        type="button"
+        [icon]="sidebarCollapsed() ? 'pi pi-bars' : 'pi pi-chevron-left'"
+        [pTooltip]="sidebarCollapsed() ? 'Show Circular Details' : 'Hide Circular Details'"
+        tooltipPosition="bottom"
+        class="p-button-outlined p-button-secondary p-button-sm bg-white"
+        (click)="toggleSidebar()"
+      ></button>
       <div class="chat-topbar-title font-semibold text-xl text-900 flex align-items-center gap-2">
         <i class="pi pi-comments text-primary text-xl"></i>
         <span>AI Chat</span>
@@ -48,7 +58,7 @@
   <div class="chat-page-layout">
 
     <!-- Left Panel: Circular Info + Suggested Prompts -->
-    <aside class="chat-sidebar">
+    <aside class="chat-sidebar" [class.collapsed]="sidebarCollapsed()">
 
       <!-- Circular Info Card -->
       <div class="sidebar-card circular-info-card">
