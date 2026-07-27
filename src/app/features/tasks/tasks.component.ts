@@ -48,6 +48,9 @@ import { BulkUploadComponent } from './bulk-upload/bulk-upload.component';
               <i class="pi pi-file-pdf"></i><span>Download PDF</span>
             </a>
           }
+          @if (cameFromChat() && activeCircularId) {
+            <button pButton pRipple type="button" icon="pi pi-comments" label="Back to AI Chat" class="p-button-outlined p-button-primary p-button-sm" (click)="goToAIChat()"></button>
+          }
           <button *ngIf="pendingCount() > 0"
                   pButton pRipple type="button" 
                   icon="pi pi-check-circle" 
@@ -55,8 +58,10 @@ import { BulkUploadComponent } from './bulk-upload/bulk-upload.component';
                   class="p-button-success p-button-sm" 
                   [loading]="approvingAll()"
                   (click)="approveAllPendingTasks()"></button>
-          <button pButton pRipple type="button" icon="pi pi-list-check" label="Go to Task Set Master" class="p-button-outlined p-button-success p-button-sm" (click)="goToTaskSets()"></button>
-          <button pButton pRipple type="button" icon="pi pi-arrow-left" label="Back to Circulars" class="p-button-outlined p-button-secondary p-button-sm" (click)="goBackToCirculars()"></button>
+          @if (activeCircularId || cameFromCirculars()) {
+            <button pButton pRipple type="button" icon="pi pi-list-check" label="Go to Task Set Master" class="p-button-outlined p-button-success p-button-sm" (click)="goToTaskSets()"></button>
+            <button pButton pRipple type="button" icon="pi pi-arrow-left" label="Back to Circulars" class="p-button-outlined p-button-secondary p-button-sm" (click)="goBackToCirculars()"></button>
+          }
         </div>
       </div>
     }
@@ -65,7 +70,7 @@ import { BulkUploadComponent } from './bulk-upload/bulk-upload.component';
       <div class="flex align-items-center justify-content-between mb-4">
         <h5 class="m-0 text-xl font-semibold">Task Master</h5>
         <div class="flex align-items-center gap-2">
-          @if (cameFromCirculars() && !currentCircular()) {
+          @if ((cameFromCirculars() || activeCircularId) && !currentCircular()) {
             <button
               pButton
               type="button"
@@ -74,6 +79,16 @@ import { BulkUploadComponent } from './bulk-upload/bulk-upload.component';
               class="p-button-outlined p-button-secondary h-2.5rem flex align-items-center"
               (click)="goBackToCirculars()">
             </button>
+            @if (cameFromChat() && activeCircularId) {
+              <button
+                pButton
+                type="button"
+                icon="pi pi-comments"
+                label="Back to AI Chat"
+                class="p-button-outlined p-button-primary h-2.5rem flex align-items-center"
+                (click)="goToAIChat()">
+              </button>
+            }
             <button
               pButton
               type="button"
@@ -640,15 +655,12 @@ export class TasksComponent implements OnInit {
   allTasks = signal<ComplianceTask[]>([]);
   totalRecords = signal<number>(0);
 
-  // Pagination state
+  // Pagination & Filter state
   page = 1;
   limit = 10;
   searchQuery = '';
   selectedCircularFilter: number | null = null;
 
-  // Filtering Logic
-  // Since pagination is server-side, counts are updated from server response if available,
-  // or we can fetch a separate stats endpoint. For now, we will leave counts as 0 unless returned.
   totalCount = signal(0);
   pendingCount = signal(0);
   approvedCount = signal(0);
@@ -659,8 +671,21 @@ export class TasksComponent implements OnInit {
     this.loadTasks();
   }
 
+  get activeCircularId(): number | null {
+    return this.selectedCircularId || this.selectedCircularFilter || null;
+  }
+
   onFilterChange() {
     this.page = 1;
+    this.selectedCircularId = this.selectedCircularFilter || null;
+    if (this.selectedCircularId) {
+      this.api.getCircularById(this.selectedCircularId).subscribe({
+        next: (data) => this.currentCircular.set(data),
+        error: (err) => console.error('Failed to load circular details in tasks view:', err)
+      });
+    } else {
+      this.currentCircular.set(null);
+    }
     this.loadTasks();
   }
 
@@ -823,6 +848,7 @@ export class TasksComponent implements OnInit {
   parentPage: number | null = null;
   parentLimit: number | null = null;
   cameFromCirculars = signal<boolean>(false);
+  cameFromChat = signal<boolean>(false);
 
   get isCcoOrAdmin(): boolean {
     const role = this.auth.currentUser()?.role;
@@ -833,8 +859,9 @@ export class TasksComponent implements OnInit {
 
   goBackToCirculars() {
     const queryParams: any = {};
-    if (this.selectedCircularId) {
-      queryParams.highlight_id = this.selectedCircularId;
+    const id = this.activeCircularId;
+    if (id) {
+      queryParams.highlight_id = id;
     }
     if (this.parentPage) {
       queryParams.page = this.parentPage;
@@ -847,8 +874,9 @@ export class TasksComponent implements OnInit {
 
   goToTaskSets() {
     const queryParams: any = { came_from_tasks: true };
-    if (this.selectedCircularId) {
-      queryParams.circular_id = this.selectedCircularId;
+    const id = this.activeCircularId;
+    if (id) {
+      queryParams.circular_id = id;
     }
     if (this.parentPage) {
       queryParams.parent_page = this.parentPage;
@@ -859,6 +887,13 @@ export class TasksComponent implements OnInit {
     this.router.navigate(['/task-sets'], { queryParams });
   }
 
+  goToAIChat() {
+    const id = this.activeCircularId;
+    if (id) {
+      this.router.navigate(['/circulars', id, 'chat']);
+    }
+  }
+
   ngOnInit() {
     this.api.getTaskHeaders().subscribe(data => this.taskHeaders.set(data));
     this.api.getCirculars({ limit: 1000, has_tasks: true }).subscribe(res => this.circulars.set(res.data));
@@ -867,6 +902,12 @@ export class TasksComponent implements OnInit {
     this.route.queryParamMap.subscribe(params => {
       const circularId = params.get('circular_id');
       this.selectedCircularId = circularId ? Number(circularId) : null;
+      if (this.selectedCircularId) {
+        this.selectedCircularFilter = this.selectedCircularId;
+      }
+      const cameFromChat = params.get('came_from_chat');
+      this.cameFromChat.set(cameFromChat === 'true' || cameFromChat === '1');
+
       // Only show back/navigate buttons when explicitly navigated from circular master
       this.cameFromCirculars.set(!!circularId);
 

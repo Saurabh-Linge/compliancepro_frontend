@@ -4,6 +4,7 @@ import {
   OnDestroy,
   inject,
   signal,
+  effect,
   ElementRef,
   ViewChild,
   AfterViewChecked,
@@ -38,12 +39,81 @@ const SUGGESTED_PROMPTS: { label: string; icon: string; text: string }[] = [
   {
     label: 'Generate Tasks',
     icon: 'pi pi-cog',
-    text: 'Extract a clean list of actionable compliance tasks from this circular that need to be performed. Provide them as clear, concrete action items.',
+    text: `You are a regulatory compliance manager at an Urban Co-operative Bank (UCB) in India, regulated by RBI.
+
+STEP 1 – EXTRACT CIRCULAR IDENTITY (Circular No., Regulator, Date, Subject)
+
+STEP 2 – GENERATE TASKS: Extract every obligation and convert to structured task.
+
+Use departments: Board of Directors/Management Committee, CEO Office, Accounts & Finance, Credit & Advances, Deposits & Liability, Recovery & NPA, Audit & Inspection, Compliance & Legal, IT & CBS, HR & Training, Branch Operations, Treasury & Investments, KYC/AML Cell, Customer Service, Secretariat & Board Affairs, Risk Management Cell, Priority Sector Lending.
+
+Format each task:
+TASK-[N]
+Title: [Action title]
+Description: [What must be done, why]
+Department: [From list]
+Priority: [Critical/High/Medium/Low]
+Deadline: [Date or "Ongoing"]
+Frequency: [One-time/Monthly/Quarterly]
+Circular Ref: [Clause]
+
+After tasks: TASK SUMMARY with totals and department breakdown.
+
+STEP 3 – RBI AMENDMENT CHECK
+
+Rules: Every obligation to a task. Flag ambiguous with ⚠️ NEEDS CLARIFICATION.`,
   },
   {
     label: 'Summary',
     icon: 'pi pi-align-left',
-    text: 'Please provide a comprehensive summary of this circular. Outline the key requirements, the target departments, the effective date, and any primary reporting mandates.',
+    text: `You are a regulatory compliance expert specializing in Urban Co-operative Bank (UCB) regulations in India, governed primarily by RBI under the Banking Regulation Act, 1949 (as applicable to Co-operative Societies).
+
+The user has uploaded a regulatory circular as a PDF issued by RBI. Read the entire document carefully before responding.
+
+STEP 1 – EXTRACT CIRCULAR IDENTITY
+Before generating the summary, identify and note internally:
+- Circular Number / Reference No.
+- Issuing Regulator
+- Date of Issue
+- Subject / Title
+
+STEP 2 – GENERATE SUMMARY
+Produce a structured executive summary using exactly this format:
+
+CIRCULAR DETAILS
+---------------
+Regulator:
+Circular No.:
+Date of Issue:
+Effective Date:
+Subject:
+
+OBJECTIVE
+---------
+In 2–3 sentences, explain why this circular was issued and what regulatory concern it addresses, in the context of Urban Co-operative Banks.
+
+KEY HIGHLIGHTS
+--------------
+List the 5–7 most important points in plain language. Each point should be a complete sentence relevant to UCB operations.
+
+UCB ENTITIES AFFECTED
+----------------------
+Specify which UCBs are affected – Tier 1 / Tier 2 / Tier 3 / Tier 4, single-state / multi-state, scheduled / non-scheduled, or all UCBs.
+
+CRITICAL DEADLINES
+------------------
+List every date and timeline mentioned. If none, state "No explicit deadlines mentioned."
+
+PENALTIES FOR NON-COMPLIANCE
+-----------------------------
+State any consequences mentioned. If none, state "Not specified in this circular."
+
+STEP 3 – RBI AMENDMENT CHECK
+Search rbi.org.in for any amendments, corrigenda, addendums, or updates issued against this circular.
+
+Append: RBI AMENDMENT CHECK section.
+
+Rules: Base strictly on uploaded PDF. Use plain language for UCB compliance officers.`,
   },
   {
     label: 'Translation',
@@ -108,6 +178,38 @@ export class CircularChatComponent implements OnInit, OnDestroy, AfterViewChecke
   private elapsedTimer: ReturnType<typeof setInterval> | null = null;
   private thinkTimer: ReturnType<typeof setInterval> | null = null;
 
+  constructor() {
+    effect(() => {
+      const msgs = this.messages();
+      if (this.circularId && msgs && msgs.length > 0) {
+        try {
+          sessionStorage.setItem(`circular_chat_${this.circularId}`, JSON.stringify(msgs));
+        } catch (e) {
+          console.error('Failed to save chat history:', e);
+        }
+      }
+    });
+  }
+
+  private loadSavedChatHistory(): ChatMessage[] | null {
+    if (!this.circularId) return null;
+    try {
+      const saved = sessionStorage.getItem(`circular_chat_${this.circularId}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((m: any) => ({
+            ...m,
+            timestamp: m.timestamp ? new Date(m.timestamp) : new Date()
+          }));
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load chat history:', e);
+    }
+    return null;
+  }
+
   getFileUrl(url: string | null | undefined): string {
     return this.api.getFileUrl(url);
   }
@@ -139,13 +241,18 @@ export class CircularChatComponent implements OnInit, OnDestroy, AfterViewChecke
       next: (data) => {
         this.circular.set(data);
         this.loadingCircular.set(false);
-        this.messages.set([
-          {
-            role: 'ai',
-            content: `Hello! I'm Qwen, your compliance assistant. I've read the circular "${data.title}" and I'm ready to answer your questions. You can use the quick prompts on the left or ask me anything directly.`,
-            timestamp: new Date(),
-          },
-        ]);
+        const restored = this.loadSavedChatHistory();
+        if (restored && restored.length > 0) {
+          this.messages.set(restored);
+        } else {
+          this.messages.set([
+            {
+              role: 'ai',
+              content: `Hello! I'm Qwen, your compliance assistant. I've read the circular "${data.title}" and I'm ready to answer your questions. You can use the quick prompts on the left or ask me anything directly.`,
+              timestamp: new Date(),
+            },
+          ]);
+        }
         this.shouldScrollToBottom = true;
         this.loadLinkedCirculars();
       },
@@ -284,6 +391,11 @@ export class CircularChatComponent implements OnInit, OnDestroy, AfterViewChecke
     this.isTyping.set(false);
     this.elapsedSeconds.set(0);
     this.thinkingText.set('');
+    if (this.circularId) {
+      try {
+        sessionStorage.removeItem(`circular_chat_${this.circularId}`);
+      } catch (e) { }
+    }
     this.messages.set(
       c
         ? [{ role: 'ai', content: `Chat cleared. I still have the full context of "${c.title}". What would you like to know?`, timestamp: new Date() }]
@@ -542,25 +654,93 @@ export class CircularChatComponent implements OnInit, OnDestroy, AfterViewChecke
     if (!text) return '';
     let html = text;
 
-    // Normalize carriage returns: \r\n -> \n
+    // 1. Normalize carriage returns
     html = html.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
-    // Escape basic HTML characters to avoid security risks
+    // 2. Escape basic HTML characters
     html = html
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
 
-    // Parse Bold text: **text** -> <strong>text</strong>
+    // 3. Backtick inline code: `text` -> <code class="markdown-inline-code">text</code>
+    html = html.replace(/`(.*?)`/g, '<code class="markdown-inline-code">$1</code>');
+
+    // 4. Bold text: **text** -> <strong>text</strong>
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
-    // Parse headers: ### text or ## text -> <h4>text</h4>
-    html = html.replace(/^(?:###|##)\s+(.*?)$/gm, '<span class="markdown-header">$1</span>');
+    // 5. STEP Badges: STEP 1 - ..., STEP 2 - ..., STEP 3 - ...
+    html = html.replace(/^(STEP\s+\d+.*?)$/gmi, '<div class="chat-step-badge"><i class="pi pi-compass"></i> $1</div>');
 
-    // Parse list items: - text or * text -> <li class="markdown-li">text</li>
+    // 6. Section Headers (CIRCULAR DETAILS, OBJECTIVE, KEY HIGHLIGHTS, etc.)
+    html = html.replace(/^(CIRCULAR DETAILS|OBJECTIVE|KEY HIGHLIGHTS|UCB ENTITIES AFFECTED|CRITICAL DEADLINES|PENALTIES FOR NON-COMPLIANCE|TASK SUMMARY)\s*\n[-=]{3,}/gmi, 
+      '<div class="chat-section-header">$1</div>');
+
+    // 7. Markdown headers: ### text or ## text
+    html = html.replace(/^(?:###|##)\s+(.*?)$/gm, '<h4 class="markdown-h4">$1</h4>');
+
+    // 8. Convert TASK-N blocks into styled Task Cards
+    html = html.replace(/^(TASK-[\d\w\[\]]+)\s*\n((?:(?:Title|Description|Department|Priority|Deadline|Frequency|Circular Ref):\s*.*\n?)+)/gmi, (match, taskNo, body) => {
+      let title = '';
+      let desc = '';
+      let dept = '';
+      let priority = 'Medium';
+      let deadline = '';
+      let frequency = '';
+      let circularRef = '';
+
+      const lines = body.split('\n');
+      for (const line of lines) {
+        const colonIdx = line.indexOf(':');
+        if (colonIdx === -1) continue;
+        const key = line.substring(0, colonIdx).trim().toLowerCase();
+        const val = line.substring(colonIdx + 1).trim();
+
+        if (key === 'title') title = val;
+        else if (key === 'description') desc = val;
+        else if (key === 'department') dept = val;
+        else if (key === 'priority') priority = val;
+        else if (key === 'deadline') deadline = val;
+        else if (key === 'frequency') frequency = val;
+        else if (key === 'circular ref') circularRef = val;
+      }
+
+      const prioLower = priority.toLowerCase();
+      let prioClass = 'prio-medium';
+      if (prioLower.includes('critical')) prioClass = 'prio-critical';
+      else if (prioLower.includes('high')) prioClass = 'prio-high';
+      else if (prioLower.includes('low')) prioClass = 'prio-low';
+
+      const cleanTaskNo = taskNo.replace(/\[|\]/g, '');
+
+      return `
+        <div class="ai-task-card">
+          <div class="ai-task-card-header">
+            <span class="ai-task-number">${cleanTaskNo}</span>
+            <span class="ai-task-title">${title || 'Action Item'}</span>
+            ${priority ? `<span class="ai-task-prio ${prioClass}">${priority}</span>` : ''}
+          </div>
+          ${desc ? `<div class="ai-task-card-desc">${desc}</div>` : ''}
+          <div class="ai-task-card-meta">
+            ${dept ? `<span class="ai-task-pill dept-pill"><i class="pi pi-building"></i> ${dept}</span>` : ''}
+            ${deadline ? `<span class="ai-task-pill meta-pill"><i class="pi pi-calendar"></i> ${deadline}</span>` : ''}
+            ${frequency ? `<span class="ai-task-pill meta-pill"><i class="pi pi-sync"></i> ${frequency}</span>` : ''}
+            ${circularRef ? `<span class="ai-task-pill meta-pill"><i class="pi pi-bookmark"></i> ${circularRef}</span>` : ''}
+          </div>
+        </div>
+      `;
+    });
+
+    // 9. Key-Value identity rows (Circular No.:, Regulator:, Date:, Subject:, Effective Date:, etc.)
+    html = html.replace(/^(Regulator|Issuing Regulator|Circular No\.|Date of Issue|Effective Date|Subject|Title|Date|Circular Ref):\s*(.*)$/gmi, (match, label, val) => {
+      if (!val) return match;
+      return `<div class="ai-kv-row"><span class="ai-kv-label">${label}:</span> <span class="ai-kv-val">${val}</span></div>`;
+    });
+
+    // 10. List items (- Item or * Item)
     html = html.replace(/^-\s+(.*?)$/gm, '<li class="markdown-li">$1</li>');
 
-    // Parse tables
+    // 11. Tables
     const lines = html.split('\n');
     let inTable = false;
     let tableHtml = '';
@@ -607,32 +787,57 @@ export class CircularChatComponent implements OnInit, OnDestroy, AfterViewChecke
       outputLines.push(tableHtml);
     }
 
-    return outputLines.join('\n');
+    let result = outputLines.join('\n');
+
+    // 12. Strip empty whitespace & linebreaks between HTML block elements
+    result = result.replace(/<\/div>\s*[\r\n]+\s*/gi, '</div>');
+    result = result.replace(/\s*[\r\n]+\s*<div/gi, '<div');
+    result = result.replace(/[\r\n]{2,}/g, '<br/>');
+    result = result.replace(/[\r\n]+/g, ' ');
+
+    return result;
   }
 
   loadingExtractionMap: { [timestampKey: number]: boolean } = {};
   showPreviewDialog = signal<boolean>(false);
   previewTasks = signal<{ description: string; checked: boolean }[]>([]);
   savingTasks = signal<boolean>(false);
+  showImportSuccessModal = signal<boolean>(false);
+  importedTaskCount = signal<number>(0);
 
   shouldShowImportButton(msg: ChatMessage, index: number): boolean {
     if (!msg || msg.role !== 'ai') return false;
     if (msg.isTaskGeneration) return true;
 
+    // Check user prompt trigger
     if (index > 0) {
       const prevMsg = this.messages()[index - 1];
       if (prevMsg && prevMsg.role === 'user') {
-        const text = prevMsg.content || '';
-        const lowerText = text.toLowerCase();
+        const text = (prevMsg.content || '').toLowerCase();
+        // Exclude Summary requests explicitly
+        if (text.includes('generate summary') || text.includes('executive summary')) {
+          return false;
+        }
         if (
-          lowerText.includes('compliance tasks') ||
-          lowerText.includes('generate tasks') ||
-          lowerText.includes('extract a clean list')
+          text.includes('generate tasks') ||
+          text.includes('extract every obligation') ||
+          text.includes('task-[n]') ||
+          text.includes('compliance tasks') ||
+          text.includes('extract a clean list')
         ) {
           return true;
         }
       }
     }
+
+    // Check if AI response itself is a task generation response
+    const content = msg.content || '';
+    if (content.includes('TASK-1') || content.includes('GENERATE TASKS')) {
+      if (!content.includes('CIRCULAR DETAILS') && !content.includes('GENERATE SUMMARY')) {
+        return true;
+      }
+    }
+
     return false;
   }
 
@@ -695,6 +900,8 @@ export class CircularChatComponent implements OnInit, OnDestroy, AfterViewChecke
       next: () => {
         this.savingTasks.set(false);
         this.showPreviewDialog.set(false);
+        this.importedTaskCount.set(selected.length);
+        this.showImportSuccessModal.set(true);
         this.messageService.add({
           severity: 'success',
           summary: 'Import Successful',
@@ -713,6 +920,17 @@ export class CircularChatComponent implements OnInit, OnDestroy, AfterViewChecke
         console.error(err);
       }
     });
+  }
+
+  goToTaskMaster(): void {
+    this.showImportSuccessModal.set(false);
+    this.router.navigate(['/tasks'], {
+      queryParams: { circular_id: this.circularId, came_from_chat: true }
+    });
+  }
+
+  stayHere(): void {
+    this.showImportSuccessModal.set(false);
   }
 
   private scrollToBottom(): void {

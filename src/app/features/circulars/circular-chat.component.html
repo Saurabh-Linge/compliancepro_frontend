@@ -21,16 +21,27 @@
         }
       </div>
     </div>
-    <button
-      pButton
-      pRipple
-      icon="pi pi-refresh"
-      class="p-button-outlined p-button-secondary p-button-sm bg-white"
-      pTooltip="Clear chat"
-      tooltipPosition="left"
-      (click)="clearChat()"
-      [disabled]="messages().length === 0"
-    ></button>
+    <div class="flex align-items-center gap-2">
+      <button
+        pButton
+        pRipple
+        type="button"
+        icon="pi pi-list-check"
+        label="Go to Task Master"
+        class="p-button-outlined p-button-success p-button-sm bg-white"
+        (click)="goToTaskMaster()"
+      ></button>
+      <button
+        pButton
+        pRipple
+        icon="pi pi-refresh"
+        class="p-button-outlined p-button-secondary p-button-sm bg-white"
+        pTooltip="Clear chat"
+        tooltipPosition="left"
+        (click)="clearChat()"
+        [disabled]="messages().length === 0"
+      ></button>
+    </div>
   </div>
 
   <!-- Body: sidebar + chat -->
@@ -350,9 +361,9 @@
               >
                 <span class="message-text" [innerHTML]="renderMarkdown(msg.content)"></span>
 
-                <!-- Import Button for AI responses that contain tasks/tables/lists -->
+                <!-- Import & Navigation Buttons for AI responses that contain tasks/tables/lists -->
                 @if (msg.role === 'ai' && shouldShowImportButton(msg, idx)) {
-                  <div class="message-actions mt-2 flex justify-content-end border-top-1 pt-2" style="border-top: 1px dashed var(--surface-border)">
+                  <div class="message-actions mt-2 flex justify-content-end gap-2 border-top-1 pt-2" style="border-top: 1px dashed var(--surface-border)">
                     <button
                       pButton
                       pRipple
@@ -362,6 +373,16 @@
                       class="p-button-outlined p-button-primary p-button-sm"
                       [loading]="loadingExtractionMap[msg.timestamp.getTime()]"
                       (click)="extractAndPreviewTasks(msg)"
+                    ></button>
+                    <button
+                      pButton
+                      pRipple
+                      type="button"
+                      icon="pi pi-arrow-right"
+                      iconPos="right"
+                      label="Go to Task Master"
+                      class="p-button-outlined p-button-success p-button-sm"
+                      (click)="goToTaskMaster()"
                     ></button>
                   </div>
                 }
@@ -545,5 +566,53 @@
       [disabled]="savingTasks() || getCheckedPreviewCount() === 0"
       (click)="savePreviewedTasks()"
     ></button>
+  </ng-template>
+</p-dialog>
+
+<!-- Post-Import Action Modal -->
+<p-dialog
+  header="Tasks Imported Successfully"
+  [visible]="showImportSuccessModal()"
+  (visibleChange)="showImportSuccessModal.set($event)"
+  [modal]="true"
+  [style]="{ width: '32rem', maxWidth: '95vw' }"
+  [dismissableMask]="true"
+  appendTo="body"
+>
+  <div class="flex flex-column align-items-center text-center p-3 gap-3">
+    <div class="flex align-items-center justify-content-center bg-green-100 border-circle" style="width: 4rem; height: 4rem;">
+      <i class="pi pi-check-circle text-green-600 text-3xl"></i>
+    </div>
+    <div>
+      <h3 class="m-0 text-xl font-bold text-900">Tasks Added to Task Master</h3>
+      <p class="text-600 text-sm mt-2 mb-0 line-height-3">
+        <strong>{{ importedTaskCount() }}</strong> task(s) have been successfully imported for this circular.
+        What would you like to do next?
+      </p>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-end gap-2 w-full">
+      <button
+        pButton
+        pRipple
+        type="button"
+        icon="pi pi-comments"
+        label="Stay Here"
+        class="p-button-outlined p-button-secondary"
+        (click)="stayHere()"
+      ></button>
+      <button
+        pButton
+        pRipple
+        type="button"
+        icon="pi pi-arrow-right"
+        iconPos="right"
+        label="Go to Task Master"
+        class="p-button-success"
+        (click)="goToTaskMaster()"
+      ></button>
+    </div>
   </ng-template>
 </p-dialog>
