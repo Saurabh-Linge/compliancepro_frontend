@@ -116,11 +116,15 @@
 
   .p-dropdown-item,
   .p-select-option {
-    white-space: normal !important;
-    word-break: break-word !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    height: 38px !important;
+    line-height: 38px !important;
     font-size: 0.85rem !important;
-    padding: 0.5rem 0.75rem !important;
-    line-height: 1.35 !important;
+    padding: 0 0.75rem !important;
+    display: block !important;
+    box-sizing: border-box !important;
   }
 }
 
