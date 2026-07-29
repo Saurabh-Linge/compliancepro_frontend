@@ -75,9 +75,11 @@
 
                     <div class="field col-12">
                         <app-text-field
-                            label="Password"
-                            placeholder="Leave blank to keep existing..."
-                            [field]="password">
+                            [label]="userId() ? 'Password' : 'Password'"
+                            [placeholder]="userId() ? 'Leave blank to keep existing...' : 'Enter password'"
+                            [field]="password"
+                            [required]="!userId()"
+                            [error]="submitted() && !userId() && !password().trim() ? 'Password is required for new users' : ''">
                         </app-text-field>
                     </div>
                 </div>

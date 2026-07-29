@@ -350,7 +350,11 @@ export class Users implements OnInit {
   saveUser() {
     this.submitted.set(true);
 
-    if (this.username().trim() && this.fullName().trim() && this.role()) {
+    const isNew = !this.userId();
+    // For new users, password is required
+    const isPasswordValid = !isNew || !!this.password().trim();
+
+    if (this.username().trim() && this.fullName().trim() && this.role() && isPasswordValid) {
       this.saving.set(true);
       const payload: any = {
         username: this.username(),
