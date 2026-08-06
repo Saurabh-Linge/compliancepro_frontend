@@ -27,7 +27,6 @@ import { DrawerModule } from 'primeng/drawer';
     TextFieldComponent,
     PageComponent
   ],
-  providers: [MessageService, ConfirmationService],
   templateUrl: './authorities.html',
   styleUrls: ['./authorities.scss']
 })
@@ -38,9 +37,10 @@ export class Authorities implements OnInit {
 
   authorities = signal<Authority[]>([]);
   loading = signal<boolean>(true);
+  saving = signal<boolean>(false);
 
   authorityDialog = signal<boolean>(false);
-  
+
   // Form signals
   authId = signal<number | null>(null);
   authName = signal<string>('');
@@ -70,12 +70,15 @@ export class Authorities implements OnInit {
     this.loadAuthorities();
   }
 
-  loadAuthorities() {
+  loadAuthorities(isRefresh = false) {
     this.loading.set(true);
     this.apiService.getAuthorities().subscribe({
       next: (data) => {
         this.authorities.set(data);
         this.loading.set(false);
+        if (isRefresh) {
+          this.messageService.add({ severity: 'info', summary: 'Refreshed', detail: 'Authorities list refreshed', life: 2500 });
+        }
       },
       error: () => {
         this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to load authorities' });
@@ -127,6 +130,7 @@ export class Authorities implements OnInit {
     this.submitted.set(true);
 
     if (this.authName().trim()) {
+      this.saving.set(true);
       const payload: any = {
         name: this.authName(),
         source_url: this.authSourceUrl()
@@ -136,6 +140,7 @@ export class Authorities implements OnInit {
       if (id) {
         this.apiService.updateAuthority(id, payload).subscribe({
           next: (res) => {
+            this.saving.set(false);
             this.authorities.update(auths => {
               const index = auths.findIndex((a) => a.id === id);
               if (index !== -1) auths[index] = res;
@@ -145,17 +150,20 @@ export class Authorities implements OnInit {
             this.authorityDialog.set(false);
           },
           error: () => {
+            this.saving.set(false);
             this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to update authority' });
           }
         });
       } else {
         this.apiService.createAuthority(payload).subscribe({
           next: (res) => {
+            this.saving.set(false);
             this.authorities.update(auths => [...auths, res]);
             this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'Authority Created', life: 3000 });
             this.authorityDialog.set(false);
           },
           error: () => {
+            this.saving.set(false);
             this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to create authority' });
           }
         });

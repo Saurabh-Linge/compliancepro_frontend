@@ -43,7 +43,6 @@ import { DateFieldComponent } from '../../shared/components/form/date-field/date
     SelectModule,
     TagModule
   ],
-  providers: [MessageService, ConfirmationService],
   templateUrl: './task-sets.html',
   styles: [`
     ::ng-deep .circular-dropdown-panel {
@@ -155,6 +154,7 @@ export class TaskSetsComponent implements OnInit {
   taskSets = signal<any[]>([]);
   loadingRowIds = signal<Set<string>>(new Set());
   generatedTaskSetIds = new Set<number>();
+  saving = signal<boolean>(false);
 
   tableColumns: TableColumn[] = [
     { field: 'circular_title', header: 'Circular Title', type: 'text', width: '25%' },
@@ -429,13 +429,21 @@ export class TaskSetsComponent implements OnInit {
     }
   }
 
-  loadData() {
-    this.api.getTaskSets().subscribe(data => {
-      const mapped = data.map((row: any) => ({
-        ...row,
-        frequency: this.frequencyMap[row.frequency] ?? row.frequency
-      }));
-      this.taskSets.set(mapped);
+  loadData(isRefresh = false) {
+    this.api.getTaskSets().subscribe({
+      next: (data) => {
+        const mapped = data.map((row: any) => ({
+          ...row,
+          frequency: this.frequencyMap[row.frequency] ?? row.frequency
+        }));
+        this.taskSets.set(mapped);
+        if (isRefresh) {
+          this.messageService.add({ severity: 'info', summary: 'Refreshed', detail: 'Task sets list refreshed', life: 2500 });
+        }
+      },
+      error: () => {
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to load task sets' });
+      }
     });
   }
 
@@ -546,6 +554,7 @@ export class TaskSetsComponent implements OnInit {
       return;
     }
 
+    this.saving.set(true);
     const payload = {
       name: this.newTaskSetName(),
       circular_id: this.newTaskSetCircularId() || undefined,
@@ -565,38 +574,72 @@ export class TaskSetsComponent implements OnInit {
         due_date: (t.due_date ? this.formatDate(t.due_date) : null) ?? null
       }));
 
-      this.api.updateTaskSetMapping(setId, taskIds, taskTimelines).subscribe(() => {
-        this.api.updateTaskSetBranches(setId, branchIds).subscribe(() => {
-          if (branchIds && branchIds.length > 0) {
-            this.api.generateAssignments(setId).subscribe(() => {
-              this.showFormDrawer.set(false);
-              this.loadData();
-              this.messageService.add({
-                severity: 'success',
-                summary: 'Success',
-                detail: 'Task set saved and assignments generated for selected units.'
-              });
-            });
-          } else {
-            this.showFormDrawer.set(false);
-            this.loadData();
-            this.messageService.add({
-              severity: 'success',
-              summary: 'Success',
-              detail: 'Task set and mappings updated.'
-            });
-          }
-        });
+      this.api.updateTaskSetMapping(setId, taskIds, taskTimelines).subscribe({
+        next: () => {
+          this.api.updateTaskSetBranches(setId, branchIds).subscribe({
+            next: () => {
+              if (branchIds && branchIds.length > 0) {
+                this.api.generateAssignments(setId).subscribe({
+                  next: () => {
+                    this.saving.set(false);
+                    this.showFormDrawer.set(false);
+                    this.loadData();
+                    this.messageService.add({
+                      severity: 'success',
+                      summary: 'Successful',
+                      detail: this.isEditMode ? 'Task set updated and assignments generated.' : 'Task set created and assignments generated for selected units.',
+                      life: 3000
+                    });
+                  },
+                  error: () => {
+                    this.saving.set(false);
+                    this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to generate assignments' });
+                  }
+                });
+              } else {
+                this.saving.set(false);
+                this.showFormDrawer.set(false);
+                this.loadData();
+                this.messageService.add({
+                  severity: 'success',
+                  summary: 'Successful',
+                  detail: this.isEditMode ? 'Task set updated successfully.' : 'Task set created successfully.',
+                  life: 3000
+                });
+              }
+            },
+            error: () => {
+              this.saving.set(false);
+              this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to update branch mappings' });
+            }
+          });
+        },
+        error: () => {
+          this.saving.set(false);
+          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to update task set mappings' });
+        }
       });
     };
 
     if (this.isEditMode && this.selectedTaskSet) {
-      this.api.updateTaskSet(this.selectedTaskSet.id, payload).subscribe(() => {
-        finalizeAssignments(this.selectedTaskSet.id);
+      this.api.updateTaskSet(this.selectedTaskSet.id, payload).subscribe({
+        next: () => {
+          finalizeAssignments(this.selectedTaskSet.id);
+        },
+        error: () => {
+          this.saving.set(false);
+          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to update task set' });
+        }
       });
     } else {
-      this.api.createTaskSet(payload).subscribe((newSet) => {
-        finalizeAssignments(newSet.id);
+      this.api.createTaskSet(payload).subscribe({
+        next: (newSet) => {
+          finalizeAssignments(newSet.id);
+        },
+        error: () => {
+          this.saving.set(false);
+          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to create task set' });
+        }
       });
     }
   }

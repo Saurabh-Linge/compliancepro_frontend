@@ -33,7 +33,6 @@ import { DrawerModule } from 'primeng/drawer';
     MultiSelectModule,
     PageComponent
   ],
-  providers: [MessageService, ConfirmationService],
   templateUrl: './users.html',
   styles: [`
     :host ::ng-deep .drawer-layout .p-drawer-content {
@@ -201,7 +200,7 @@ export class Users implements OnInit {
     this.loadData();
   }
 
-  loadData() {
+  loadData(isRefresh = false) {
     this.loading.set(true);
     this.apiService.getBranches().subscribe(br => {
       this.rawBranches.set(br);
@@ -210,6 +209,9 @@ export class Users implements OnInit {
         next: (data) => {
           this.users.set(data);
           this.loading.set(false);
+          if (isRefresh) {
+            this.messageService.add({ severity: 'info', summary: 'Refreshed', detail: 'Users list refreshed', life: 2500 });
+          }
         },
         error: () => {
           this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to load users' });
@@ -288,65 +290,6 @@ export class Users implements OnInit {
     this.submitted.set(false);
   }
 
-  // saveUser() {
-  //   this.submitted.set(true);
-
-  //   if (this.username().trim() && this.fullName().trim() && this.role()) {
-  //     this.saving.set(true);
-  //     const payload: any = {
-  //       username: this.username(),
-  //       full_name: this.fullName(),
-  //       email: this.email(),
-  //       role: this.role(),
-  //       branch_id: this.role() !== 'CO' ? this.branchId() : null,
-  //       managed_branch_ids: this.role() === 'CO' ? this.managedBranchIds() : [],
-  //       is_active: this.isActive()
-  //     };
-
-  //     if (this.password()) {
-  //       payload.password = this.password();
-  //     }
-
-  //     const id = this.userId();
-  //     if (id) {
-  //       this.apiService.updateUser(id, payload).subscribe({
-  //         next: (res) => {
-  //           this.users.update(list => {
-  //             const index = list.findIndex((u) => u.id === id);
-  //             if (index !== -1) {
-  //               list[index] = { ...list[index], ...res };
-  //               const branch = this.branches().find(b => b.value === res.branch_id);
-  //               if (branch) list[index].branch_name = branch.label;
-  //             }
-  //             return [...list];
-  //           });
-  //           this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'User Updated', life: 3000 });
-  //           this.userDialog.set(false);
-  //           this.loadData(); // Reload to refresh branch assignments state
-  //         },
-  //         error: () => {
-  //           this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to update user' });
-  //         }
-  //       });
-  //     } else {
-  //       this.apiService.createUser(payload).subscribe({
-  //         next: (res) => {
-  //           const branch = this.branches().find(b => b.value === res.branch_id);
-  //           if (branch) res.branch_name = branch.label;
-
-  //           this.users.update(list => [...list, res]);
-  //           this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'User Created', life: 3000 });
-  //           this.userDialog.set(false);
-  //           this.loadData(); // Reload to refresh branch assignments state
-  //         },
-  //         error: () => {
-  //           this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to create user' });
-  //         }
-  //       });
-  //     }
-  //   }
-  // }
-
   saveUser() {
     this.submitted.set(true);
 
@@ -374,7 +317,7 @@ export class Users implements OnInit {
       if (id) {
         this.apiService.updateUser(id, payload).subscribe({
           next: (res) => {
-            this.saving.set(false); // 1. Turn off loader on update success
+            this.saving.set(false); // Turn off loader on update success
             this.users.update(list => {
               const index = list.findIndex((u) => u.id === id);
               if (index !== -1) {
@@ -389,14 +332,14 @@ export class Users implements OnInit {
             this.loadData();
           },
           error: () => {
-            this.saving.set(false); // 2. Turn off loader on update error
+            this.saving.set(false); // Turn off loader on update error
             this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to update user' });
           }
         });
       } else {
         this.apiService.createUser(payload).subscribe({
           next: (res) => {
-            this.saving.set(false); // 3. Turn off loader on create success
+            this.saving.set(false); // Turn off loader on create success
             const branch = this.branches().find(b => b.value === res.branch_id);
             if (branch) res.branch_name = branch.label;
 
@@ -406,7 +349,7 @@ export class Users implements OnInit {
             this.loadData();
           },
           error: () => {
-            this.saving.set(false); // 4. Turn off loader on create error
+            this.saving.set(false); // Turn off loader on create error
             this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to create user' });
           }
         });

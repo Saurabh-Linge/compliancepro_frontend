@@ -58,7 +58,6 @@ import { TooltipModule } from 'primeng/tooltip';
     TooltipModule,
     DateRangeFieldComponent
   ],
-  providers: [ConfirmationService, MessageService],
   templateUrl: './circulars.component.html',
   styleUrl: './circulars.component.css'
 })
@@ -396,7 +395,7 @@ export class CircularsComponent implements OnInit, OnDestroy {
     return `${year}-${month}-${day}`;
   }
 
-  loadData() {
+  loadData(isRefresh = false) {
     const params: any = {
       page: this.page,
       limit: this.limit,
@@ -426,6 +425,9 @@ export class CircularsComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.circulars.set(res.data);
         this.totalRecords.set(res.total);
+        if (isRefresh) {
+          this.messageService.add({ severity: 'info', summary: 'Refreshed', detail: 'Circulars list refreshed', life: 2500 });
+        }
 
         // Auto scroll to highlighted row if exists
         if (this.highlightedCircularId()) {

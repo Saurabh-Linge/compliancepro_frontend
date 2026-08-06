@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ComplianceApiService } from '../../core/services/api/compliance-api.service';
@@ -8,11 +8,14 @@ import { PageComponent } from '../../shared/components/page/page.component';
 import { DialogModule } from 'primeng/dialog';
 import { DrawerModule } from 'primeng/drawer';
 import { ButtonModule } from 'primeng/button';
+import { ToastModule } from 'primeng/toast';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 @Component({
   selector: 'app-task-headers',
   standalone: true,
-  imports: [CommonModule, FormsModule, TableComponent, TextFieldComponent, PageComponent, DialogModule, DrawerModule, ButtonModule],
+  imports: [CommonModule, FormsModule, TableComponent, TextFieldComponent, PageComponent, DialogModule, DrawerModule, ButtonModule, ToastModule, ConfirmDialogModule],
   template: `
     <div class="card">
       <div class="flex align-items-center justify-content-between mb-4">
@@ -23,7 +26,7 @@ import { ButtonModule } from 'primeng/button';
           [columns]="columns"
           [actions]="actions"
           (onAdd)="openModal()"
-          (onRefresh)="loadHeaders()"
+          (onRefresh)="loadHeaders(true)"
         ></app-table>
       </div>
 
@@ -77,7 +80,7 @@ import { ButtonModule } from 'primeng/button';
         <ng-template pTemplate="footer">
           <div class="drawer-footer-row">
             <button pButton pRipple label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary" (click)="showModal.set(false)"></button>
-            <button pButton pRipple label="Save" icon="pi pi-check" class="p-button-primary" (click)="save()"></button>
+            <button pButton pRipple label="Save" icon="pi pi-check" class="p-button-primary" [loading]="saving()" [disabled]="saving()" (click)="save()"></button>
           </div>
         </ng-template>
       </p-drawer>
@@ -190,8 +193,13 @@ import { ButtonModule } from 'primeng/button';
   `]
 })
 export class TaskHeadersComponent implements OnInit {
+  private api = inject(ComplianceApiService);
+  private messageService = inject(MessageService);
+  private confirmationService = inject(ConfirmationService);
+
   headers = signal<any[]>([]);
   showModal = signal(false);
+  saving = signal(false);
   
   headerName = signal('');
   submitted = signal(false);
@@ -213,18 +221,26 @@ export class TaskHeadersComponent implements OnInit {
       label: 'Delete',
       icon: 'pi pi-trash',
       styleClass: 'text-red-500',
-      command: (row: any) => this.deleteHeader(row.id)
+      command: (row: any) => this.deleteHeader(row)
     }
   ];
-
-  constructor(private api: ComplianceApiService) {}
 
   ngOnInit() {
     this.loadHeaders();
   }
 
-  loadHeaders() {
-    this.api.getTaskHeaders().subscribe((data: any) => this.headers.set(data));
+  loadHeaders(isRefresh = false) {
+    this.api.getTaskHeaders().subscribe({
+      next: (data: any) => {
+        this.headers.set(data);
+        if (isRefresh) {
+          this.messageService.add({ severity: 'info', summary: 'Refreshed', detail: 'Task headers list refreshed', life: 2500 });
+        }
+      },
+      error: () => {
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to load task headers' });
+      }
+    });
   }
 
   openModal() {
@@ -241,12 +257,23 @@ export class TaskHeadersComponent implements OnInit {
     this.showModal.set(true);
   }
 
-  deleteHeader(id: number) {
-    if (confirm('Are you sure you want to delete this task header?')) {
-      this.api.deleteTaskHeader(id).subscribe(() => {
-        this.loadHeaders();
-      });
-    }
+  deleteHeader(row: any) {
+    this.confirmationService.confirm({
+      message: 'Are you sure you want to delete ' + (row.name || 'this task header') + '?',
+      header: 'Confirm',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        this.api.deleteTaskHeader(row.id).subscribe({
+          next: () => {
+            this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'Task Header Deleted', life: 3000 });
+            this.loadHeaders();
+          },
+          error: () => {
+            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to delete task header' });
+          }
+        });
+      }
+    });
   }
 
   save() {
@@ -255,15 +282,32 @@ export class TaskHeadersComponent implements OnInit {
       return;
     }
 
+    this.saving.set(true);
     if (this.editingId) {
-      this.api.updateTaskHeader(this.editingId, this.headerName()).subscribe(() => {
-        this.showModal.set(false);
-        this.loadHeaders();
+      this.api.updateTaskHeader(this.editingId, this.headerName()).subscribe({
+        next: () => {
+          this.saving.set(false);
+          this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'Task Header Updated', life: 3000 });
+          this.showModal.set(false);
+          this.loadHeaders();
+        },
+        error: () => {
+          this.saving.set(false);
+          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to update task header' });
+        }
       });
     } else {
-      this.api.createTaskHeader(this.headerName()).subscribe(() => {
-        this.showModal.set(false);
-        this.loadHeaders();
+      this.api.createTaskHeader(this.headerName()).subscribe({
+        next: () => {
+          this.saving.set(false);
+          this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'Task Header Created', life: 3000 });
+          this.showModal.set(false);
+          this.loadHeaders();
+        },
+        error: () => {
+          this.saving.set(false);
+          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to create task header' });
+        }
       });
     }
   }

@@ -11,7 +11,7 @@
           [showRefreshButton]="true"
           [paginator]="true"
           [rows]="10"
-          (onRefresh)="loadBranches()"
+          (onRefresh)="loadBranches(true)"
       >
         <div toolbar-actions class="flex align-items-center ml-2">
           <p-select
@@ -91,7 +91,7 @@
     <ng-template pTemplate="footer">
         <div class="drawer-footer-row">
             <button pButton pRipple label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary" (click)="hideDialog()"></button>
-            <button pButton pRipple label="Save" icon="pi pi-check" class="p-button-primary" (click)="saveBranch()"></button>
+            <button pButton pRipple label="Save" icon="pi pi-check" class="p-button-primary" [loading]="saving()" [disabled]="saving()" (click)="saveBranch()"></button>
         </div>
     </ng-template>
 </p-drawer>

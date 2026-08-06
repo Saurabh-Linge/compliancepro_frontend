@@ -24,7 +24,6 @@ import { BulkUploadComponent } from './bulk-upload/bulk-upload.component';
   selector: 'app-tasks',
   standalone: true,
   imports: [CommonModule, FormsModule, DialogModule, DrawerModule, ButtonModule, TabsModule, PageComponent, TableComponent, TextareaFieldComponent, SelectFieldComponent, SelectModule, TableModule, ToastModule, TagModule, FileUploadModule, BulkUploadComponent],
-  providers: [MessageService],
   template: `
     @if (currentCircular()) {
       <div class="card mb-4 surface-card border-round border-1 surface-border p-3 flex flex-column md:flex-row md:align-items-center md:justify-content-between gap-3">
@@ -160,7 +159,7 @@ import { BulkUploadComponent } from './bulk-upload/bulk-upload.component';
             [totalRecords]="totalRecords()"
             (onLazyLoad)="handleLazyLoad($event)"
             (onSearch)="handleSearch($event)"
-            (onRefresh)="loadTasks()"
+            (onRefresh)="loadTasks(true)"
           >
             <ng-container toolbar-actions>
               <div class="flex gap-2 align-items-center">
@@ -343,7 +342,7 @@ import { BulkUploadComponent } from './bulk-upload/bulk-upload.component';
         <ng-template pTemplate="footer">
           <div class="drawer-footer-row">
             <button pButton pRipple type="button" label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary" (click)="showEditModal.set(false)"></button>
-            <button pButton pRipple type="button" label="Save Changes" icon="pi pi-check" [disabled]="!editTaskDescription().trim()" (click)="saveEditedTask()"></button>
+            <button pButton pRipple type="button" label="Save Changes" icon="pi pi-check" [loading]="savingEdit()" [disabled]="!editTaskDescription().trim() || savingEdit()" (click)="saveEditedTask()"></button>
           </div>
         </ng-template>
       </p-drawer>
@@ -486,7 +485,7 @@ import { BulkUploadComponent } from './bulk-upload/bulk-upload.component';
         <ng-template pTemplate="footer">
           <div class="drawer-footer-row">
             <button pButton pRipple type="button" label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary" (click)="showManualTaskModal.set(false)"></button>
-            <button pButton pRipple type="button" label="Create Task" icon="pi pi-check" [disabled]="!manualTaskDescription().trim() || (!manualTaskCircularId() && !selectedCircularId)" (click)="createManualTask()"></button>
+            <button pButton pRipple type="button" label="Create Task" icon="pi pi-check" [loading]="savingManual()" [disabled]="!manualTaskDescription().trim() || (!manualTaskCircularId() && !selectedCircularId) || savingManual()" (click)="createManualTask()"></button>
           </div>
         </ng-template>
       </p-drawer>
@@ -930,7 +929,10 @@ export class TasksComponent implements OnInit {
     });
   }
 
-  loadTasks() {
+  savingEdit = signal<boolean>(false);
+  savingManual = signal<boolean>(false);
+
+  loadTasks(isRefresh = false) {
     this.loading.set(true);
 
     const params: any = {
@@ -970,6 +972,9 @@ export class TasksComponent implements OnInit {
         this.allTasks.set(mappedTasks);
         this.totalRecords.set(res.total);
         this.loading.set(false);
+        if (isRefresh) {
+          this.messageService.add({ severity: 'info', summary: 'Refreshed', detail: 'Tasks list refreshed', life: 2500 });
+        }
       },
       error: () => this.loading.set(false)
     });
@@ -978,8 +983,14 @@ export class TasksComponent implements OnInit {
   approvingAll = signal<boolean>(false);
 
   approveTask(id: number) {
-    this.api.approveTask(id).subscribe(() => {
-      this.loadTasks();
+    this.api.approveTask(id).subscribe({
+      next: () => {
+        this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'Task approved successfully', life: 3000 });
+        this.loadTasks();
+      },
+      error: (err) => {
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: err?.error?.message || 'Failed to approve task' });
+      }
     });
   }
 
@@ -1028,6 +1039,7 @@ export class TasksComponent implements OnInit {
 
   saveEditedTask() {
     if (this.editingTaskId && this.editTaskDescription().trim()) {
+      this.savingEdit.set(true);
       const payload = {
         description: this.editTaskDescription(),
         header_id: this.editTaskHeaderId() || undefined,
@@ -1038,9 +1050,17 @@ export class TasksComponent implements OnInit {
         audit_area_id: this.editTaskAuditAreaId() || undefined,
         file_url: this.editTaskFileUrl() || null
       };
-      this.api.updateTaskDescription(this.editingTaskId, payload).subscribe(() => {
-        this.showEditModal.set(false);
-        this.loadTasks();
+      this.api.updateTaskDescription(this.editingTaskId, payload).subscribe({
+        next: () => {
+          this.savingEdit.set(false);
+          this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'Task updated successfully', life: 3000 });
+          this.showEditModal.set(false);
+          this.loadTasks();
+        },
+        error: (err) => {
+          this.savingEdit.set(false);
+          this.messageService.add({ severity: 'error', summary: 'Error', detail: err?.error?.message || 'Failed to update task' });
+        }
       });
     }
   }
@@ -1064,6 +1084,7 @@ export class TasksComponent implements OnInit {
     const circularId = this.manualTaskCircularId() || this.selectedCircularId;
     if (!circularId) return;
 
+    this.savingManual.set(true);
     const payload = {
       description: this.manualTaskDescription(),
       circular_id: circularId,
@@ -1076,9 +1097,17 @@ export class TasksComponent implements OnInit {
       file_url: this.manualTaskFileUrl() || null
     };
 
-    this.api.createManualTask(payload).subscribe(() => {
-      this.showManualTaskModal.set(false);
-      this.loadTasks();
+    this.api.createManualTask(payload).subscribe({
+      next: () => {
+        this.savingManual.set(false);
+        this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'Manual task created successfully', life: 3000 });
+        this.showManualTaskModal.set(false);
+        this.loadTasks();
+      },
+      error: (err) => {
+        this.savingManual.set(false);
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: err?.error?.message || 'Failed to create manual task' });
+      }
     });
   }
 

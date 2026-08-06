@@ -23,7 +23,6 @@ import { PageComponent } from '../../../shared/components/page/page.component';
     DateFieldComponent,
     PageComponent
   ],
-  providers: [MessageService],
   templateUrl: './manage-assignments.html',
   styleUrls: ['./manage-assignments.scss']
 })
@@ -67,7 +66,7 @@ export class ManageAssignmentsComponent implements OnInit {
     this.loadExpiredAssignments();
   }
 
-  loadExpiredAssignments() {
+  loadExpiredAssignments(isRefresh = false) {
     this.loading.set(true);
     this.apiService.getAssignments({
       page: this.page,
@@ -79,6 +78,14 @@ export class ManageAssignmentsComponent implements OnInit {
         this.assignments.set(res.data || []);
         this.totalRecords.set(res.total || 0);
         this.loading.set(false);
+        if (isRefresh) {
+          this.messageService.add({
+            severity: 'info',
+            summary: 'Refreshed',
+            detail: 'Expired assignments list refreshed',
+            life: 2500
+          });
+        }
       },
       error: (err) => {
         console.error('Failed to load expired assignments', err);

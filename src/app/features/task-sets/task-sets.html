@@ -1,5 +1,3 @@
-<p-toast></p-toast>
-<p-confirmdialog></p-confirmdialog>
 @if (currentCircular()) {
   <div class="card mb-4 surface-card border-round border-1 surface-border p-3 flex flex-column md:flex-row md:align-items-center md:justify-content-between gap-3">
     <div class="flex-1">
@@ -58,7 +56,7 @@
         [columns]="tableColumns"
         [actions]="tableActions"
         [loadingRowIds]="loadingRowIds()"
-        (onRefresh)="loadData()"
+        (onRefresh)="loadData(true)"
         (onAdd)="openCreateModal()"
         [showAddButton]="true"
         [showRefreshButton]="true"
@@ -221,7 +219,7 @@
   <ng-template pTemplate="footer">
     <div class="drawer-footer-row">
       <button pButton pRipple type="button" label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary" (click)="showFormDrawer.set(false)"></button>
-      <button pButton pRipple type="button" [label]="isEditMode ? 'Save Changes' : 'Create Task Set'" icon="pi pi-check" [disabled]="!newTaskSetName()" (click)="saveTaskSet()"></button>
+      <button pButton pRipple type="button" [label]="isEditMode ? 'Save Changes' : 'Create Task Set'" icon="pi pi-check" [loading]="saving()" [disabled]="!newTaskSetName() || saving()" (click)="saveTaskSet()"></button>
     </div>
   </ng-template>
 </p-drawer>

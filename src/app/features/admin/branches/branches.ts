@@ -31,7 +31,6 @@ import { SelectModule } from 'primeng/select';
     PageComponent,
     SelectModule
   ],
-  providers: [MessageService, ConfirmationService],
   templateUrl: './branches.html',
   styleUrls: ['./branches.scss']
 })
@@ -42,6 +41,7 @@ export class Branches implements OnInit {
 
   branches = signal<any[]>([]);
   loading = signal<boolean>(true);
+  saving = signal<boolean>(false);
 
   // Type filter signals
   selectedTypeFilter = signal<string | null>(null);
@@ -95,12 +95,15 @@ export class Branches implements OnInit {
     this.loadBranches();
   }
 
-  loadBranches() {
+  loadBranches(isRefresh = false) {
     this.loading.set(true);
     this.apiService.getBranches().subscribe({
       next: (data) => {
         this.branches.set(data);
         this.loading.set(false);
+        if (isRefresh) {
+          this.messageService.add({ severity: 'info', summary: 'Refreshed', detail: 'Branches & Departments list refreshed', life: 2500 });
+        }
       },
       error: () => {
         this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to load branches' });
@@ -152,6 +155,7 @@ export class Branches implements OnInit {
     this.submitted.set(true);
 
     if (this.branchName().trim() && this.branchType()) {
+      this.saving.set(true);
       const payload: any = {
         name: this.branchName(),
         type: this.branchType()
@@ -161,6 +165,7 @@ export class Branches implements OnInit {
       if (id) {
         this.apiService.updateBranch(id, payload).subscribe({
           next: (res) => {
+            this.saving.set(false);
             this.branches.update(list => {
               const index = list.findIndex((b) => b.id === id);
               if (index !== -1) list[index] = res;
@@ -170,17 +175,20 @@ export class Branches implements OnInit {
             this.branchDialog.set(false);
           },
           error: () => {
+            this.saving.set(false);
             this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to update branch' });
           }
         });
       } else {
         this.apiService.createBranch(payload).subscribe({
           next: (res) => {
+            this.saving.set(false);
             this.branches.update(list => [...list, res]);
             this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'Branch Created', life: 3000 });
             this.branchDialog.set(false);
           },
           error: () => {
+            this.saving.set(false);
             this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to create branch' });
           }
         });

@@ -15,7 +15,7 @@
         [totalRecords]="totalRecords()"
         (onLazyLoad)="handleLazyLoad($event)"
         (onSearch)="handleSearch($event)"
-        (onRefresh)="loadData()"
+        (onRefresh)="loadData(true)"
         (onActionClick)="handleTableActionClick($event)"
         [tableStyle]="{ 'table-layout': 'fixed', 'min-width': '85rem', 'width': '100%' }"
         [actionsWidth]="'14rem'"
@@ -44,9 +44,6 @@
       </div>
     </app-table>
   </div>
-
-<p-confirmDialog></p-confirmDialog>
-<p-toast position="top-right"></p-toast>
 
 <!-- Circular Master Drawer -->
 <p-drawer
