@@ -1,11 +1,10 @@
 .login-page {
     height: 100vh;
     overflow: hidden;
-    background: var(--ap-page-bg);
+    background: var(--ap-page-bg, #f4f6fa);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
     position: relative;
 }
-
 
 /* Language Toggle (inline card) */
 .lang-toggle-row {
@@ -29,7 +28,7 @@
     font-weight: 600;
     font-family: inherit;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
     letter-spacing: 0.2px;
 }
 
@@ -61,24 +60,7 @@
     background-position: center;
     background-repeat: no-repeat;
     z-index: 1;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
     overflow: hidden;
-}
-
-/* Glowing scanline below fixed banner */
-.top-banner::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 3px;
-    background: linear-gradient(90deg, transparent, #3f51b5, #e8eaf6, #3f51b5, transparent);
-    background-size: 200% 100%;
-    animation: scanLine 6s linear infinite;
-    z-index: 3;
-    box-shadow: 0 1px 8px rgba(63, 81, 181, 0.4);
 }
 
 /* Scrollable Content */
@@ -105,7 +87,6 @@
 .brand-section {
     text-align: center;
     color: #ffffff;
-    
 }
 
 .brand-section h1 {
@@ -116,7 +97,6 @@
     letter-spacing: -1px;
     color: #ffffff;
     text-shadow: 0 4px 14px rgba(20, 26, 60, 0.26);
-    
 }
 
 .brand-section p {
@@ -140,32 +120,12 @@
 /* Login Card */
 .login-card {
     width: 440px;
-    background: rgba(255, 255, 255, 0.98);
+    background: #ffffff;
     padding: 28px 24px 30px;
     border-radius: 12px;
     box-shadow: 0 18px 45px rgba(28, 35, 70, 0.16);
-    backdrop-filter: blur(8px);
     border: 1px solid rgba(207, 214, 228, 0.75);
     border-top: 4px solid #3f51b5;
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease;
-    animation: cardBorderGlow 6s infinite ease-in-out;
-}
-
-.login-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 
-        0 24px 60px rgba(63, 81, 181, 0.12),
-        0 8px 20px rgba(10, 25, 38, 0.04);
-    border-color: rgba(63, 81, 181, 0.3);
-}
-
-@keyframes cardBorderGlow {
-    0%, 100% {
-        border-top-color: #3f51b5;
-    }
-    50% {
-        border-top-color: #5c6bc0;
-    }
 }
 
 .login-card h2 {
@@ -224,51 +184,8 @@
     cursor: pointer;
 }
 
-/* Production login layout: if role buttons are removed, the card still stays balanced */
 .login-card form {
     margin-bottom: 0;
-}
-
-.user-types:empty {
-    display: none;
-}
-
-/* Role Buttons */
-.user-types {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-top: 14px;
-}
-
-.user-btn {
-    height: 40px;
-    border-radius: 8px;
-    border: 1px solid #cfd6e4;
-    background: #ffffff;
-    color: #656d7b;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 14px;
-    transition: all 0.2s ease;
-}
-
-.user-btn:hover:not(:disabled) {
-    background: #f5f7fb;
-    border-color: #3f51b5;
-    color: #3f51b5;
-    transform: translateY(-1px);
-}
-
-.user-btn.active {
-    background: #e8eaf6;
-    border-color: #3f51b5;
-    color: #3f51b5;
-}
-
-.user-btn:disabled {
-    opacity: 0.65;
-    cursor: not-allowed;
 }
 
 /* PrimeNG */
@@ -328,29 +245,6 @@
     font-weight: 700;
     font-size: 15px;
     box-shadow: none;
-    position: relative;
-    overflow: hidden;
-}
-
-:host ::ng-deep .p-button::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 50%;
-    height: 100%;
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.25),
-        transparent
-    );
-    transform: skewX(-25deg);
-}
-
-:host ::ng-deep .p-button:hover::after {
-    left: 150%;
-    transition: left 0.75s ease-in-out;
 }
 
 :host ::ng-deep .p-button:hover {
@@ -375,14 +269,10 @@
     box-shadow: 0 0 0 3px rgba(63, 81, 181, 0.15);
 }
 
-
-
 /* Responsive */
 @media screen and (max-width: 768px) {
     .top-banner {
         height: 330px;
-        border-bottom-left-radius: 0;
-        border-bottom-right-radius: 0;
     }
 
     .brand-section {
@@ -407,14 +297,6 @@
         max-width: 430px;
         padding: 28px 24px;
         border-radius: 12px;
-    }
-
-    .user-types {
-        grid-template-columns: 1fr;
-    }
-
-    .user-btn {
-        width: 100%;
     }
 }
 
@@ -441,179 +323,6 @@
 
     .input-group {
         margin-bottom: 10px;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-        animation: none !important;
-        transition: none !important;
-        scroll-behavior: auto !important;
-    }
-}
-
-/* Animated Nodes inside Banner */
-.glow-node {
-    position: absolute;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    pointer-events: none;
-    z-index: 2;
-}
-
-.node-1 {
-    width: 70px;
-    height: 70px;
-    top: 15%;
-    left: 20%;
-    animation: floatNode1 12s infinite ease-in-out alternate;
-}
-
-.node-2 {
-    width: 110px;
-    height: 110px;
-    bottom: 10%;
-    right: 15%;
-    animation: floatNode2 18s infinite ease-in-out alternate;
-}
-
-.node-3 {
-    width: 45px;
-    height: 45px;
-    top: 45%;
-    right: 35%;
-    animation: floatNode3 14s infinite ease-in-out alternate;
-}
-
-@keyframes floatNode1 {
-    0% {
-        transform: translateY(0) scale(1);
-        opacity: 0.35;
-    }
-    100% {
-        transform: translateY(-20px) scale(1.15);
-        opacity: 0.65;
-        box-shadow: 0 0 15px rgba(255, 255, 255, 0.25);
-    }
-}
-
-@keyframes floatNode2 {
-    0% {
-        transform: translateY(0) scale(1);
-        opacity: 0.25;
-    }
-    100% {
-        transform: translateY(25px) scale(1.1);
-        opacity: 0.55;
-        box-shadow: 0 0 25px rgba(255, 255, 255, 0.2);
-    }
-}
-
-@keyframes floatNode3 {
-    0% {
-        transform: translate(0, 0) scale(1);
-        opacity: 0.45;
-    }
-    100% {
-        transform: translate(15px, -15px) scale(1.2);
-        opacity: 0.75;
-        box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-    }
-}
-
-/* Background Floating Shapes in White Space */
-.bg-shape {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(40px);
-    pointer-events: none;
-    z-index: 1;
-    opacity: 0.35;
-}
-
-.shape-1 {
-    width: 250px;
-    height: 250px;
-    background: rgba(63, 81, 181, 0.08); /* Indigo soft blur */
-    top: 50%;
-    left: 10%;
-    animation: floatShape1 20s infinite ease-in-out alternate;
-}
-
-.shape-2 {
-    width: 300px;
-    height: 300px;
-    background: rgba(92, 107, 192, 0.06);
-    top: 65%;
-    right: 8%;
-    animation: floatShape2 25s infinite ease-in-out alternate;
-}
-
-.shape-3 {
-    width: 180px;
-    height: 180px;
-    background: rgba(63, 81, 181, 0.05);
-    bottom: 5%;
-    left: 40%;
-    animation: floatShape3 22s infinite ease-in-out alternate;
-}
-
-@keyframes floatShape1 {
-    0% {
-        transform: translate(0, 0) scale(1);
-    }
-    100% {
-        transform: translate(30px, -40px) scale(1.15);
-    }
-}
-
-@keyframes floatShape2 {
-    0% {
-        transform: translate(0, 0) scale(1);
-    }
-    100% {
-        transform: translate(-40px, -20px) scale(1.1);
-    }
-}
-
-@keyframes floatShape3 {
-    0% {
-        transform: translate(0, 0) scale(1);
-    }
-    100% {
-        transform: translate(20px, 30px) scale(1.2);
-    }
-}
-
-/* Staggered Entrance Animations */
-.animate-item {
-    opacity: 0;
-    transform: translateY(18px);
-    animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.delay-1 { animation-delay: 0.06s; }
-.delay-2 { animation-delay: 0.12s; }
-.delay-3 { animation-delay: 0.18s; }
-.delay-4 { animation-delay: 0.24s; }
-.delay-5 { animation-delay: 0.3s; }
-
-@keyframes fadeInUp {
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes scanLine {
-    0% {
-        background-position: 200% 0;
-    }
-    100% {
-        background-position: -200% 0;
     }
 }
 
@@ -664,7 +373,7 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    transition: all 0.2s ease;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
     letter-spacing: 0.1px;
 }
 
@@ -676,13 +385,6 @@
     background: #f5f7fb;
     border-color: #3f51b5;
     color: #3f51b5;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(63, 81, 181, 0.12);
-}
-
-.demo-btn:active {
-    transform: translateY(0);
-    box-shadow: none;
 }
 
 .demo-btn:disabled {

@@ -182,8 +182,8 @@ export class CircularsComponent implements OnInit, OnDestroy {
   private config: any = inject(APP_CONFIG);
 
   tableColumns: TableColumn[] = [
-    { field: 'reference_no', header: 'Reference No.', width: '120px' },
-    { field: 'authority_name', header: 'Authority', width: '120px' },
+    { field: 'reference_no', header: 'Reference No.', width: '170px' },
+    { field: 'authority_name', header: 'Authority', width: '150px' },
     { field: 'title', header: 'Circular Title', width: '380px' },
     { field: 'published_date', header: 'Circular Date', type: 'date', width: '100px' },
     { field: 'circular_nature', header: 'Nature', type: 'badge', width: '160px' },

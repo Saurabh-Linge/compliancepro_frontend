@@ -3,28 +3,19 @@
 <div class="login-page">
 
   <!-- Fixed Banner -->
-  <div class="top-banner">
-    <div class="glow-node node-1"></div>
-    <div class="glow-node node-2"></div>
-    <div class="glow-node node-3"></div>
-  </div>
-
-  <!-- Background Floating Shapes in White Space -->
-  <div class="bg-shape shape-1"></div>
-  <div class="bg-shape shape-2"></div>
-  <div class="bg-shape shape-3"></div>
+  <div class="top-banner"></div>
 
   <!-- Scrollable Content -->
   <div class="content-section">
     <!-- Brand -->
-    <div class="brand-section animate-item">
+    <div class="brand-section">
       <h1>Compliance Pro</h1>
       <p>AI POWERED COMPLIANCE MANAGEMENT</p>
     </div>
 
     <!-- Login -->
     <div class="login-wrapper">
-      <div class="login-card animate-item delay-1">
+      <div class="login-card">
         <h2>Login to Your Account</h2>
 
         <div class="company-name">Compliance Pro Access</div>
@@ -36,7 +27,7 @@
 
           <form #loginForm="ngForm" (ngSubmit)="onLogin()" autocomplete="off">
             <!-- Username -->
-            <div class="input-group animate-item delay-2">
+            <div class="input-group">
               <label for="username">Employee Code</label>
 
               <input
@@ -53,7 +44,7 @@
             </div>
 
             <!-- Password -->
-            <div class="input-group animate-item delay-3">
+            <div class="input-group">
               <label for="password">Password</label>
 
               <p-password
@@ -78,12 +69,12 @@
               [label]="loading() ? 'Logging in...' : 'Login'"
               [loading]="loading()"
               [disabled]="loading() || !username || !password"
-              class="login-btn animate-item delay-4"
+              class="login-btn"
             ></button>
           </form>
 
           <!-- Demo Login Buttons -->
-          <div class="demo-login-section animate-item delay-5">
+          <div class="demo-login-section">
             <div class="demo-label">
               <span class="demo-divider-line"></span>
               <span class="demo-divider-text">Quick Login</span>
@@ -108,7 +99,7 @@
           </div>
 
           <!-- Language Toggle -->
-          <div class="lang-toggle-row animate-item delay-5">
+          <div class="lang-toggle-row">
             <button
               class="lang-pill"
               [class.active]="selectedLanguage === 'en'"
