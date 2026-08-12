@@ -339,34 +339,53 @@
   padding: 0 !important;
   border: none !important;
 }
-:host ::ng-deep [toolbar-actions] app-select-field p-select,
-:host ::ng-deep [toolbar-actions] app-select-field .p-select,
-:host ::ng-deep [toolbar-actions] app-select-field .p-select-label-container {
+:host ::ng-deep .circular-filter-bar {
+  display: flex;
+  align-items: center;
+}
+
+:host ::ng-deep .circular-filter-bar .toolbar-filter-select {
+  display: inline-flex !important;
+  align-items: center !important;
+  flex: 0 0 auto !important;
+}
+
+:host ::ng-deep .circular-filter-bar app-select-field {
+  width: 14rem !important;
+  margin-right: 0.75rem !important;
+}
+
+:host ::ng-deep .circular-filter-bar p-datepicker {
+  width: 16rem !important;
+  margin-right: 0.75rem !important;
+}
+
+:host ::ng-deep .circular-filter-bar app-select-field .form-field,
+:host ::ng-deep .circular-filter-bar app-select-field .field-wrapper,
+:host ::ng-deep .circular-filter-bar app-select-field p-select,
+:host ::ng-deep .circular-filter-bar app-select-field .p-select,
+:host ::ng-deep .circular-filter-bar p-datepicker,
+:host ::ng-deep .circular-filter-bar .p-datepicker {
   width: 100% !important;
   height: 2.5rem !important;
   min-height: 2.5rem !important;
-  max-height: 2.5rem !important;
   display: inline-flex !important;
   align-items: center !important;
+  border-radius: 6px !important;
   margin: 0 !important;
-  padding: 0 !important;
+}
+
+:host ::ng-deep .circular-filter-bar p-datepicker .p-datepicker-input {
+  width: 100% !important;
+  height: 2.5rem !important;
+  font-size: 0.85rem !important;
   border-radius: 6px !important;
 }
-:host ::ng-deep [toolbar-actions] app-select-field p-select .p-select-label,
-:host ::ng-deep [toolbar-actions] app-select-field .p-select .p-select-label {
-  font-size: 0.875rem !important;
-  padding: 0.5rem 0.75rem !important;
-  line-height: 1.5 !important;
-  height: auto !important;
-  min-height: 0 !important;
-  max-height: none !important;
-  display: flex !important;
-  align-items: center !important;
-  margin: 0 !important;
-}
-:host ::ng-deep .date-range-input {
-  width: 14rem !important;
-  height: 2.5rem !important;
-  font-size: 0.875rem !important;
-  padding: 0.5rem 0.75rem !important;
+
+:host ::ng-deep .circular-filter-bar p-datepicker .p-datepicker-input-icon,
+:host ::ng-deep .circular-filter-bar p-datepicker i,
+:host ::ng-deep .circular-filter-bar p-datepicker svg {
+  font-size: 1.15rem !important;
+  width: 1.15rem !important;
+  height: 1.15rem !important;
 }

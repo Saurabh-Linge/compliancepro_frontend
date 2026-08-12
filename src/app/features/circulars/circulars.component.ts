@@ -130,6 +130,9 @@ export class CircularsComponent implements OnInit, OnDestroy {
   isActive = signal<boolean>(true);
   editingCircularId = signal<number | null>(null);
   selectedAuthorityFilter = signal<number | null>(null);
+  categories = signal<any[]>([]);
+  selectedCategoryFilter = signal<string | null>(null);
+  categoryField = signal<string>('');
 
   priorityOptions = [
     { label: 'Critical', value: 'Critical' },
@@ -184,7 +187,8 @@ export class CircularsComponent implements OnInit, OnDestroy {
   tableColumns: TableColumn[] = [
     { field: 'reference_no', header: 'Reference No.', width: '170px' },
     { field: 'authority_name', header: 'Authority', width: '150px' },
-    { field: 'title', header: 'Circular Title', width: '380px' },
+    { field: 'category', header: 'Category', width: '190px' },
+    { field: 'title', header: 'Circular Title', width: '360px' },
     { field: 'published_date', header: 'Circular Date', type: 'date', width: '100px' },
     { field: 'circular_nature', header: 'Nature', type: 'badge', width: '160px' },
     { field: 'task_count', header: 'Tasks', type: 'number', width: '75px', align: 'center', headerAlign: 'center', sortable: true },
@@ -409,6 +413,11 @@ export class CircularsComponent implements OnInit, OnDestroy {
       params.authority_id = authId;
     }
 
+    const cat = this.selectedCategoryFilter();
+    if (cat) {
+      params.category = cat;
+    }
+
     const dates = this.selectedDateRange();
     if (dates && dates.length > 0) {
       const startDate = dates[0];
@@ -442,6 +451,20 @@ export class CircularsComponent implements OnInit, OnDestroy {
       error: (err) => console.error(err)
     });
     this.api.getAuthorities().subscribe(data => this.authorities.set(data));
+    this.api.getCategories().subscribe(data => this.categories.set(data));
+  }
+
+  handleCategoryFilterChange() {
+    this.page = 1;
+    this.loadData();
+  }
+
+  clearAllFilters() {
+    this.selectedCategoryFilter.set(null);
+    this.selectedAuthorityFilter.set(null);
+    this.selectedDateRange.set(null);
+    this.page = 1;
+    this.loadData();
   }
 
   handleAuthorityFilterChange() {

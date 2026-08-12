@@ -40,7 +40,7 @@ import { TooltipModule } from 'primeng/tooltip';
             [optionValue]="optionValue()"
             [disabled]="disabled()"
             [filter]="filter()"
-            [filterBy]="filterBy()"
+            [filterBy]="effectiveFilterBy()"
             [showClear]="showClear()"
             [editable]="editable()"
             [virtualScroll]="virtualScroll()"
@@ -65,7 +65,7 @@ import { TooltipModule } from 'primeng/tooltip';
               [optionValue]="optionValue()"
               [disabled]="disabled()"
               [filter]="filter()"
-              [filterBy]="filterBy()"
+              [filterBy]="effectiveFilterBy()"
               [showClear]="showClear()"
               [editable]="editable()"
               [virtualScroll]="virtualScroll()"
@@ -222,6 +222,16 @@ export class SelectFieldComponent<T = any> {
 
   /** Add event emitter */
   add = output<void>();
+
+  /** Effective filterBy property - defaults to optionLabel if filterBy is untouched */
+  effectiveFilterBy = computed(() => {
+    const fb = this.filterBy();
+    const labelKey = this.optionLabel();
+    if (fb === 'label' && labelKey !== 'label') {
+      return labelKey;
+    }
+    return fb;
+  });
 
   /** Defensive options array */
   safeOptions = computed(() => {

@@ -2,6 +2,71 @@
   <div class="flex align-items-center justify-content-between mb-4">
     <h5 class="m-0 text-xl font-semibold">Circular Master</h5>
   </div>
+  <!-- Compact Dedicated Filter Bar -->
+  <div class="py-2 px-3 mb-3 surface-card border-round border-1 surface-border circular-filter-bar">
+    <div class="flex align-items-center justify-content-between gap-3 flex-wrap">
+      <div class="flex align-items-center gap-2 flex-wrap">
+        <span class="font-medium text-700 text-sm flex align-items-center gap-2 mr-1">
+          <i class="pi pi-filter text-primary"></i> Filters:
+        </span>
+
+        <!-- Filter: Category -->
+        <app-select-field
+          [field]="selectedCategoryFilter"
+          [options]="categories()"
+          optionLabel="name"
+          optionValue="name"
+          filterBy="name"
+          [hideLabel]="true"
+          [showClear]="true"
+          placeholder="Select Category"
+          (onChange)="handleCategoryFilterChange()"
+          class="w-13rem toolbar-filter-select"
+        ></app-select-field>
+
+        <!-- Filter: Authority -->
+        <app-select-field
+          [field]="selectedAuthorityFilter"
+          [options]="authorities()"
+          optionLabel="name"
+          optionValue="id"
+          filterBy="name"
+          [hideLabel]="true"
+          [showClear]="true"
+          placeholder="Select Authority"
+          (onChange)="handleAuthorityFilterChange()"
+          class="w-13rem toolbar-filter-select"
+        ></app-select-field>
+
+        <!-- Filter: Date Range -->
+        <p-datepicker
+          [ngModel]="selectedDateRange()"
+          (ngModelChange)="selectedDateRange.set($event); handleDateRangeFilterChange()"
+          selectionMode="range"
+          [showIcon]="true"
+          iconDisplay="input"
+          [readonlyInput]="true"
+          dateFormat="dd/mm/yy"
+          placeholder="Select Date Range"
+          appendTo="body"
+          class="toolbar-filter-select"
+        ></p-datepicker>
+      </div>
+
+      <!-- Clear Filters Button at Far Right -->
+      <button
+        *ngIf="selectedCategoryFilter() || selectedAuthorityFilter() || selectedDateRange()"
+        pButton
+        pRipple
+        type="button"
+        label="Clear Filters"
+        icon="pi pi-filter-slash"
+        class="p-button-text p-button-secondary p-button-sm py-1 ml-auto"
+        (click)="clearAllFilters()"
+      ></button>
+    </div>
+  </div>
+
     <app-table
         [data]="circulars()"
         [columns]="tableColumns"
@@ -20,28 +85,6 @@
         [tableStyle]="{ 'table-layout': 'fixed', 'min-width': '85rem', 'width': '100%' }"
         [actionsWidth]="'14rem'"
     >
-      <div toolbar-actions class="flex align-items-center gap-2 ml-2 flex-shrink-0" style="flex-wrap: nowrap;">
-        <!-- Filter: Authority -->
-        <app-select-field
-          [field]="selectedAuthorityFilter"
-          [options]="authorities()"
-          optionLabel="name"
-          optionValue="id"
-          [hideLabel]="true"
-          [showClear]="true"
-          placeholder="Select Authority"
-          (onChange)="handleAuthorityFilterChange()"
-          class="w-20rem flex-shrink-0 toolbar-filter-select"
-        ></app-select-field>
-
-        <!-- Filter: Date Range -->
-        <app-date-range-field
-          [field]="selectedDateRange"
-          [defaultToToday]="false"
-          placeholder="Select Date Range"
-          class="flex-shrink-0"
-        ></app-date-range-field>
-      </div>
     </app-table>
   </div>
 

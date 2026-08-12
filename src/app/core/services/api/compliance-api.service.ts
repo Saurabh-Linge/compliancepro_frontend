@@ -20,6 +20,7 @@ export interface Circular {
   authority_id: number;
   reference_no?: string | null;
   title: string;
+  category?: string | null;
   published_date: string;
   priority?: string;
   circular_type?: number;
@@ -100,6 +101,10 @@ export class ComplianceApiService {
       });
     }
     return this.http.get<PaginatedResponse<Circular>>(`${this.baseUrl}/circulars`, { params: httpParams });
+  }
+
+  getCategories() {
+    return this.http.get<any[]>(`${this.baseUrl}/circulars/categories`);
   }
 
   getCircularTasks(circularId: number) {
