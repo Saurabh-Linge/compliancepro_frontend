@@ -252,7 +252,7 @@ export class CoReviewDetailsComponent implements OnInit {
   submitReview(action: "ACCEPT" | "REJECT" | "ESCALATE") {
     if (!this.assignmentId) return;
 
-    if (this.unreviewedCount() > 0) {
+    if (action !== "ESCALATE" && this.unreviewedCount() > 0) {
       this.notification.warn(`Cannot proceed: There are ${this.unreviewedCount()} unreviewed task(s) remaining. Please review all tasks (Accept or Reject) before submitting.`);
       return;
     }

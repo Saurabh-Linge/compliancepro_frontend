@@ -32,7 +32,8 @@ export class CcoReviewDetailsComponent implements OnInit {
   notCompliedCount = computed(() => this.tasks().filter(t => t.compliance_status === "NOT_COMPLIED").length);
   approvedCount = computed(() => this.tasks().filter(t => t.review_status === "APPROVED").length);
   needsRedoCount = computed(() => this.tasks().filter(t => t.review_status === "NEEDS_REDO").length);
-  unreviewedCount = computed(() => this.tasks().filter(t => !t.review_status).length);
+  escalatedCount = computed(() => this.tasks().filter(t => t.review_status === "ESCALATED").length);
+  unreviewedCount = computed(() => this.tasks().filter(t => !t.review_status || t.review_status === "ESCALATED").length);
 
   isReviewActive(): boolean {
     const status = this.assignmentMeta()?.assignment_status?.toUpperCase();
@@ -77,7 +78,8 @@ export class CcoReviewDetailsComponent implements OnInit {
         if (filter === 'NOT_COMPLIED') return t.compliance_status === 'NOT_COMPLIED';
         if (filter === 'APPROVED')     return t.review_status === 'APPROVED';
         if (filter === 'NEEDS_REDO')   return t.review_status === 'NEEDS_REDO';
-        if (filter === 'UNREVIEWED')   return !t.review_status;
+        if (filter === 'ESCALATED')    return t.review_status === 'ESCALATED';
+        if (filter === 'UNREVIEWED')   return !t.review_status || t.review_status === 'ESCALATED';
         return true;
       })
     })).filter(g => g.tasks.length > 0);
@@ -152,8 +154,10 @@ export class CcoReviewDetailsComponent implements OnInit {
       filteredTasks = tasks.filter(t => t.review_status === 'APPROVED');
     } else if (filter === 'NEEDS_REDO') {
       filteredTasks = tasks.filter(t => t.review_status === 'NEEDS_REDO');
+    } else if (filter === 'ESCALATED') {
+      filteredTasks = tasks.filter(t => t.review_status === 'ESCALATED');
     } else if (filter === 'UNREVIEWED') {
-      filteredTasks = tasks.filter(t => !t.review_status);
+      filteredTasks = tasks.filter(t => !t.review_status || t.review_status === 'ESCALATED');
     }
 
     const groupsMap = new Map<string, any[]>();

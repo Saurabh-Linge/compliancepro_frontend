@@ -52,7 +52,7 @@
         *ngIf="showAddButton()"
         pButton
         pRipple
-        label="New (Ctrl+N)"
+        [label]="addButtonLabel()"
         icon="pi pi-plus"
         class="p-button-primary"
         (click)="handleAdd()"
@@ -72,7 +72,7 @@
       [rows]="rows()"
       [paginator]="paginator() && !virtualScroll()"
       [rowsPerPageOptions]="rowsPerPageOptions"
-      [globalFilterFields]="globalFilterFields()"
+      [globalFilterFields]="effectiveGlobalFilterFields()"
       [loading]="loading()"
       [virtualScroll]="virtualScroll()"
       [virtualScrollItemSize]="virtualScrollItemSize()"

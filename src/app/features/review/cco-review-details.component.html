@@ -50,6 +50,16 @@
     <!-- Progress stats using clickable p-button chips -->
     <div class="review-progress" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
       <p-button
+        *ngIf="escalatedCount() > 0"
+        [label]="'Escalated: ' + escalatedCount()"
+        icon="pi pi-exclamation-triangle"
+        severity="warn"
+        [outlined]="activeFilter() !== 'ESCALATED'"
+        size="small"
+        styleClass="progress-btn-chip"
+        (click)="toggleFilter('ESCALATED')"
+        pTooltip="Click to show tasks escalated from CO" />
+      <p-button
         [label]="'Accepted: ' + approvedCount()"
         icon="pi pi-verified"
         severity="success"
@@ -157,8 +167,8 @@
               </div>
             </div>
 
-            <!-- Per-task Accept / Reject toggle (shown for tasks saved by department or tasks escalated to CCO) -->
-            <div class="review-toggle-row" *ngIf="(!t.saved_review_status || t.saved_review_status === 'ESCALATED') && isTaskSavedByDept(t)">
+            <!-- Per-task Accept / Reject toggle (shown for tasks saved by department) -->
+            <div class="review-toggle-row" *ngIf="isTaskSavedByDept(t)">
               <p-button label="Accept" icon="pi pi-check" size="small"
                         [severity]="t.review_status === 'APPROVED' ? 'success' : 'secondary'"
                         [outlined]="t.review_status !== 'APPROVED'"
@@ -174,12 +184,12 @@
             </div>
 
             <!-- Unsaved task notification for CCO -->
-            <div *ngIf="!t.saved_review_status && !isTaskSavedByDept(t)" style="font-size: 0.75rem; color: #9ca3af; font-style: italic; margin-top: 0.25rem;">
+            <div *ngIf="!isTaskSavedByDept(t)" style="font-size: 0.75rem; color: #9ca3af; font-style: italic; margin-top: 0.25rem;">
               <i class="pi pi-clock" style="font-size: 0.7rem; margin-right: 0.25rem;"></i> Awaiting Department Response
             </div>
 
-            <!-- Reviewer remark textarea & Save button (only shown when drafting review before saving) -->
-            <div *ngIf="(!t.saved_review_status || t.saved_review_status === 'ESCALATED') && (t.review_status === 'APPROVED' || t.review_status === 'NEEDS_REDO')" style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+            <!-- Reviewer remark textarea & Save button (shown when drafting review before saving) -->
+            <div *ngIf="isReviewActive() && (t.review_status === 'APPROVED' || t.review_status === 'NEEDS_REDO')" style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
               <textarea pTextarea
                         [(ngModel)]="t.review_remark"
                         placeholder="CCO Reviewer Remarks / Feedback..."
@@ -252,6 +262,15 @@
     <!-- Clickable filter chips — click to highlight tasks of that type -->
     <div class="decision-summary">
       <p-button
+        *ngIf="escalatedCount() > 0"
+        [label]="escalatedCount() + ' Escalated'"
+        icon="pi pi-exclamation-triangle"
+        severity="warn" [outlined]="activeFilter() !== 'ESCALATED'"
+        size="small" styleClass="ds-chip"
+        (click)="toggleFilter('ESCALATED')"
+        [badge]="activeFilter() === 'ESCALATED' ? 'active' : ''"
+        pTooltip="Click to show tasks escalated from CO" />
+      <p-button
         [label]="approvedCount() + ' Accepted'"
         icon="pi pi-check-circle"
         severity="success" [outlined]="activeFilter() !== 'APPROVED'"
@@ -265,14 +284,16 @@
         severity="danger" [outlined]="activeFilter() !== 'NEEDS_REDO'"
         size="small" styleClass="ds-chip"
         (click)="toggleFilter('NEEDS_REDO')"
+        [badge]="activeFilter() === 'NEEDS_REDO' ? 'active' : ''"
         pTooltip="Click to show only Rejected tasks" />
       <p-button
-        [label]="unreviewedCount() + ' Not Reviewed'"
+        [label]="unreviewedCount() + ' Pending Decision'"
         icon="pi pi-clock"
         severity="secondary" [outlined]="activeFilter() !== 'UNREVIEWED'"
         size="small" styleClass="ds-chip"
         (click)="toggleFilter('UNREVIEWED')"
-        pTooltip="Click to show only unreviewed tasks" />
+        [badge]="activeFilter() === 'UNREVIEWED' ? 'active' : ''"
+        pTooltip="Click to show tasks awaiting CCO decision" />
       <p-button *ngIf="activeFilter()"
         label="Show All" icon="pi pi-filter-slash"
         severity="secondary" [text]="true" size="small"

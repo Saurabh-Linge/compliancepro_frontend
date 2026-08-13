@@ -1,4 +1,4 @@
-@if (currentCircular()) {
+@if (cameFromCirculars() && currentCircular()) {
   <div class="card mb-4 surface-card border-round border-1 surface-border p-3 flex flex-column md:flex-row md:align-items-center md:justify-content-between gap-3">
     <div class="flex-1">
       <div class="flex align-items-center gap-2 mb-2 flex-wrap">
@@ -68,6 +68,7 @@
           [options]="circularFilterOptions()"
           [ngModel]="selectedCircularFilter()"
           (ngModelChange)="selectedCircularFilter.set($event)"
+          (onShow)="ensureCircularsLoaded()"
           placeholder="Filter by Circular"
           [showClear]="true"
           [filter]="true"
@@ -108,40 +109,59 @@
           <span class="section-line"></span>
         </div>
         <div class="grid formgrid p-fluid drawer-form-grid">
-          <div class="field col-12">
-            <label class="font-medium text-sm text-700 mb-1 block">Circular <span class="text-red-500">*</span></label>
-            <p-select
-              [options]="circularFilterOptions()"
-              [ngModel]="newTaskSetCircularId()"
-              (ngModelChange)="newTaskSetCircularId.set($event); formCircularFilter.set($event)"
-              placeholder="Please select circular"
-              [showClear]="true"
-              [filter]="true"
-              filterPlaceholder="Search circular..."
-              [virtualScroll]="true"
-              [virtualScrollItemSize]="38"
-              styleClass="w-full"
-              panelStyleClass="circular-dropdown-panel"
-            ></p-select>
+          <div class="field col-12 md:col-6">
+            <app-select-field 
+              label="Task Set Type" 
+              [field]="newTaskSetType" 
+              [options]="taskSetTypeOptions" 
+              optionLabel="label" 
+              optionValue="value" 
+              [required]="true"
+              (onChange)="onTypeChange($event)">
+            </app-select-field>
           </div>
+
+          @if (newTaskSetType() === 'REGULAR') {
+            <div class="field col-12 md:col-6">
+              <app-select-field
+                label="Circular"
+                [field]="newTaskSetCircularId"
+                [options]="circularFilterOptions()"
+                optionLabel="label"
+                optionValue="value"
+                filterBy="label"
+                [showClear]="true"
+                [required]="true"
+                [virtualScroll]="true"
+                [virtualScrollItemSize]="38"
+                placeholder="Select Circular"
+                (onShow)="ensureCircularsLoaded()"
+                (onChange)="formCircularFilter.set($event)">
+              </app-select-field>
+            </div>
+          }
+
           <div class="field col-12 md:col-6">
             <app-text-field label="Task Set Name" [field]="newTaskSetName" [required]="true"></app-text-field>
           </div>
           <div class="field col-12 md:col-6">
-            <app-select-field label="Task Set Frequency" [field]="newTaskSetFrequency" [options]="frequencies" optionLabel="label" optionValue="value"></app-select-field>
+            <app-select-field label="Task Set Frequency" [field]="newTaskSetFrequency" [options]="frequencies" optionLabel="label" optionValue="value" [required]="true"></app-select-field>
           </div>
           <div class="field col-12 md:col-6">
-            <app-date-field label="Start Date" [field]="newTaskSetStartDate" dateFormat="dd/mm/yy"></app-date-field>
+            <app-date-field label="Start Date" [field]="newTaskSetStartDate" dateFormat="dd/mm/yy" [required]="true"></app-date-field>
           </div>
-          <div class="field col-12 md:col-6">
-            <app-date-field label="End Date" [field]="newTaskSetEndDate" dateFormat="dd/mm/yy"></app-date-field>
-          </div>
-          <div class="field col-12 md:col-6">
-            <app-date-field label="Reporting Date" [field]="newTaskSetReportingDate" dateFormat="dd/mm/yy"></app-date-field>
-          </div>
-          <div class="field col-12 md:col-6">
-            <app-date-field label="Due Date [For Branch]" [field]="newTaskSetDueDate" (onChange)="onDueDateChange($event)" dateFormat="dd/mm/yy"></app-date-field>
-          </div>
+
+          @if (newTaskSetType() === 'REGULAR') {
+            <div class="field col-12 md:col-6">
+              <app-date-field label="End Date" [field]="newTaskSetEndDate" dateFormat="dd/mm/yy" [required]="true"></app-date-field>
+            </div>
+            <div class="field col-12 md:col-6">
+              <app-date-field label="Reporting Date" [field]="newTaskSetReportingDate" dateFormat="dd/mm/yy" [required]="true"></app-date-field>
+            </div>
+            <div class="field col-12 md:col-6">
+              <app-date-field label="Due Date [For Branch]" [field]="newTaskSetDueDate" (onChange)="onDueDateChange($event)" dateFormat="dd/mm/yy" [required]="true"></app-date-field>
+            </div>
+          }
         </div>
       </section>
 
@@ -155,21 +175,27 @@
         <div class="border-round border-1 border-300 w-full" style="height: 28rem; display: flex; flex-direction: column;">
           <app-table
             [data]="allTasks()"
-            [columns]="taskColumns"
+            [columns]="taskColumns()"
+            [globalFilterFields]="newTaskSetType() === 'INTERNAL' ? ['description', 'priority', 'authority_name'] : ['description', 'priority']"
+            [loading]="loadingFormDetails()"
             [selectable]="true"
             [(selection)]="targetTasks"
             [paginator]="true"
             [rows]="5"
             [dataKey]="'id'"
-            [showAddButton]="false"
+            [showAddButton]="newTaskSetType() === 'INTERNAL'"
+            addButtonLabel="Add Task"
+            (onAdd)="openInlineTaskDialog()"
             (onActionClick)="onTaskTableAction($event)"
             style="flex: 1; display: flex; flex-direction: column; overflow: hidden;"
           >
             <div toolbar-actions class="flex align-items-center ml-2">
               <p-select
+                *ngIf="newTaskSetType() === 'REGULAR'"
                 [options]="circularFilterOptions()"
                 [ngModel]="formCircularFilter()"
                 (ngModelChange)="formCircularFilter.set($event)"
+                (onShow)="ensureCircularsLoaded()"
                 placeholder="Filter by Circular"
                 [showClear]="true"
                 optionLabel="label"
@@ -219,7 +245,61 @@
   <ng-template pTemplate="footer">
     <div class="drawer-footer-row">
       <button pButton pRipple type="button" label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary" (click)="showFormDrawer.set(false)"></button>
-      <button pButton pRipple type="button" [label]="isEditMode ? 'Save Changes' : 'Create Task Set'" icon="pi pi-check" [loading]="saving()" [disabled]="!newTaskSetName() || saving()" (click)="saveTaskSet()"></button>
+      <button pButton pRipple type="button" [label]="isEditMode ? 'Save Changes' : 'Create Task Set'" icon="pi pi-check" [loading]="saving()" [disabled]="!isFormValid() || saving()" (click)="saveTaskSet()"></button>
+    </div>
+  </ng-template>
+</p-drawer>
+
+<!-- Inline Create Task Drawer -->
+<p-drawer 
+  [(visible)]="showInlineTaskDrawer" 
+  position="right"
+  [style]="{ width: '480px' }" 
+  header="Add New Task" 
+  appendTo="body"
+>
+  <div class="flex flex-column gap-3 px-4 py-3">
+    <div class="field">
+      <app-textarea-field 
+        label="Task Description" 
+        [field]="inlineTaskDescription" 
+        [rows]="4" 
+        [required]="true"
+        placeholder="Enter task detail / checklist responsibility...">
+      </app-textarea-field>
+    </div>
+
+    <div class="field">
+      <app-select-field 
+        label="Priority" 
+        [field]="inlineTaskPriority" 
+        [options]="priorityOptions" 
+        optionLabel="label" 
+        optionValue="value"
+        [required]="true">
+      </app-select-field>
+    </div>
+
+    <div class="field">
+      <app-select-field
+        label="Authority (RBI, NABARD, etc.)"
+        [field]="inlineTaskAuthorityId"
+        [options]="authorities()"
+        optionLabel="name"
+        optionValue="id"
+        filterBy="name"
+        [showClear]="true"
+        [required]="true"
+        placeholder="Select Authority"
+        (onShow)="ensureAuthoritiesLoaded()">
+      </app-select-field>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="drawer-footer-row">
+      <button pButton type="button" label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary" (click)="showInlineTaskDrawer.set(false)"></button>
+      <button pButton type="button" label="Add Task" icon="pi pi-plus" [loading]="savingInlineTask()" [disabled]="!isInlineTaskValid() || savingInlineTask()" (click)="saveInlineTask()"></button>
     </div>
   </ng-template>
 </p-drawer>

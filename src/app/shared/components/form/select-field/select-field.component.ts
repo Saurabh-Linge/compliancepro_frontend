@@ -35,6 +35,7 @@ import { TooltipModule } from 'primeng/tooltip';
             (ngModelChange)="onValueChange($event)"
             (onBlur)="onBlur()"
             (onFilter)="onFilter($event)"
+            (onShow)="onShow.emit($event)"
             [options]="sortedOptions()"
             [optionLabel]="optionLabel()"
             [optionValue]="optionValue()"
@@ -60,6 +61,7 @@ import { TooltipModule } from 'primeng/tooltip';
               (ngModelChange)="onValueChange($event)"
               (onBlur)="onBlur()"
               (onFilter)="onFilter($event)"
+              (onShow)="onShow.emit($event)"
               [options]="sortedOptions()"
               [optionLabel]="optionLabel()"
               [optionValue]="optionValue()"
@@ -183,6 +185,9 @@ export class SelectFieldComponent<T = any> {
 
   /** Change event emitter */
   onChange = output<T | null>();
+
+  /** Dropdown panel open event emitter */
+  onShow = output<any>();
 
   /** Whether field is required */
   required = input<boolean>(false);

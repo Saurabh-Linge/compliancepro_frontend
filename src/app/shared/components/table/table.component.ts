@@ -124,6 +124,7 @@ export class TableComponent implements OnDestroy {
   actions = input<TableAction[]>([]);
   actionsWidth = input<string | undefined>('auto');
   showAddButton = input<boolean>(true);
+  addButtonLabel = input<string>('New (Ctrl+N)');
   showRefreshButton = input<boolean>(true);
   sortField = input<string | undefined>();
   sortOrder = input<number>(1); // 1: Asc, -1: Desc
@@ -182,6 +183,17 @@ export class TableComponent implements OnDestroy {
   // Categorize columns for specialized rendering order
   actionColumns = computed(() => this.columns().filter(c => c.type === 'action'));
   dataColumns = computed(() => this.columns().filter(c => c.type !== 'action'));
+
+  // Effective global filter fields for client-side search
+  effectiveGlobalFilterFields = computed(() => {
+    const fields = this.globalFilterFields();
+    if (fields && fields.length > 0) {
+      return fields;
+    }
+    return this.columns()
+      .filter(c => !c.type || ['text', 'badge', 'status', 'status_inv', 'date', 'number'].includes(c.type))
+      .map(c => c.field);
+  });
 
   // Computed scoped tokens for PrimeNG [dt] input
   scopedTokens = computed(() => {

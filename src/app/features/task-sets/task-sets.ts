@@ -18,6 +18,7 @@ import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
 
 import { TextFieldComponent } from '../../shared/components/form/text-field/text-field.component';
+import { TextareaFieldComponent } from '../../shared/components/form/textarea-field/textarea-field.component';
 import { SelectFieldComponent } from '../../shared/components/form/select-field/select-field.component';
 import { DateFieldComponent } from '../../shared/components/form/date-field/date-field.component';
 
@@ -36,6 +37,7 @@ import { DateFieldComponent } from '../../shared/components/form/date-field/date
     PickListModule,
     DateFieldComponent,
     TextFieldComponent,
+    TextareaFieldComponent,
     SelectFieldComponent,
     ToastModule,
     ConfirmDialogModule,
@@ -157,12 +159,14 @@ export class TaskSetsComponent implements OnInit {
   saving = signal<boolean>(false);
 
   tableColumns: TableColumn[] = [
-    { field: 'circular_title', header: 'Circular Title', type: 'text', width: '25%' },
-    { field: 'name', header: 'Task Set Name', type: 'text', width: '25%' },
-    { field: 'default_due_date', header: 'Due Date', type: 'date' },
-    { field: 'start_date', header: 'Start Date', type: 'date' },
-    { field: 'frequency', header: 'Frequency', type: 'text' },
-    { field: 'created_at', header: 'Created', type: 'date' }
+    { field: 'type', header: 'Type', type: 'badge', width: '100px' },
+    { field: 'circular_title', header: 'Circular / Authority', type: 'text', width: '22%' },
+    { field: 'name', header: 'Task Set Name', type: 'text', width: '20%' },
+    { field: 'branch_names', header: 'Dept/Branch', type: 'text', width: '18%' },
+    { field: 'default_due_date', header: 'Due Date', type: 'date', width: '110px' },
+    { field: 'start_date', header: 'Start Date', type: 'date', width: '110px' },
+    { field: 'frequency', header: 'Frequency', type: 'text', width: '120px' },
+    { field: 'created_at', header: 'Created', type: 'date', width: '110px' }
   ];
 
   tableActions: TableAction[] = [
@@ -199,9 +203,16 @@ export class TaskSetsComponent implements OnInit {
   selectedTaskSet: any = null;
   showBranchAssignment = signal(false);
 
+  taskSetTypeOptions = [
+    { label: 'Regular (Circular Based)', value: 'REGULAR' },
+    { label: 'Internal (Daily / Operational Checklist)', value: 'INTERNAL' }
+  ];
+
   // Form states as WritableSignals
+  newTaskSetType = signal<string>('REGULAR');
   newTaskSetName = signal<string>('');
   newTaskSetCircularId = signal<number | null>(null);
+  newTaskSetAuthorityId = signal<number | null>(null);
   newTaskSetDueDate = signal<Date | null>(null);
   newTaskSetStartDate = signal<Date | null>(null);
   newTaskSetEndDate = signal<Date | null>(null);
@@ -209,6 +220,7 @@ export class TaskSetsComponent implements OnInit {
   newTaskSetReportingDate = signal<Date | null>(null);
 
   frequencies = [
+    { label: 'DAILY - Every Day', value: '0' },
     { label: 'FORTNIGHT - Every 15 Days', value: '1' },
     { label: 'MONTHLY - Every Month', value: '2' },
     { label: 'QUARTERLY - Every Three Months', value: '3' },
@@ -218,6 +230,7 @@ export class TaskSetsComponent implements OnInit {
   ];
 
   readonly frequencyMap: Record<string, string> = {
+    '0': 'Daily',
     '1': 'Fortnight (Every 15 Days)',
     '2': 'Monthly',
     '3': 'Quarterly',
@@ -226,17 +239,152 @@ export class TaskSetsComponent implements OnInit {
     '6': '1 Time Use'
   };
 
+  // Form & details loading states
+  loadingFormDetails = signal<boolean>(false);
+
+  // Inline Task Creation Signals
+  showInlineTaskDrawer = signal<boolean>(false);
+  showInlineTaskDialog = this.showInlineTaskDrawer; // alias for template compatibility
+  inlineTaskDescription = signal<string>('');
+  inlineTaskPriority = signal<string>('');
+  inlineTaskAuthorityId = signal<number | null>(null);
+  savingInlineTask = signal<boolean>(false);
+
+  priorityOptions = [
+    { label: 'Critical', value: 'Critical' },
+    { label: 'High', value: 'High' },
+    { label: 'Medium', value: 'Medium' },
+    { label: 'Low', value: 'Low' }
+  ];
+
+  // Inline task form validation signal
+  isInlineTaskValid = computed(() => {
+    const desc = this.inlineTaskDescription()?.trim();
+    const priority = this.inlineTaskPriority();
+    const authorityId = this.inlineTaskAuthorityId();
+
+    return !!(desc && priority && authorityId);
+  });
+
+  // Form validation signal
+  isFormValid = computed(() => {
+    const type = this.newTaskSetType();
+    const name = this.newTaskSetName()?.trim();
+    const circularId = this.newTaskSetCircularId();
+    const frequency = this.newTaskSetFrequency();
+    const startDate = this.newTaskSetStartDate();
+    const endDate = this.newTaskSetEndDate();
+    const reportingDate = this.newTaskSetReportingDate();
+    const dueDate = this.newTaskSetDueDate();
+
+    if (!type || !name || !frequency || !startDate) {
+      return false;
+    }
+
+    if (type === 'REGULAR') {
+      if (!circularId || !endDate || !reportingDate || !dueDate) {
+        return false;
+      }
+      if (startDate > endDate) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
   // Mapping
   rawTasks = signal<any[]>([]);
+  authorities = signal<any[]>([]);
   selectedCircularFilter = signal<number | null>(null);
   formCircularFilter = signal<number | null>(null);
   circulars = signal<any[]>([]);
 
+  openInlineTaskDialog() {
+    this.ensureAuthoritiesLoaded();
+    this.inlineTaskDescription.set('');
+    this.inlineTaskPriority.set('');
+    this.inlineTaskAuthorityId.set(this.newTaskSetAuthorityId() || null);
+    this.showInlineTaskDrawer.set(true);
+  }
+
+  saveInlineTask() {
+    const desc = this.inlineTaskDescription()?.trim();
+    const priority = this.inlineTaskPriority();
+    const authorityId = this.inlineTaskAuthorityId();
+
+    if (!desc || !priority || !authorityId) {
+      const missing: string[] = [];
+      if (!desc) missing.push('Task Description');
+      if (!priority) missing.push('Priority');
+      if (!authorityId) missing.push('Authority');
+
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Required Fields Missing',
+        detail: `Please fill in all required fields for Add Task: ${missing.join(', ')}.`,
+        life: 4000
+      });
+      return;
+    }
+
+    this.savingInlineTask.set(true);
+    const circularId = this.newTaskSetType() === 'REGULAR' ? (this.newTaskSetCircularId() || undefined) : undefined;
+
+    const payload: any = {
+      description: desc,
+      circular_id: circularId,
+      priority: priority,
+      authority_id: authorityId
+    };
+
+    this.api.createManualTask(payload).subscribe({
+      next: (createdTask: any) => {
+        this.savingInlineTask.set(false);
+        this.showInlineTaskDrawer.set(false);
+
+        const defaultDueObj = this.newTaskSetDueDate();
+        createdTask.due_date = defaultDueObj || null;
+
+        const currentRaw = this.rawTasks();
+        this.rawTasks.set([createdTask, ...currentRaw]);
+        this.targetTasks = [createdTask, ...this.targetTasks];
+
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Task Created',
+          detail: 'New task created and automatically added to this task set.',
+          life: 3000
+        });
+      },
+      error: () => {
+        this.savingInlineTask.set(false);
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to create task' });
+      }
+    });
+  }
+
   allTasks = computed(() => {
     const tasks = this.rawTasks();
-    const filterId = this.formCircularFilter();
-    if (!filterId) return tasks;
-    return tasks.filter(t => t.circular_id === filterId);
+    const type = this.newTaskSetType();
+    const circularId = this.formCircularFilter() || this.newTaskSetCircularId();
+    const authorities = this.authorities();
+    const authMap = new Map<number, string>(authorities.map(a => [a.id, a.name]));
+
+    if (type === 'REGULAR') {
+      if (!circularId) return [];
+      return tasks.filter(t => t.circular_id === circularId);
+    }
+
+    if (type === 'INTERNAL') {
+      const internalTasks = tasks.filter(t => !t.circular_id);
+      return internalTasks.map(t => ({
+        ...t,
+        authority_name: t.authority_name || (t.authority_id ? (authMap.get(t.authority_id) || `Authority #${t.authority_id}`) : 'Bank Internal')
+      }));
+    }
+
+    return tasks;
   });
 
   filteredTaskSets = computed(() => {
@@ -254,20 +402,23 @@ export class TaskSetsComponent implements OnInit {
     return found ? (found.reference_no ? `${found.reference_no} — ${found.title}` : found.title) : null;
   });
 
-  circularFilterOptions = computed(() => {
-    return this.circulars().map(c => ({
-      label: c.reference_no ? `${c.reference_no} - ${c.title}` : c.title,
-      value: c.id
-    }));
-  });
+  circularFilterOptions = signal<{ label: string; value: any }[]>([]);
 
   targetTasks: any[] = [];
-  taskColumns: TableColumn[] = [
-    { field: 'description', header: 'Description', type: 'text' },
-    // { field: 'risk_category', header: 'Risk', type: 'badge' },
-    { field: 'priority', header: 'Priority', type: 'badge' },
-    { field: 'due_date', header: 'Proposed Due Date', type: 'date_input', width: '160px' }
-  ];
+  taskColumns = computed<TableColumn[]>(() => {
+    if (this.newTaskSetType() === 'INTERNAL') {
+      return [
+        { field: 'description', header: 'Description', type: 'text' },
+        { field: 'priority', header: 'Priority', type: 'badge', width: '120px' },
+        { field: 'authority_name', header: 'Authority', type: 'text', width: '180px' }
+      ];
+    }
+    return [
+      { field: 'description', header: 'Description', type: 'text' },
+      { field: 'priority', header: 'Priority', type: 'badge', width: '120px' },
+      { field: 'due_date', header: 'Proposed Due Date', type: 'date_input', width: '160px' }
+    ];
+  });
 
   // Assigning
   branches = signal<any[]>([]);
@@ -401,32 +552,34 @@ export class TaskSetsComponent implements OnInit {
       this.rawTasks.set(res.data);
     });
     this.api.getBranches().subscribe(data => this.branches.set(data));
-    this.loadCirculars();
+    this.loadAuthorities();
 
-    // Auto-apply circular filter if navigated from Circular Master
-    const circularId = this.route.snapshot.queryParamMap.get('circular_id');
-    if (circularId) {
-      this.selectedCircularFilter.set(+circularId);
-      this.cameFromCirculars.set(true);
-      this.api.getCircularById(+circularId).subscribe({
-        next: (data) => this.currentCircular.set(data),
-        error: (err) => console.error('Failed to load circular details in task sets:', err)
-      });
-    } else {
-      this.currentCircular.set(null);
-    }
-    const parentPage = this.route.snapshot.queryParamMap.get('parent_page');
-    if (parentPage) {
-      this.parentPage = +parentPage;
-    }
-    const parentLimit = this.route.snapshot.queryParamMap.get('parent_limit');
-    if (parentLimit) {
-      this.parentLimit = +parentLimit;
-    }
-    const cameFromTasks = this.route.snapshot.queryParamMap.get('came_from_tasks');
-    if (cameFromTasks === 'true') {
-      this.cameFromTasks.set(true);
-    }
+    // Auto-apply circular filter if navigated from Circular Master / Tasks
+    this.route.queryParamMap.subscribe(params => {
+      const circularId = params.get('circular_id');
+      const cameFromTasks = params.get('came_from_tasks');
+      const parentPage = params.get('parent_page');
+      const parentLimit = params.get('parent_limit');
+
+      this.parentPage = parentPage ? +parentPage : null;
+      this.parentLimit = parentLimit ? +parentLimit : null;
+
+      if (circularId) {
+        this.selectedCircularFilter.set(+circularId);
+        this.cameFromCirculars.set(true);
+        this.cameFromTasks.set(cameFromTasks === 'true' || cameFromTasks === '1');
+        this.loadCirculars();
+        this.api.getCircularById(+circularId).subscribe({
+          next: (data) => this.currentCircular.set(data),
+          error: (err) => console.error('Failed to load circular details in task sets:', err)
+        });
+      } else {
+        this.selectedCircularFilter.set(null);
+        this.cameFromCirculars.set(false);
+        this.cameFromTasks.set(false);
+        this.currentCircular.set(null);
+      }
+    });
   }
 
   loadData(isRefresh = false) {
@@ -434,6 +587,11 @@ export class TaskSetsComponent implements OnInit {
       next: (data) => {
         const mapped = data.map((row: any) => ({
           ...row,
+          type: row.type || 'REGULAR',
+          circular_title: (row.type || 'REGULAR') === 'INTERNAL'
+            ? (row.authority_name ? `Authority: ${row.authority_name}` : 'Internal / Operational')
+            : (row.circular_title || '-'),
+          branch_names: row.branch_names || '—',
           frequency: this.frequencyMap[row.frequency] ?? row.frequency
         }));
         this.taskSets.set(mapped);
@@ -447,19 +605,61 @@ export class TaskSetsComponent implements OnInit {
     });
   }
 
+  ensureCircularsLoaded() {
+    if (!this.circulars() || this.circulars().length === 0) {
+      this.loadCirculars();
+    }
+  }
+
   loadCirculars() {
     this.api.getCirculars({ limit: 1000 }).subscribe(res => {
       this.circulars.set(res.data);
+      this.circularFilterOptions.set(
+        res.data.map((c: any) => ({
+          label: c.reference_no ? `${c.reference_no} - ${c.title}` : c.title,
+          value: c.id
+        }))
+      );
     });
+  }
+
+  ensureAuthoritiesLoaded() {
+    if (!this.authorities() || this.authorities().length === 0) {
+      this.loadAuthorities();
+    }
+  }
+
+  loadAuthorities() {
+    this.api.getAuthorities().subscribe({
+      next: (data) => {
+        this.authorities.set(data || []);
+      },
+      error: (err) => {
+        console.error('Failed to load authorities in task sets:', err);
+      }
+    });
+  }
+
+  onTypeChange(type: any) {
+    this.targetTasks = [];
+    if (type === 'INTERNAL') {
+      this.ensureAuthoritiesLoaded();
+      this.newTaskSetCircularId.set(null);
+      this.formCircularFilter.set(null);
+    } else if (type === 'REGULAR') {
+      this.ensureCircularsLoaded();
+      this.newTaskSetAuthorityId.set(null);
+    }
   }
 
   openCreateModal() { // Kept method name since html uses it, but it opens the form drawer
     this.isEditMode = false;
     this.selectedTaskSet = null;
+    this.newTaskSetType.set('REGULAR');
     this.newTaskSetName.set('');
-    const prefillCircularId = this.selectedCircularFilter();
-    this.newTaskSetCircularId.set(prefillCircularId); // pre-fill from filter if active
-    this.formCircularFilter.set(prefillCircularId); // pre-fill form task filter
+    this.newTaskSetAuthorityId.set(null);
+    this.newTaskSetCircularId.set(null);
+    this.formCircularFilter.set(null);
     this.newTaskSetDueDate.set(null);
     this.newTaskSetStartDate.set(null);
     this.newTaskSetEndDate.set(null);
@@ -470,12 +670,21 @@ export class TaskSetsComponent implements OnInit {
     this.proposedDate.set(null);
     this.showBranchAssignment.set(true);
 
-    // Reset tasks
-    this.api.getApprovedTasks({ limit: 1000 }).subscribe(res => {
-      this.rawTasks.set(res.data);
-      this.showFormDrawer.set(true);
-    });
+    // Clean any previous task due dates
+    const cleanTasks = (this.rawTasks() || []).map((t: any) => ({
+      ...t,
+      due_date: null
+    }));
+    this.rawTasks.set(cleanTasks);
 
+    // Open drawer immediately for instant response
+    this.showFormDrawer.set(true);
+
+    if (!this.rawTasks() || this.rawTasks().length === 0) {
+      this.api.getApprovedTasks({ limit: 1000 }).subscribe(res => {
+        this.rawTasks.set(res.data);
+      });
+    }
   }
 
   getFrequencyKeyByLabel(label: string): string {
@@ -486,8 +695,13 @@ export class TaskSetsComponent implements OnInit {
   openFormDrawer(row: any) {
     this.isEditMode = true;
     this.selectedTaskSet = row;
+    this.newTaskSetType.set(row.type || 'REGULAR');
+    if ((row.type || 'REGULAR') === 'INTERNAL') {
+      this.ensureAuthoritiesLoaded();
+    }
     this.newTaskSetName.set(row.name || '');
     this.newTaskSetCircularId.set(row.circular_id || null);
+    this.newTaskSetAuthorityId.set(row.authority_id || null);
     this.formCircularFilter.set(row.circular_id || null);
     this.newTaskSetDueDate.set(row.default_due_date ? new Date(row.default_due_date) : null);
     this.newTaskSetStartDate.set(row.start_date ? new Date(row.start_date) : null);
@@ -495,6 +709,7 @@ export class TaskSetsComponent implements OnInit {
     this.newTaskSetFrequency.set(this.getFrequencyKeyByLabel(row.frequency || ''));
     this.newTaskSetReportingDate.set(row.reporting_date ? new Date(row.reporting_date) : null);
     this.selectedBranches = [];
+    this.targetTasks = [];
     this.showBranchAssignment.set(true);
     if (row.default_due_date) {
       this.proposedDate.set(new Date(row.default_due_date));
@@ -502,32 +717,51 @@ export class TaskSetsComponent implements OnInit {
       this.proposedDate.set(null);
     }
 
+    // Open drawer immediately for instant response
+    this.loadingFormDetails.set(true);
+    this.showFormDrawer.set(true);
 
-    this.api.getTaskSet(row.id).subscribe(details => {
-      const dateMap = new Map<number, string | null>();
-      (details.tasks || []).forEach((t: any) => {
-        const d = t.due_date ? t.due_date.split('T')[0] : null;
-        dateMap.set(t.id, d);
-      });
-
-      const mappedIds = new Set((details.tasks || []).map((t: any) => t.id));
-      const mappedBranchIds = new Set((details.branches || []).map((b: any) => b.id));
-
-      const defaultDueObj = this.newTaskSetDueDate();
-      this.api.getApprovedTasks({ limit: 1000 }).subscribe(res => {
-        const mappedRawTasks = res.data.map((t: any) => {
-          const rawVal = dateMap.get(t.id);
-          return {
-            ...t,
-            due_date: this.parseToDate(rawVal) || defaultDueObj || null
-          };
+    this.api.getTaskSet(row.id).subscribe({
+      next: (details) => {
+        const dateMap = new Map<number, string | null>();
+        (details.tasks || []).forEach((t: any) => {
+          const d = t.due_date ? t.due_date.split('T')[0] : null;
+          dateMap.set(t.id, d);
         });
-        this.rawTasks.set(mappedRawTasks);
 
-        this.targetTasks = mappedRawTasks.filter((t: any) => mappedIds.has(t.id));
-        this.selectedBranches = this.branches().filter((b: any) => mappedBranchIds.has(b.id));
-        this.showFormDrawer.set(true);
-      });
+        const mappedIds = new Set((details.tasks || []).map((t: any) => t.id));
+        const mappedBranchIds = new Set((details.branches || []).map((b: any) => b.id));
+
+        const defaultDueObj = this.newTaskSetDueDate();
+        const applyMappedTasks = (tasksToMap: any[]) => {
+          const mappedRawTasks = tasksToMap.map((t: any) => {
+            const rawVal = dateMap.get(t.id);
+            return {
+              ...t,
+              due_date: this.parseToDate(rawVal) || defaultDueObj || null
+            };
+          });
+          this.rawTasks.set(mappedRawTasks);
+          this.targetTasks = mappedRawTasks.filter((t: any) => mappedIds.has(t.id));
+          this.selectedBranches = this.branches().filter((b: any) => mappedBranchIds.has(b.id));
+          this.loadingFormDetails.set(false);
+        };
+
+        const currentTasks = this.rawTasks();
+        if (currentTasks && currentTasks.length > 0) {
+          applyMappedTasks(currentTasks);
+        } else {
+          this.api.getApprovedTasks({ limit: 1000 }).subscribe({
+            next: (res) => {
+              applyMappedTasks(res.data);
+            },
+            error: () => this.loadingFormDetails.set(false)
+          });
+        }
+      },
+      error: () => {
+        this.loadingFormDetails.set(false);
+      }
     });
   }
 
@@ -547,22 +781,74 @@ export class TaskSetsComponent implements OnInit {
   }
 
   saveTaskSet() {
-    if (!this.newTaskSetName()) return;
+    if (this.saving()) return;
+
+    const missingFields: string[] = [];
+    const isRegular = this.newTaskSetType() === 'REGULAR';
+
+    if (!this.newTaskSetType()) {
+      missingFields.push('Task Set Type');
+    }
+    if (isRegular && !this.newTaskSetCircularId()) {
+      missingFields.push('Circular');
+    }
+    if (!this.newTaskSetName() || !this.newTaskSetName().trim()) {
+      missingFields.push('Task Set Name');
+    }
+    if (!this.newTaskSetFrequency()) {
+      missingFields.push('Task Set Frequency');
+    }
+    if (!this.newTaskSetStartDate()) {
+      missingFields.push('Start Date');
+    }
+    if (isRegular && !this.newTaskSetEndDate()) {
+      missingFields.push('End Date');
+    }
+    if (isRegular && !this.newTaskSetReportingDate()) {
+      missingFields.push('Reporting Date');
+    }
+    if (isRegular && !this.newTaskSetDueDate()) {
+      missingFields.push('Due Date [For Branch]');
+    }
+
+    if (missingFields.length > 0) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Required Fields Missing',
+        detail: `Please fill in all required fields: ${missingFields.join(', ')}.`,
+        life: 5000
+      });
+      return;
+    }
+
+    const startDate = this.newTaskSetStartDate();
+    const endDate = this.newTaskSetEndDate();
+    if (isRegular && startDate && endDate && startDate > endDate) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Invalid Date Range',
+        detail: 'Start Date cannot be greater than End Date.',
+        life: 4000
+      });
+      return;
+    }
 
     const reportingDate = this.newTaskSetReportingDate();
-    if (reportingDate && !this.validateTaskDueDates(reportingDate)) {
+    if (isRegular && reportingDate && !this.validateTaskDueDates(reportingDate)) {
       return;
     }
 
     this.saving.set(true);
     const payload = {
-      name: this.newTaskSetName(),
-      circular_id: this.newTaskSetCircularId() || undefined,
-      default_due_date: this.formatDate(this.newTaskSetDueDate()),
+      name: this.newTaskSetName().trim(),
+      type: this.newTaskSetType(),
+      circular_id: isRegular ? (this.newTaskSetCircularId() || undefined) : undefined,
+      authority_id: undefined,
+      default_due_date: isRegular ? this.formatDate(this.newTaskSetDueDate()) : undefined,
       start_date: this.formatDate(this.newTaskSetStartDate()),
-      end_date: this.formatDate(this.newTaskSetEndDate()),
+      end_date: isRegular ? this.formatDate(this.newTaskSetEndDate()) : undefined,
       frequency: this.newTaskSetFrequency() || undefined,
-      reporting_date: this.formatDate(this.newTaskSetReportingDate())
+      reporting_date: isRegular ? this.formatDate(this.newTaskSetReportingDate()) : undefined
     };
 
     const finalizeAssignments = (setId: number) => {

@@ -189,9 +189,9 @@ export class AssignmentsComponent implements OnInit {
     {
       label: 'Propose Timeline',
       icon: 'pi pi-calendar',
-      visible: (row) => row.status === 'Pending_Timeline' && this.isBranchUser,
+      visible: (row) => this.isPendingTimeline(row.status) && this.isBranchUser && !this.isRowInternal(row),
       command: (row) => {
-        if (row.status === 'Pending_Timeline') {
+        if (this.isPendingTimeline(row.status)) {
           this.openProposeModal(row);
         }
       }
@@ -199,7 +199,7 @@ export class AssignmentsComponent implements OnInit {
     {
       label: 'Setup Timeline',
       icon: 'pi pi-calendar-plus',
-      visible: (row) => row.status === 'Pending_Timeline' && this.isBranchUser,
+      visible: (row) => this.isPendingTimeline(row.status) && this.isBranchUser && !this.isRowInternal(row),
       command: (row) => {
         this.goToTasks(row.id);
       }
@@ -207,7 +207,7 @@ export class AssignmentsComponent implements OnInit {
     {
       label: 'Review Timeline',
       icon: 'pi pi-calendar-minus',
-      visible: (row) => row.status === 'Timeline_Review' && this.isReviewerUser,
+      visible: (row) => this.isTimelineReview(row.status) && this.isReviewerUser && !this.isRowInternal(row),
       command: (row) => {
         this.goToTasks(row.id);
       }
@@ -216,9 +216,9 @@ export class AssignmentsComponent implements OnInit {
       label: 'Accept Timeline',
       icon: 'pi pi-check',
       styleClass: 'text-green-600',
-      visible: (row) => (row.status === 'Pending_Timeline' && this.isBranchUser) || (row.status === 'Timeline_Review' && this.isReviewerUser),
+      visible: (row) => !this.isRowInternal(row) && ((this.isPendingTimeline(row.status) && this.isBranchUser) || (this.isTimelineReview(row.status) && this.isReviewerUser)),
       command: (row) => {
-        if (row.status === 'Pending_Timeline' || row.status === 'Timeline_Review') {
+        if (this.isPendingTimeline(row.status) || this.isTimelineReview(row.status)) {
           this.acceptTimeline(row);
         }
       }
@@ -226,11 +226,15 @@ export class AssignmentsComponent implements OnInit {
     {
       label: 'Do Compliance',
       icon: 'pi pi-list',
-      visible: (row) => (row.status?.toUpperCase() === 'IN_PROGRESS' || row.status?.toUpperCase() === 'REJECTED' || row.status?.toUpperCase() === 'PENDING_RECOMPLIANCE') && this.isBranchUser,
-      command: (row) => {
-        if (row.status?.toUpperCase() === 'IN_PROGRESS' || row.status?.toUpperCase() === 'REJECTED' || row.status?.toUpperCase() === 'PENDING_RECOMPLIANCE') {
-          this.goToTasks(row.id);
+      visible: (row) => {
+        const s = row.status?.toUpperCase();
+        if (this.isRowInternal(row) && this.isBranchUser) {
+          return s === 'PENDING_TIMELINE' || s === 'IN_PROGRESS' || s === 'REJECTED' || s === 'PENDING_RECOMPLIANCE';
         }
+        return (s === 'IN_PROGRESS' || s === 'REJECTED' || s === 'PENDING_RECOMPLIANCE') && this.isBranchUser;
+      },
+      command: (row) => {
+        this.goToTasks(row.id);
       }
     },
     {
@@ -246,6 +250,25 @@ export class AssignmentsComponent implements OnInit {
       }
     }
   ];
+
+  isPendingTimeline(status: string | undefined | null): boolean {
+    const s = (status || '').toUpperCase();
+    return s === 'PENDING_TIMELINE' || s === 'PENDING TIMELINE';
+  }
+
+  isTimelineReview(status: string | undefined | null): boolean {
+    const s = (status || '').toUpperCase();
+    return s === 'TIMELINE_REVIEW' || s === 'TIMELINE REVIEW';
+  }
+
+  isRowInternal(row: any): boolean {
+    if (!row) return false;
+    const taskSetType = (row.task_set_type || row.type || '').toUpperCase();
+    if (taskSetType === 'INTERNAL') return true;
+    if (taskSetType === 'REGULAR') return false;
+    if (row.circular_id) return false;
+    return false;
+  }
 
   taskSetActions: TableAction[] = [
     {

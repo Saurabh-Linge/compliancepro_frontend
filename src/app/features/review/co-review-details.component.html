@@ -156,7 +156,7 @@
             </div>
 
             <!-- Per-task Accept / Reject / Escalate toggle (only shown for questions saved by department) -->
-            <div class="review-toggle-row" *ngIf="!t.saved_review_status && isTaskSavedByDept(t)" style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+            <div class="review-toggle-row" *ngIf="isTaskSavedByDept(t)" style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
               <p-button label="Accept" icon="pi pi-check" size="small"
                         [severity]="t.review_status === 'APPROVED' ? 'success' : 'secondary'"
                         [outlined]="t.review_status !== 'APPROVED'"
@@ -178,12 +178,12 @@
             </div>
 
             <!-- Unsaved task notification for CO -->
-            <div *ngIf="!t.saved_review_status && !isTaskSavedByDept(t)" style="font-size: 0.75rem; color: #9ca3af; font-style: italic; margin-top: 0.25rem;">
+            <div *ngIf="!isTaskSavedByDept(t)" style="font-size: 0.75rem; color: #9ca3af; font-style: italic; margin-top: 0.25rem;">
               <i class="pi pi-clock" style="font-size: 0.7rem; margin-right: 0.25rem;"></i> Awaiting Department Response
             </div>
 
             <!-- Reviewer remark textarea & Save button (only shown when drafting review before saving) -->
-            <div *ngIf="!t.saved_review_status && (t.review_status === 'APPROVED' || t.review_status === 'NEEDS_REDO' || t.review_status === 'ESCALATED')" style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+            <div *ngIf="isReviewActive() && (t.review_status === 'APPROVED' || t.review_status === 'NEEDS_REDO' || t.review_status === 'ESCALATED')" style="margin-top: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
               <textarea pTextarea
                         [(ngModel)]="t.review_remark"
                         placeholder="Reviewer Remarks / Feedback (Required for Reject / Escalate)..."

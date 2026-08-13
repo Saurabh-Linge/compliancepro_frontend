@@ -172,7 +172,7 @@ import { DatePickerModule } from 'primeng/datepicker';
             </div>
 
             <!-- Right Column: Answer Form or Timeline Proposing -->
-            <div class="answer-form" *ngIf="assignmentStatus() === 'Pending_Timeline' || assignmentStatus() === 'Timeline_Review'; else complianceForm" style="display: flex; flex-direction: column; align-items: stretch; justify-content: center; width: 100%;">
+            <div class="answer-form" *ngIf="isTimelineMode(); else complianceForm" style="display: flex; flex-direction: column; align-items: stretch; justify-content: center; width: 100%;">
               
               <!-- If Branch is proposing/editing timeline -->
               <ng-container *ngIf="!isReviewer()">
@@ -508,6 +508,8 @@ export class AssignmentDetailsComponent implements OnInit {
   // Rich metadata properties
   branchName = signal<string>('');
   taskSetName = signal<string>('');
+  taskSetType = signal<string>('');
+  isInternalTaskSet = computed(() => (this.taskSetType() || '').toUpperCase() === 'INTERNAL');
   proposedTimeline = signal<string>('');
   frequency = signal<string>('');
   startDate = signal<string>('');
@@ -568,9 +570,16 @@ export class AssignmentDetailsComponent implements OnInit {
     });
   }
 
-  completedCount = computed(() => {
+  isTimelineMode(): boolean {
+    if (this.isInternalTaskSet()) {
+      return false; // Direct compliance mode for Internal task sets
+    }
     const status = this.assignmentStatus();
-    if (status === 'Pending_Timeline' || status === 'Timeline_Review') {
+    return status === 'Pending_Timeline' || status === 'Timeline_Review';
+  }
+
+  completedCount = computed(() => {
+    if (this.isTimelineMode()) {
       return this.tasks().filter(t => t.proposed_due_date !== null && t.proposed_due_date !== undefined && t.proposed_due_date !== '').length;
     }
     return this.tasks().filter(t => t.compliance_status === 'COMPLIED' || t.compliance_status === 'NOT_COMPLIED').length;
@@ -581,6 +590,9 @@ export class AssignmentDetailsComponent implements OnInit {
     const status = this.assignmentStatus()?.toUpperCase();
     if (status === 'REVIEW_PENDING' || status === 'COMPLETED') {
       return false;
+    }
+    if (this.isInternalTaskSet()) {
+      return status === 'PENDING_TIMELINE' || status === 'IN_PROGRESS' || status === 'REJECTED' || status === 'PENDING_RECOMPLIANCE' || status === 'ESCALATED_TO_CCO';
     }
     const hasNeedsRedoTask = this.tasks().some(t => t.review_status === 'NEEDS_REDO');
     return status === 'IN_PROGRESS' || status === 'REJECTED' || status === 'PENDING_RECOMPLIANCE' || status === 'ESCALATED_TO_CCO' || hasNeedsRedoTask;
@@ -597,6 +609,10 @@ export class AssignmentDetailsComponent implements OnInit {
     // If reviewer explicitly accepted or escalated this single task point, hide Save Task button & lock inputs for this task
     if (task?.review_status === 'APPROVED' || task?.review_status === 'ESCALATED') {
       return false;
+    }
+
+    if (this.isInternalTaskSet()) {
+      return status === 'PENDING_TIMELINE' || status === 'IN_PROGRESS' || status === 'ESCALATED_TO_CCO' || status === 'REJECTED' || status === 'PENDING_RECOMPLIANCE';
     }
 
     // In compliance phase (IN_PROGRESS, ESCALATED_TO_CCO, REJECTED, PENDING_RECOMPLIANCE), enable unaccepted/unsaved task remarks & attachments
@@ -811,6 +827,7 @@ export class AssignmentDetailsComponent implements OnInit {
       // Populate rich header metadata
       this.branchName.set(first.branch_name || '');
       this.taskSetName.set(first.task_set_name || '');
+      this.taskSetType.set(first.task_set_type || first.type || '');
       this.proposedTimeline.set(first.proposed_timeline || '');
       
       if (first.proposed_timeline) {
@@ -832,6 +849,7 @@ export class AssignmentDetailsComponent implements OnInit {
       this.reviewRemark.set('');
       this.branchName.set('');
       this.taskSetName.set('');
+      this.taskSetType.set('');
       this.proposedTimeline.set('');
       this.frequency.set('');
       this.startDate.set('');
