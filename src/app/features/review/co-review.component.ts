@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
-import { Router } from "@angular/router";
+import { ActivatedRoute, Router } from "@angular/router";
 import { inject } from "@angular/core";
 import { APP_CONFIG } from "../../core/services/config/config.token";
 import { NotificationService } from "../../core/services/notification/notification.service";
@@ -16,7 +16,7 @@ import { FormsModule } from "@angular/forms";
   template: `
     <div class="card">
       <div class="flex align-items-center justify-content-between mb-4">
-        <h5 class="m-0 text-xl font-semibold">CO Review Queue</h5>
+        <h5 class="m-0 text-xl font-semibold">CO Review Queue {{ taskSetType() ? '(' + (taskSetType() === 'INTERNAL' ? 'Internal' : 'Circular Based') + ')' : '' }}</h5>
       </div>
       <app-table
         [data]="assignments()"
@@ -50,6 +50,7 @@ export class CoReviewComponent implements OnInit {
   rawAssignments = signal<any[]>([]);
   searchQuery = signal<string>('');
   selectedStatusFilter = signal<string | null>(null);
+  taskSetType = signal<string | null>(null);
 
   private config: any = inject(APP_CONFIG);
 
@@ -93,28 +94,42 @@ export class CoReviewComponent implements OnInit {
       label: "Review Timeline",
       icon: "pi pi-calendar-plus",
       visible: (row: any) => row.status?.toUpperCase() === 'TIMELINE_REVIEW',
-      command: (row: any) => this.router.navigate(["/co-review", row.id])
+      command: (row: any) => this.router.navigate(["/co-review", row.id], { queryParams: { type: this.taskSetType() } })
     },
     {
       label: "Review Compliance",
       icon: "pi pi-shield",
       visible: (row: any) => ['REVIEW_PENDING', 'ESCALATED_TO_CCO'].includes(row.status?.toUpperCase()),
-      command: (row: any) => this.router.navigate(["/co-review", row.id])
+      command: (row: any) => this.router.navigate(["/co-review", row.id], { queryParams: { type: this.taskSetType() } })
     },
     {
       label: "View Compliance",
       icon: "pi pi-eye",
       visible: (row: any) => ['IN_PROGRESS', 'COMPLETED', 'REJECTED', 'PENDING_RECOMPLIANCE'].includes(row.status?.toUpperCase()),
-      command: (row: any) => this.router.navigate(["/co-review", row.id])
+      command: (row: any) => this.router.navigate(["/co-review", row.id], { queryParams: { type: this.taskSetType() } })
     }
   ];
 
-  constructor(private http: HttpClient, public router: Router, private notification: NotificationService) { }
+  constructor(private http: HttpClient, public router: Router, private route: ActivatedRoute, private notification: NotificationService) { }
 
-  ngOnInit() { this.loadAssignments(); }
+  ngOnInit() {
+    this.route.queryParams.subscribe(params => {
+      if (params['type']) {
+        this.taskSetType.set(params['type']);
+      } else {
+        this.taskSetType.set(null);
+      }
+      this.loadAssignments();
+    });
+  }
 
   loadAssignments() {
-    this.http.get<any>(`${this.config.apiUrl}/assignments?limit=100`).subscribe({
+    let url = `${this.config.apiUrl}/assignments?limit=100`;
+    const type = this.taskSetType();
+    if (type) {
+      url += `&task_set_type=${type}`;
+    }
+    this.http.get<any>(url).subscribe({
       next: (res) => {
         const data = res.data || res;
         this.rawAssignments.set(data);

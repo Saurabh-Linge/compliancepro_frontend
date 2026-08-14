@@ -53,10 +53,12 @@ export class AppMenu implements OnInit {
 
     if (userRole === 'cco') {
       // CCO Review Queue
-      complianceItems.push({ label: 'CCO Review Queue', icon: 'pi pi-fw pi-shield', routerLink: ['/cco-review'] });
+      complianceItems.push({ label: 'CCO Review Queue (Internal)', icon: 'pi pi-fw pi-shield', routerLink: ['/cco-review'], queryParams: { type: 'INTERNAL' }, routerLinkActiveOptions: { paths: 'exact', queryParams: 'exact', matrixParams: 'ignored', fragment: 'ignored' } });
+      complianceItems.push({ label: 'CCO Review Queue (Circular Based)', icon: 'pi pi-fw pi-shield', routerLink: ['/cco-review'], queryParams: { type: 'REGULAR' }, routerLinkActiveOptions: { paths: 'exact', queryParams: 'exact', matrixParams: 'ignored', fragment: 'ignored' } });
     } else if (userRole === 'co') {
       // CO Review Queue
-      complianceItems.push({ label: 'CO Review Queue', icon: 'pi pi-fw pi-check-circle', routerLink: ['/co-review'] });
+      complianceItems.push({ label: 'CO Review Queue (Internal)', icon: 'pi pi-fw pi-check-circle', routerLink: ['/co-review'], queryParams: { type: 'INTERNAL' }, routerLinkActiveOptions: { paths: 'exact', queryParams: 'exact', matrixParams: 'ignored', fragment: 'ignored' } });
+      complianceItems.push({ label: 'CO Review Queue (Circular Based)', icon: 'pi pi-fw pi-check-circle', routerLink: ['/co-review'], queryParams: { type: 'REGULAR' }, routerLinkActiveOptions: { paths: 'exact', queryParams: 'exact', matrixParams: 'ignored', fragment: 'ignored' } });
     } else if (['branch', 'branch_user', 'department'].includes(userRole)) {
       complianceItems.push({ label: 'My Assignments', icon: 'pi pi-fw pi-briefcase', routerLink: ['/assignments'] });
     }

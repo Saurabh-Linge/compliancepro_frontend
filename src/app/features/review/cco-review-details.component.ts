@@ -294,7 +294,10 @@ export class CcoReviewDetailsComponent implements OnInit {
     this.groupTasks(this.tasks());
   }
 
-  goBack() { this.router.navigate(["/cco-review"]); }
+  goBack() { 
+    const type = this.route.snapshot.queryParamMap.get('type');
+    this.router.navigate(["/cco-review"], { queryParams: type ? { type } : {} }); 
+  }
 }
 
 

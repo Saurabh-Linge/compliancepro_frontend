@@ -290,7 +290,10 @@ export class CoReviewDetailsComponent implements OnInit {
     this.groupTasks(this.tasks());
   }
 
-  goBack() { this.router.navigate(["/co-review"]); }
+  goBack() { 
+    const type = this.route.snapshot.queryParamMap.get('type');
+    this.router.navigate(["/co-review"], { queryParams: type ? { type } : {} }); 
+  }
 
 }
 
