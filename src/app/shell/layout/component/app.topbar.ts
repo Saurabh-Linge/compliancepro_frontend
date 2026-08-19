@@ -98,13 +98,12 @@ interface SearchItem {
               </ng-template>
             </p-select>
 
-        <div class="notification-container hide-on-small">
+        <div class="notification-container hide-on-small" #notifBtnContainer (click)="op.toggle($event, notifBtnContainer)">
           <p-button
             icon="pi pi-bell"
             pTooltip="Notification"
             tooltipPosition="bottom"
             severity="secondary"
-            (click)="op.toggle($event)"
           >
           </p-button>
           <span *ngIf="unreadCount() > 0" class="notification-badge animate-fadein">
@@ -112,9 +111,7 @@ interface SearchItem {
           </span>
         </div>
 
-
-
-        <p-popover #op [style]="{ width: '380px', padding: '0' }" styleClass="notification-popover-panel">
+        <p-popover #op appendTo="body" [style]="{ width: '380px', padding: '0' }" styleClass="notification-popover-panel">
           <div class="notification-dropdown-card">
             
             <!-- Sticky Header -->
@@ -429,12 +426,25 @@ interface SearchItem {
 
       /* ── Premium Notification Overlay Card Styles (Global overrides for body appends) ── */
       ::ng-deep .notification-popover-panel {
+        position: fixed !important;
+        top: 3.75rem !important;
+        right: 1.5rem !important;
+        left: auto !important;
+        transform: none !important;
         width: 380px !important;
+        max-width: calc(100vw - 2rem) !important;
         border-radius: 12px !important;
         overflow: hidden !important;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
         border: 1px solid var(--surface-border) !important;
         background: var(--surface-card) !important;
+        margin: 0 !important;
+      }
+
+      ::ng-deep .notification-popover-panel::before,
+      ::ng-deep .notification-popover-panel::after,
+      ::ng-deep .notification-popover-panel .p-popover-arrow {
+        display: none !important;
       }
 
       ::ng-deep .notification-popover-panel .p-popover-content {

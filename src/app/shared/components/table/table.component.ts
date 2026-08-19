@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, input, computed, effect, signal, Output, ViewEncapsulation, ViewChild, ElementRef, HostListener, ContentChild, TemplateRef, inject, OnDestroy } from '@angular/core';
+import { Component, EventEmitter, input, computed, effect, signal, Output, ViewEncapsulation, ViewChild, ElementRef, HostListener, ContentChild, TemplateRef, inject, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
@@ -126,6 +126,8 @@ export class TableComponent implements OnDestroy {
   showAddButton = input<boolean>(true);
   addButtonLabel = input<string>('New (Ctrl+N)');
   showRefreshButton = input<boolean>(true);
+  showBulkUploadButton = input<boolean>(false);
+  bulkUploadButtonLabel = input<string>('Bulk Upload');
   sortField = input<string | undefined>();
   sortOrder = input<number>(1); // 1: Asc, -1: Desc
   showExportButton = input<boolean>(false);
@@ -236,6 +238,7 @@ export class TableComponent implements OnDestroy {
   @Output() onActionClick = new EventEmitter<{ name: string; row: any }>();
   @Output() onAdd = new EventEmitter<void>();
   @Output() onRefresh = new EventEmitter<void>();
+  @Output() onBulkUpload = new EventEmitter<void>();
   @Output() onLazyLoad = new EventEmitter<any>();
   @Output() onSearch = new EventEmitter<string>();
   @Output() onRowsChange = new EventEmitter<number>();
@@ -293,6 +296,7 @@ export class TableComponent implements OnDestroy {
   @ViewChild('dt') table!: any;
   @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
   private exportService = inject(ExportService);
+  private cdr = inject(ChangeDetectorRef);
 
   // Row Expansion Support
   dataKey = input<string | undefined>();
@@ -387,6 +391,7 @@ export class TableComponent implements OnDestroy {
     this.searchDebounceTimer = setTimeout(() => {
       if (!this.lazy() && this.table) {
         this.table.filterGlobal(value, 'contains');
+        this.cdr.markForCheck();
       }
       this.onSearch.emit(value);
       this.searchDebounceTimer = null;
@@ -579,7 +584,8 @@ export class TableComponent implements OnDestroy {
           'REVIEW_PENDING': 'Review Pending',
           'COMPLETED': 'Completed',
           'ESCALATED_TO_CCO': 'Escalated to CCO',
-          'REJECTED': 'Rejected',
+          'REJECTED': 'Pending Recompliance',
+          'Rejected': 'Pending Recompliance',
           'PENDING_RECOMPLIANCE': 'Pending Recompliance'
         };
         return assignmentStatusMap[value] ?? value;
@@ -638,11 +644,14 @@ export class TableComponent implements OnDestroy {
     }
 
     const val = String(value).toUpperCase();
-    const base = 'border-round px-2.5 py-1 font-semibold text-xs inline-block ';
+    const base = 'border-round px-2.5 py-1 font-semibold text-xs inline-block white-space-nowrap ';
     
     if (val === 'ORIGINAL') return base + 'bg-gray-100 text-gray-600 border-1 border-gray-300';
     if (val === 'AMENDMENT') return base + 'bg-blue-100 text-blue-700';
-    if (val.includes('NOT_FOUND') || val.includes('ERROR') || val.includes('FAILED') || val.includes('REJECTED') || val.includes('INACTIVE') || val.includes('ESCALATED')) {
+    if (val.includes('RECOMPLIANCE') || val === 'REJECTED') {
+      return base + 'bg-purple-100 text-purple-700 font-bold';
+    }
+    if (val.includes('NOT_FOUND') || val.includes('ERROR') || val.includes('FAILED') || val.includes('INACTIVE') || val.includes('ESCALATED')) {
       return base + 'bg-red-100 text-red-700';
     }
     if (val === 'COMPLETED' || val === 'SUCCESS' || val === 'APPROVED' || val === 'ACTIVE') {

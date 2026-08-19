@@ -11,7 +11,7 @@ import { CcoDashboardComponent } from './cco-dashboard/cco-dashboard.component';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, PageComponent, BranchDashboardComponent, CoDashboardComponent, CcoDashboardComponent],
+  imports: [CommonModule, RouterModule, BranchDashboardComponent, CoDashboardComponent, CcoDashboardComponent],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss']
 })

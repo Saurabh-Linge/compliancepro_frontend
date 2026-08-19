@@ -20,8 +20,7 @@ import { PageComponent } from '../../../shared/components/page/page.component';
     ButtonModule,
     ToastModule,
     TableComponent,
-    DateFieldComponent,
-    PageComponent
+    DateFieldComponent
   ],
   templateUrl: './manage-assignments.html',
   styleUrls: ['./manage-assignments.scss']

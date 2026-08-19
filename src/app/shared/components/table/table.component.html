@@ -38,6 +38,17 @@
         tooltipPosition="bottom"
       ></button>
       <button
+        *ngIf="showBulkUploadButton()"
+        pButton
+        pRipple
+        [label]="bulkUploadButtonLabel()"
+        icon="pi pi-upload"
+        class="p-button-outlined p-button-secondary"
+        (click)="onBulkUpload.emit()"
+        pTooltip="Bulk Upload from Excel"
+        tooltipPosition="bottom"
+      ></button>
+      <button
         *ngIf="showExportButton()"
         pButton
         pRipple

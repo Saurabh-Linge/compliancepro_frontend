@@ -28,7 +28,6 @@ import { SelectModule } from 'primeng/select';
     TableComponent,
     TextFieldComponent,
     SelectFieldComponent,
-    PageComponent,
     SelectModule
   ],
   templateUrl: './branches.html',
@@ -173,6 +172,7 @@ export class Branches implements OnInit {
             });
             this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'Branch Updated', life: 3000 });
             this.branchDialog.set(false);
+            this.loadBranches();
           },
           error: () => {
             this.saving.set(false);
@@ -183,9 +183,10 @@ export class Branches implements OnInit {
         this.apiService.createBranch(payload).subscribe({
           next: (res) => {
             this.saving.set(false);
-            this.branches.update(list => [...list, res]);
+            this.branches.update(list => [res, ...list]);
             this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'Branch Created', life: 3000 });
             this.branchDialog.set(false);
+            this.loadBranches();
           },
           error: () => {
             this.saving.set(false);

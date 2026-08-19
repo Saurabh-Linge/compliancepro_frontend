@@ -9,10 +9,14 @@ import { TableComponent, TableColumn, TableAction } from "../../shared/component
 import { SelectModule } from "primeng/select";
 import { FormsModule } from "@angular/forms";
 
+import { DialogModule } from "primeng/dialog";
+import { TextareaModule } from "primeng/textarea";
+import { ButtonModule } from "primeng/button";
+
 @Component({
   selector: "app-cco-review",
   standalone: true,
-  imports: [CommonModule, TableComponent, SelectModule, FormsModule],
+  imports: [CommonModule, TableComponent, SelectModule, FormsModule, DialogModule, TextareaModule, ButtonModule],
   template: `
     <div class="card">
       <div class="flex align-items-center justify-content-between mb-4">
@@ -41,31 +45,89 @@ import { FormsModule } from "@angular/forms";
             class="w-full sm:w-16rem"
             styleClass="h-2.5rem flex align-items-center"
           ></p-select>
+          <p-select
+            [options]="branchFilterOptions()"
+            [ngModel]="selectedBranchFilter()"
+            (ngModelChange)="selectedBranchFilter.set($event)"
+            placeholder="Filter by Dept/Branch"
+            [showClear]="true"
+            optionLabel="label"
+            optionValue="value"
+            class="w-full sm:w-16rem"
+            styleClass="h-2.5rem flex align-items-center"
+          ></p-select>
+          <p-select
+            [options]="frequencyFilterOptions()"
+            [ngModel]="selectedFrequencyFilter()"
+            (ngModelChange)="selectedFrequencyFilter.set($event)"
+            placeholder="Filter by Frequency"
+            [showClear]="true"
+            optionLabel="label"
+            optionValue="value"
+            class="w-full sm:w-16rem"
+            styleClass="h-2.5rem flex align-items-center"
+          ></p-select>
         </div>
       </app-table>
     </div>
+
+    <!-- Notification Modal -->
+    <p-dialog [(visible)]="showNotifyModal" header="Send Notification" [modal]="true" [style]="{width: '450px'}">
+      <div class="flex flex-column gap-3 pt-3">
+        <span class="text-600">Send a message to the branch regarding <b>{{selectedAssignment()?.task_set_name}}</b>.</span>
+        <textarea pInputTextarea [(ngModel)]="notificationMessage" rows="4" placeholder="Type your message here..." class="w-full"></textarea>
+      </div>
+      <ng-template pTemplate="footer">
+        <button pButton label="Cancel" icon="pi pi-times" class="p-button-text p-button-secondary" (click)="showNotifyModal = false"></button>
+        <button pButton label="Send" icon="pi pi-send" (click)="sendNotification()" [disabled]="!notificationMessage.trim() || sendingNotification()"></button>
+      </ng-template>
+    </p-dialog>
   `
 })
 export class CcoReviewComponent implements OnInit {
   rawAssignments = signal<any[]>([]);
   searchQuery = signal<string>('');
   selectedStatusFilter = signal<string | null>(null);
+  selectedBranchFilter = signal<string | null>(null);
+  selectedFrequencyFilter = signal<string | null>(null);
   taskSetType = signal<string | null>(null);
 
   private config: any = inject(APP_CONFIG);
 
+  readonly frequencyMap: Record<string, string> = {
+    '0': 'Daily',
+    '7': 'Weekly',
+    '1': 'Fortnight',
+    '2': 'Monthly',
+    '3': 'Quarterly',
+    '4': 'Semi-Annually',
+    '5': 'Yearly',
+    '6': '1 Time Use'
+  };
+
   tableColumns: TableColumn[] = [
-    { field: 'task_set_name', header: 'Task Set Name', width: '40%' },
-    { field: 'branch_name', header: 'Dept/Branch', width: '30%' },
-    { field: 'status', header: 'Status', type: 'status', width: '20%' }
+    { field: 'task_set_name',     header: 'Task Set',       type: 'text',   width: '26%' },
+    { field: 'task_set_type',     header: 'Type',           type: 'badge',  width: '90px' },
+    { field: 'branch_name',       header: 'Dept / Branch',  type: 'text',   width: '14%' },
+    { field: 'frequency',         header: 'Frequency',      type: 'text',   width: '110px' },
+    { field: 'progress_text',     header: 'Progress',       type: 'text',   width: '90px', align: 'center' },
+    { field: 'due_schedule_text', header: 'Due Schedule',   type: 'text',   width: '140px' },
+    { field: 'status',            header: 'Status',         type: 'status', width: '160px' }
   ];
 
   statusFilterOptions = [
     { label: 'Escalated to CCO', value: 'ESCALATED_TO_CCO' },
     { label: 'Timeline Review', value: 'Timeline_Review' },
+    { label: 'In Progress', value: 'In_Progress' },
     { label: 'Completed', value: 'COMPLETED' },
-    { label: 'Rejected', value: 'Rejected' }
+    { label: 'Pending Recompliance', value: 'PENDING_RECOMPLIANCE' },
+    { label: 'Overdue', value: 'OVERDUE' }
   ];
+
+  showNotifyModal = false;
+  notificationMessage = '';
+  selectedAssignment = signal<any>(null);
+  sendingNotification = signal(false);
 
   assignments = computed(() => {
     let list = this.rawAssignments();
@@ -73,7 +135,26 @@ export class CcoReviewComponent implements OnInit {
     // Filter by status selection
     const status = this.selectedStatusFilter();
     if (status) {
-      list = list.filter((a: any) => a.status?.toUpperCase() === status?.toUpperCase());
+      if (status.toUpperCase() === 'PENDING_RECOMPLIANCE' || status.toUpperCase() === 'REJECTED') {
+        list = list.filter((a: any) => {
+          const s = a.status?.toUpperCase();
+          return s === 'PENDING_RECOMPLIANCE' || s === 'REJECTED';
+        });
+      } else {
+        list = list.filter((a: any) => a.status?.toUpperCase() === status?.toUpperCase());
+      }
+    }
+
+    // Filter by branch selection
+    const branch = this.selectedBranchFilter();
+    if (branch) {
+      list = list.filter((a: any) => a.branch_name?.toLowerCase() === branch?.toLowerCase());
+    }
+
+    // Filter by frequency selection
+    const freq = this.selectedFrequencyFilter();
+    if (freq) {
+      list = list.filter((a: any) => a.frequency === freq);
     }
 
     // Filter by search query
@@ -104,8 +185,15 @@ export class CcoReviewComponent implements OnInit {
     {
       label: "View Compliance",
       icon: "pi pi-eye",
-      visible: (row: any) => ['IN_PROGRESS', 'COMPLETED', 'REJECTED', 'PENDING_RECOMPLIANCE'].includes(row.status?.toUpperCase()),
+      visible: (row: any) => ['PENDING_TIMELINE', 'IN_PROGRESS', 'PENDING_RECOMPLIANCE', 'COMPLETED', 'REJECTED', 'OVERDUE'].includes(row.status?.toUpperCase()),
       command: (row: any) => this.router.navigate(["/cco-review", row.id], { queryParams: { type: this.taskSetType() } })
+    },
+    {
+      label: "Send Notification",
+      icon: "pi pi-bell",
+      styleClass: "text-blue-600",
+      visible: (row: any) => ['PENDING_TIMELINE', 'IN_PROGRESS', 'PENDING_RECOMPLIANCE', 'OVERDUE'].includes(row.status?.toUpperCase()),
+      command: (row: any) => this.openNotificationModal(row)
     }
   ];
 
@@ -118,20 +206,56 @@ export class CcoReviewComponent implements OnInit {
       } else {
         this.taskSetType.set(null);
       }
+      if (params['branch']) {
+        this.selectedBranchFilter.set(params['branch']);
+      } else {
+        this.selectedBranchFilter.set(null);
+      }
+
+      if (params['status']) {
+        this.selectedStatusFilter.set(params['status']);
+      } else {
+        this.selectedStatusFilter.set(null);
+      }
       this.loadAssignments();
     });
   }
 
   loadAssignments() {
-    let url = `${this.config.apiUrl}/assignments?limit=100`;
+    let url = `${this.config.apiUrl}/assignments?limit=1000`;
     const type = this.taskSetType();
-    if (type) {
-      url += `&task_set_type=${type}`;
-    }
+    if (type) url += `&task_set_type=${type}`;
     this.http.get<any>(url).subscribe({
       next: (res) => {
         const data = res.data || res;
-        this.rawAssignments.set(data);
+        const mappedData = data.map((a: any) => {
+          const total     = parseInt(a.total_tasks, 10) || 0;
+          const completed = parseInt(a.completed_tasks, 10) || 0;
+          const pct       = total > 0 ? Math.round((completed / total) * 100) : 0;
+          
+          // Format standard Date string dd/MM/yyyy
+          let dateStr = '';
+          if (a.proposed_timeline) {
+            const d = new Date(a.proposed_timeline);
+            if (!isNaN(d.getTime())) {
+              dateStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            }
+          }
+          
+          // Combine Date with Time if available
+          let dueScheduleText = dateStr || 'N/A';
+          if (a.due_time) {
+            dueScheduleText += ` ${a.due_time}`;
+          }
+
+          return {
+            ...a,
+            frequency:     this.frequencyMap[a.frequency] || a.frequency,
+            progress_text: total > 0 ? `${completed} / ${total} (${pct}%)` : '—',
+            due_schedule_text: dueScheduleText
+          };
+        });
+        this.rawAssignments.set(mappedData);
       },
       error: (err) => this.notification.error("Failed to load escalated assignments: " + (err.message || err.statusText))
     });
@@ -143,6 +267,46 @@ export class CcoReviewComponent implements OnInit {
 
   handleStatusChange(status: string | null) {
     this.selectedStatusFilter.set(status);
+  }
+
+  branchFilterOptions = computed(() => {
+    const list = this.rawAssignments();
+    const branches = new Set(list.map((a: any) => a.branch_name).filter((b: any) => !!b));
+    
+    const selected = this.selectedBranchFilter();
+    if (selected) {
+      branches.add(selected);
+    }
+    
+    return Array.from(branches).sort().map(b => ({ label: b, value: b }));
+  });
+
+  frequencyFilterOptions = computed(() => {
+    const list = this.rawAssignments();
+    const frequencies = new Set(list.map((a: any) => a.frequency).filter((f: any) => !!f));
+    return Array.from(frequencies).sort().map(f => ({ label: f, value: f }));
+  });
+
+  openNotificationModal(row: any) {
+    this.selectedAssignment.set(row);
+    this.notificationMessage = '';
+    this.showNotifyModal = true;
+  }
+
+  sendNotification() {
+    if (!this.notificationMessage.trim() || !this.selectedAssignment()) return;
+    this.sendingNotification.set(true);
+    this.http.post<any>(`${this.config.apiUrl}/assignments/${this.selectedAssignment().id}/notify`, { message: this.notificationMessage }).subscribe({
+      next: () => {
+        this.notification.success('Notification sent to branch successfully');
+        this.showNotifyModal = false;
+        this.sendingNotification.set(false);
+      },
+      error: (err: any) => {
+        this.notification.error('Failed to send notification: ' + (err.message || err.statusText));
+        this.sendingNotification.set(false);
+      }
+    });
   }
 }
 

@@ -2,6 +2,7 @@ import { Component, OnInit, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import * as XLSX from 'xlsx';
 import { ComplianceApiService } from '../../core/services/api/compliance-api.service';
 import { TableComponent, TableColumn, TableAction } from '../../shared/components/table/table.component';
 import { PageComponent } from '../../shared/components/page/page.component';
@@ -16,6 +17,8 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { FieldsetModule } from 'primeng/fieldset';
 import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
+import { TableModule } from 'primeng/table';
+import { SelectButtonModule } from 'primeng/selectbutton';
 
 import { TextFieldComponent } from '../../shared/components/form/text-field/text-field.component';
 import { TextareaFieldComponent } from '../../shared/components/form/textarea-field/textarea-field.component';
@@ -29,7 +32,6 @@ import { DateFieldComponent } from '../../shared/components/form/date-field/date
     CommonModule,
     FormsModule,
     TableComponent,
-    PageComponent,
     DialogModule,
     DrawerModule,
     ButtonModule,
@@ -43,7 +45,9 @@ import { DateFieldComponent } from '../../shared/components/form/date-field/date
     ConfirmDialogModule,
     FieldsetModule,
     SelectModule,
-    TagModule
+    TagModule,
+    TableModule,
+    SelectButtonModule,
   ],
   templateUrl: './task-sets.html',
   styles: [`
@@ -134,10 +138,205 @@ import { DateFieldComponent } from '../../shared/components/form/date-field/date
     .drawer-footer-row button {
       min-width: 9.5rem;
     }
+
+    /* ── Bulk Upload Dialog ── */
+    ::ng-deep .bulk-upload-dialog .p-dialog-content { padding: 1.25rem 1.5rem; }
+    .bulk-upload-content { display: flex; flex-direction: column; gap: 1rem; }
+    .bulk-dialog-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 2.8rem; height: 2.8rem; border-radius: 10px;
+      background: var(--green-50, #f0fdf4); border: 1.5px solid var(--green-200, #bbf7d0);
+      color: var(--green-600, #16a34a); font-size: 1.25rem;
+    }
+    .bulk-drop-zone {
+      border: 2px dashed var(--surface-border);
+      border-radius: 12px;
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      background: var(--surface-ground);
+      display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+    }
+    .bulk-drop-zone:hover, .bulk-drop-zone.dragging {
+      border-color: var(--primary-color);
+      background: var(--primary-50, #f0f9ff);
+    }
+    .bulk-drop-zone.dragging { border-style: solid; }
+    .drop-icon { font-size: 2.5rem; color: var(--primary-color); margin-bottom: 0.25rem; }
+    .drop-title { font-size: 1rem; font-weight: 600; color: var(--text-color); }
+    .drop-subtitle { font-size: 0.875rem; color: var(--text-color-secondary); }
+    .drop-formats { font-size: 0.75rem; color: var(--text-color-secondary); margin-top: 0.25rem; }
+    .bulk-actions-row { display: flex; align-items: center; gap: 1rem; padding: 0.5rem 0; }
+    .bulk-preview { display: flex; flex-direction: column; gap: 0.75rem; }
+    .preview-header {
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+      gap: 0.5rem; padding: 0.75rem 1rem;
+      background: var(--green-50, #f0fdf4); border: 1px solid var(--green-200, #bbf7d0);
+      border-radius: 8px;
+    }
+    .preview-table-wrap { border: 1px solid var(--surface-border); border-radius: 8px; overflow: hidden; }
+    tr.preview-set-start td { border-top: 2px solid var(--primary-200, #bfdbfe) !important; }
+    .badge-branch { background: #dbeafe; color: #1d4ed8; border-radius: 4px; padding: 2px 8px; font-size: 0.75rem; font-weight: 600; }
+    .badge-dept { background: #fae8ff; color: #7e22ce; border-radius: 4px; padding: 2px 8px; font-size: 0.75rem; font-weight: 600; }
   `]
 })
 export class TaskSetsComponent implements OnInit {
   currentCircular = signal<any | null>(null);
+
+  // ── Bulk Upload Modal ──────────────────────────────────────────────────────
+  showBulkUploadDialog = false;
+  bulkPreviewRows = signal<any[]>([]);
+  bulkSelectedFile = signal<File | null>(null);
+  bulkSelectedFileName = signal<string>('');
+  isDraggingOver = signal<boolean>(false);
+
+  bulkPreviewSetCount = computed(() => {
+    const seen = new Set<string>();
+    for (const r of this.bulkPreviewRows()) {
+      if (r.set_name) seen.add(String(r.set_name));
+    }
+    return seen.size;
+  });
+
+  openBulkUploadModal() {
+    this.clearBulkFile();
+    this.showBulkUploadDialog = true;
+  }
+
+  closeBulkUploadModal() {
+    this.showBulkUploadDialog = false;
+    this.clearBulkFile();
+  }
+
+  clearBulkFile() {
+    this.bulkPreviewRows.set([]);
+    this.bulkSelectedFile.set(null);
+    this.bulkSelectedFileName.set('');
+    this.isDraggingOver.set(false);
+  }
+
+  onDragOver(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDraggingOver.set(true);
+  }
+
+  onDragLeave(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDraggingOver.set(false);
+  }
+
+  onDrop(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDraggingOver.set(false);
+    const file = event.dataTransfer?.files?.[0];
+    if (file) this.parseBulkFile(file);
+  }
+
+  onBulkFileChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (file) this.parseBulkFile(file);
+    input.value = '';
+  }
+
+  parseBulkFile(file: File) {
+    this.bulkSelectedFile.set(file);
+    this.bulkSelectedFileName.set(file.name);
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { raw: false }) as any[];
+      this.bulkPreviewRows.set(rows);
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  downloadTemplate() {
+    const templateRows = [
+      {
+        set_name: 'Example Set 1',
+        task_name: 'Task A',
+        task_header: 'Cash Management',
+        department_branch_name: 'Main Branch',
+        for_branch_or_department: 'branch',
+        authority: 'RBI',
+        priority: 'HIGH',
+        frequency: 'DAILY',
+        start_date: '01-09-2026',
+        end_date: '31-12-2026',
+        due: '17:00',
+        reporting: '18:00',
+      },
+      {
+        set_name: 'Example Set 1',
+        task_name: 'Task B',
+        task_header: 'Reporting',
+        department_branch_name: 'HO Finance',
+        for_branch_or_department: 'department',
+        authority: 'RBI',
+        priority: 'MEDIUM',
+        frequency: 'DAILY',
+        start_date: '01-09-2026',
+        end_date: '31-12-2026',
+        due: '17:00',
+        reporting: '18:00',
+      },
+      {
+        set_name: 'Example Set 2',
+        task_name: 'KYC Review',
+        task_header: 'KYC Ops',
+        department_branch_name: 'Compliance Dept',
+        for_branch_or_department: 'department',
+        authority: 'NABARD',
+        priority: 'CRITICAL',
+        frequency: 'WEEKLY',
+        start_date: '01-09-2026',
+        end_date: '31-12-2026',
+        due: 'fri',
+        reporting: 'sat',
+      },
+    ];
+    const ws = XLSX.utils.json_to_sheet(templateRows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'TaskSets');
+    XLSX.writeFile(wb, 'bulk_upload_template.xlsx');
+  }
+
+  submitBulkUpload() {
+    const file = this.bulkSelectedFile();
+    if (!file) return;
+    
+    this.saving.set(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    this.api.bulkUploadTaskSets(formData).subscribe({
+      next: (res: any) => {
+        this.saving.set(false);
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Bulk Upload Successful',
+          detail: `${res.created} internal task set(s) created.`,
+          life: 4000
+        });
+        this.loadData(true);
+        this.showBulkUploadDialog = false;
+        this.clearBulkFile();
+      },
+      error: (err: any) => {
+        this.saving.set(false);
+        console.error(err);
+        this.messageService.add({ severity: 'error', summary: 'Upload Error', detail: 'Failed to process bulk upload.' });
+      }
+    });
+  }
+
 
   getFileUrl(url: string | null | undefined): string {
     return this.api.getFileUrl(url);
@@ -213,14 +412,28 @@ export class TaskSetsComponent implements OnInit {
   newTaskSetName = signal<string>('');
   newTaskSetCircularId = signal<number | null>(null);
   newTaskSetAuthorityId = signal<number | null>(null);
-  newTaskSetDueDate = signal<Date | null>(null);
   newTaskSetStartDate = signal<Date | null>(null);
   newTaskSetEndDate = signal<Date | null>(null);
   newTaskSetFrequency = signal<string>('');
-  newTaskSetReportingDate = signal<Date | null>(null);
+
+  // INTERNAL & REGULAR schedule fields
+  newTaskSetReferenceNo              = signal<string>('');
+  newTaskSetReportingTime            = signal<string>('');
+  newTaskSetDueTime                  = signal<string>('');
+  newTaskSetAssignmentTime           = signal<string>('');
+  newTaskSetReportingDayOfWeek       = signal<number | null>(null);
+  newTaskSetDueDayOfWeek             = signal<number | null>(null);
+  newTaskSetAssignmentDayOfWeek      = signal<number | null>(null);
+  newTaskSetReportingDaysOfMonth     = signal<string>('');
+  newTaskSetDueDaysOfMonth           = signal<string>('');
+  newTaskSetAssignmentDaysOfMonth    = signal<string>('');
+  newTaskSetReportingSchedule        = signal<string>('');
+  newTaskSetDueSchedule              = signal<string>('');
+  newTaskSetAssignmentSchedule       = signal<string>('');
 
   frequencies = [
     { label: 'DAILY - Every Day', value: '0' },
+    { label: 'WEEKLY - Every Week', value: '7' },
     { label: 'FORTNIGHT - Every 15 Days', value: '1' },
     { label: 'MONTHLY - Every Month', value: '2' },
     { label: 'QUARTERLY - Every Three Months', value: '3' },
@@ -236,8 +449,50 @@ export class TaskSetsComponent implements OnInit {
     '3': 'Quarterly',
     '4': 'Semi-Annually',
     '5': 'Yearly',
-    '6': '1 Time Use'
+    '6': '1 Time Use',
+    '7': 'Weekly'
   };
+
+  dayOfWeekOptions = [
+    { label: 'Monday', value: 1 },
+    { label: 'Tuesday', value: 2 },
+    { label: 'Wednesday', value: 3 },
+    { label: 'Thursday', value: 4 },
+    { label: 'Friday', value: 5 },
+    { label: 'Saturday', value: 6 },
+    { label: 'Sunday', value: 7 }
+  ];
+
+  daysArray = Array.from({ length: 31 }, (_, i) => i + 1);
+
+  toggleDayOfMonth(signalObj: any, day: number) {
+    const current = signalObj() || '';
+    let days = current.split(',').map((s: string) => parseInt(s.trim())).filter((n: number) => !isNaN(n));
+    if (days.includes(day)) {
+      days = days.filter((n: number) => n !== day);
+    } else {
+      days.push(day);
+    }
+    days.sort((a: number, b: number) => a - b);
+    signalObj.set(days.join(', '));
+  }
+  
+  isDayOfMonthSelected(signalObj: any, day: number): boolean {
+    const current = signalObj() || '';
+    const days = current.split(',').map((s: string) => parseInt(s.trim())).filter((n: number) => !isNaN(n));
+    return days.includes(day);
+  }
+
+  monthOptions = [
+    { label: 'January', value: 1 }, { label: 'February', value: 2 },
+    { label: 'March', value: 3 }, { label: 'April', value: 4 },
+    { label: 'May', value: 5 }, { label: 'June', value: 6 },
+    { label: 'July', value: 7 }, { label: 'August', value: 8 },
+    { label: 'September', value: 9 }, { label: 'October', value: 10 },
+    { label: 'November', value: 11 }, { label: 'December', value: 12 }
+  ];
+
+  scheduleDayOptions = Array.from({ length: 31 }, (_, i) => ({ label: `${i + 1}`, value: i + 1 }));
 
   // Form & details loading states
   loadingFormDetails = signal<boolean>(false);
@@ -270,27 +525,88 @@ export class TaskSetsComponent implements OnInit {
   isFormValid = computed(() => {
     const type = this.newTaskSetType();
     const name = this.newTaskSetName()?.trim();
-    const circularId = this.newTaskSetCircularId();
     const frequency = this.newTaskSetFrequency();
     const startDate = this.newTaskSetStartDate();
     const endDate = this.newTaskSetEndDate();
-    const reportingDate = this.newTaskSetReportingDate();
-    const dueDate = this.newTaskSetDueDate();
 
-    if (!type || !name || !frequency || !startDate) {
-      return false;
-    }
+    if (!type || !name || !frequency || !startDate || !endDate) return false;
+
+    if (startDate > endDate) return false;
 
     if (type === 'REGULAR') {
-      if (!circularId || !endDate || !reportingDate || !dueDate) {
-        return false;
+      const circularId = this.newTaskSetCircularId();
+      if (!circularId) return false;
+    }
+
+    // Schedule logic for both types if recurring
+    if (frequency !== '6') {
+      if (frequency === '0') {
+        if (!this.newTaskSetAssignmentTime()?.trim()) return false;
+        if (!this.newTaskSetReportingTime()?.trim() || !this.newTaskSetDueTime()?.trim()) return false;
       }
-      if (startDate > endDate) {
-        return false;
+      if (frequency === '7') {
+        if (!this.newTaskSetAssignmentDayOfWeek()) return false;
+        if (!this.newTaskSetReportingDayOfWeek() || !this.newTaskSetDueDayOfWeek()) return false;
+      }
+      if (frequency === '1' || frequency === '2') {
+        if (!this.newTaskSetAssignmentDaysOfMonth()?.trim()) return false;
+        if (!this.newTaskSetReportingDaysOfMonth()?.trim() || !this.newTaskSetDueDaysOfMonth()?.trim()) return false;
+      }
+      if (['3', '4', '5'].includes(frequency)) {
+        if (!this.newTaskSetAssignmentSchedule()?.trim()) return false;
+        if (!this.newTaskSetReportingSchedule()?.trim() || !this.newTaskSetDueSchedule()?.trim()) return false;
       }
     }
 
+    if (this.scheduleValidationError()) return false;
+
     return true;
+  });
+
+  scheduleValidationError = computed(() => {
+    const freq = this.newTaskSetFrequency();
+    if (!freq || freq === '6') return null;
+
+    const extractFirstNum = (str: string | null) => {
+      if (!str) return 0;
+      const match = str.match(/\d+/);
+      return match ? parseInt(match[0], 10) : 0;
+    };
+
+    if (freq === '0') {
+      const aTime = this.newTaskSetAssignmentTime()?.trim();
+      const dTime = this.newTaskSetDueTime()?.trim();
+      const rTime = this.newTaskSetReportingTime()?.trim();
+      if (aTime && dTime && rTime) {
+        if (aTime >= dTime) return 'Assignment Time must be before Due Time.';
+        if (dTime >= rTime) return 'Due Time must be before Reporting Time.';
+      }
+    } else if (freq === '7') {
+      const aDay = this.newTaskSetAssignmentDayOfWeek();
+      const dDay = this.newTaskSetDueDayOfWeek();
+      const rDay = this.newTaskSetReportingDayOfWeek();
+      if (aDay !== null && dDay !== null && rDay !== null) {
+        if (Number(aDay) >= Number(dDay)) return 'Assignment Day must be before Due Day.';
+        if (Number(dDay) >= Number(rDay)) return 'Due Day must be before Reporting Day.';
+      }
+    } else if (freq === '1' || freq === '2') {
+      const aDays = this.newTaskSetAssignmentDaysOfMonth();
+      const dDays = this.newTaskSetDueDaysOfMonth();
+      const rDays = this.newTaskSetReportingDaysOfMonth();
+      if (aDays && dDays && rDays) {
+        if (extractFirstNum(aDays) >= extractFirstNum(dDays)) return 'Assignment Day must be before Due Day.';
+        if (extractFirstNum(dDays) >= extractFirstNum(rDays)) return 'Due Day must be before Reporting Day.';
+      }
+    } else if (['3','4','5'].includes(freq)) {
+      const aSched = this.newTaskSetAssignmentSchedule();
+      const dSched = this.newTaskSetDueSchedule();
+      const rSched = this.newTaskSetReportingSchedule();
+      if (aSched && dSched && rSched) {
+        if (extractFirstNum(aSched) >= extractFirstNum(dSched)) return 'Assignment Schedule must be before Due Schedule.';
+        if (extractFirstNum(dSched) >= extractFirstNum(rSched)) return 'Due Schedule must be before Reporting Schedule.';
+      }
+    }
+    return null;
   });
 
   // Mapping
@@ -343,8 +659,7 @@ export class TaskSetsComponent implements OnInit {
         this.savingInlineTask.set(false);
         this.showInlineTaskDrawer.set(false);
 
-        const defaultDueObj = this.newTaskSetDueDate();
-        createdTask.due_date = defaultDueObj || null;
+        createdTask.due_date = null;
 
         const currentRaw = this.rawTasks();
         this.rawTasks.set([createdTask, ...currentRaw]);
@@ -380,6 +695,7 @@ export class TaskSetsComponent implements OnInit {
       const internalTasks = tasks.filter(t => !t.circular_id);
       return internalTasks.map(t => ({
         ...t,
+        header_name: t.header_name || '-',
         authority_name: t.authority_name || (t.authority_id ? (authMap.get(t.authority_id) || `Authority #${t.authority_id}`) : 'Bank Internal')
       }));
     }
@@ -387,12 +703,45 @@ export class TaskSetsComponent implements OnInit {
     return tasks;
   });
 
+  selectedFrequencyFilter = signal<string | null>(null);
+  selectedBranchFilter = signal<string | null>(null);
+
+  frequencyFilterOptions = computed(() => {
+    const list = this.taskSets();
+    const freqs = new Set(list.map((s: any) => s.frequency).filter((f: any) => !!f));
+    return Array.from(freqs).sort().map(f => ({ label: f, value: f }));
+  });
+
+  branchFilterOptions = computed(() => {
+    const list = this.taskSets();
+    const branches = new Set<string>();
+    list.forEach(s => {
+      if (s.branch_names && s.branch_names !== '—') {
+        s.branch_names.split(',').forEach((b: string) => branches.add(b.trim()));
+      }
+    });
+    return Array.from(branches).sort().map(b => ({ label: b, value: b }));
+  });
+
   filteredTaskSets = computed(() => {
-    const sets = this.taskSets();
+    let sets = this.taskSets();
+    
     const filterId = this.selectedCircularFilter();
-    if (!filterId) return sets;
-    // Filter by circular_id directly (now stored on task_set)
-    return sets.filter(s => s.circular_id === filterId);
+    if (filterId) {
+      sets = sets.filter(s => s.circular_id === filterId);
+    }
+    
+    const freq = this.selectedFrequencyFilter();
+    if (freq) {
+      sets = sets.filter(s => s.frequency === freq);
+    }
+    
+    const branch = this.selectedBranchFilter();
+    if (branch) {
+      sets = sets.filter(s => s.branch_names && s.branch_names.includes(branch));
+    }
+    
+    return sets;
   });
 
   selectedCircularLabel = computed(() => {
@@ -405,20 +754,57 @@ export class TaskSetsComponent implements OnInit {
   circularFilterOptions = signal<{ label: string; value: any }[]>([]);
 
   targetTasks: any[] = [];
-  taskColumns = computed<TableColumn[]>(() => {
-    if (this.newTaskSetType() === 'INTERNAL') {
-      return [
-        { field: 'description', header: 'Description', type: 'text' },
-        { field: 'priority', header: 'Priority', type: 'badge', width: '120px' },
-        { field: 'authority_name', header: 'Authority', type: 'text', width: '180px' }
-      ];
-    }
-    return [
-      { field: 'description', header: 'Description', type: 'text' },
-      { field: 'priority', header: 'Priority', type: 'badge', width: '120px' },
-      { field: 'due_date', header: 'Proposed Due Date', type: 'date_input', width: '160px' }
-    ];
+  selectionTick = signal<number>(0);
+  availableTasks = computed(() => {
+    this.selectionTick();
+    const all = this.allTasks();
+    const selectedIds = new Set(this.targetTasks.map(t => t.id));
+    return all.filter(t => !selectedIds.has(t.id));
   });
+
+  availableTaskColumns = computed<TableColumn[]>(() => {
+    const isInternal = this.newTaskSetType() === 'INTERNAL';
+    const cols: TableColumn[] = [
+      { field: 'description', header: 'Description', type: 'text' },
+      { field: 'priority', header: 'Priority', type: 'badge', width: '100px' }
+    ];
+    if (isInternal) {
+      cols.splice(1, 0, { field: 'header_name', header: 'Task Header', type: 'text', width: '130px' });
+      cols.push({ field: 'authority_name', header: 'Authority', type: 'text', width: '130px' });
+    }
+    cols.push({ field: 'add', actionName: 'add', header: 'Add', type: 'action', actionIcon: 'pi pi-arrow-right', width: '70px', align: 'center', cssClass: 'text-primary' });
+    return cols;
+  });
+
+  selectedTaskColumns = computed<TableColumn[]>(() => {
+    const isInternal = this.newTaskSetType() === 'INTERNAL';
+    const cols: TableColumn[] = [
+      { field: 'remove', actionName: 'remove', header: 'Remove', type: 'action', actionIcon: 'pi pi-times', width: '70px', align: 'center', cssClass: 'text-red-500' },
+      { field: 'description', header: 'Description', type: 'text' },
+      { field: 'priority', header: 'Priority', type: 'badge', width: '100px' }
+    ];
+    if (isInternal) {
+      cols.splice(2, 0, { field: 'header_name', header: 'Task Header', type: 'text', width: '130px' });
+      cols.push({ field: 'authority_name', header: 'Authority', type: 'text', width: '130px' });
+    } else {
+      cols.push({ field: 'due_date', header: 'Proposed Due Date', type: 'date_input', width: '160px' });
+    }
+    return cols;
+  });
+
+  onAvailableTaskAction(event: { name: string, row: any }) {
+    if (event.name === 'add') {
+      this.targetTasks = [event.row, ...this.targetTasks];
+      this.selectionTick.set(this.selectionTick() + 1);
+    }
+  }
+
+  onSelectedTaskAction(event: { name: string, row: any }) {
+    if (event.name === 'remove') {
+      this.targetTasks = this.targetTasks.filter(t => t.id !== event.row.id);
+      this.selectionTick.set(this.selectionTick() + 1);
+    }
+  }
 
   // Assigning
   branches = signal<any[]>([]);
@@ -429,12 +815,7 @@ export class TaskSetsComponent implements OnInit {
   cameFromCirculars = signal<boolean>(false);
   cameFromTasks = signal<boolean>(false);
 
-  constructor(private api: ComplianceApiService, private messageService: MessageService, private confirmationService: ConfirmationService, private route: ActivatedRoute, private router: Router) {
-    effect(() => {
-      const reportingDate = this.newTaskSetReportingDate();
-      this.validateTaskDueDates(reportingDate);
-    });
-  }
+  constructor(private api: ComplianceApiService, private messageService: MessageService, private confirmationService: ConfirmationService, private route: ActivatedRoute, private router: Router) {}
 
   private parseToDate(val: any): Date | null {
     if (!val) return null;
@@ -450,70 +831,8 @@ export class TaskSetsComponent implements OnInit {
     return null;
   }
 
-  onDueDateChange(dateVal: any) {
-    const dateObj = this.parseToDate(dateVal) || this.newTaskSetDueDate();
-    if (dateObj) {
-      const currentTasks = this.rawTasks();
-      if (currentTasks && currentTasks.length) {
-        currentTasks.forEach(t => {
-          if (!t.due_date) {
-            t.due_date = dateObj;
-          }
-        });
-        this.rawTasks.set([...currentTasks]);
-      }
-      this.targetTasks.forEach(t => {
-        if (!t.due_date) {
-          t.due_date = dateObj;
-        }
-      });
-    }
-  }
-
-  validateTaskDueDates(reportingDate: Date | null): boolean {
-    if (!reportingDate) return true;
-    const repTime = new Date(reportingDate.getFullYear(), reportingDate.getMonth(), reportingDate.getDate()).getTime();
-    let hasViolation = false;
-    for (const t of this.targetTasks) {
-      if (t.due_date) {
-        const dObj = this.parseToDate(t.due_date);
-        if (dObj) {
-          const dueTime = new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate()).getTime();
-          if (dueTime > repTime) {
-            hasViolation = true;
-            t.due_date = null;
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Validation Error',
-              detail: `Task "${t.description.substring(0, 30)}..." Proposed Due Date cannot be greater than Reporting Date (${this.formatDate(reportingDate)}). It has been cleared.`
-            });
-          }
-        }
-      }
-    }
-    return !hasViolation;
-  }
-
   onTaskTableAction(event: any) {
-    if (event.name === 'due_date_change') {
-      const row = event.row;
-      const reportingDate = this.newTaskSetReportingDate();
-      if (reportingDate && row.due_date) {
-        const dObj = this.parseToDate(row.due_date);
-        if (dObj) {
-          const repTime = new Date(reportingDate.getFullYear(), reportingDate.getMonth(), reportingDate.getDate()).getTime();
-          const dueTime = new Date(dObj.getFullYear(), dObj.getMonth(), dObj.getDate()).getTime();
-          if (dueTime > repTime) {
-            row.due_date = null;
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Validation Error',
-              detail: `Task Proposed Due Date cannot be greater than Reporting Date (${this.formatDate(reportingDate)}). It has been cleared.`
-            });
-          }
-        }
-      }
-    }
+    // Other task table actions if any
   }
 
   goBackToCirculars() {
@@ -583,6 +902,12 @@ export class TaskSetsComponent implements OnInit {
   }
 
   loadData(isRefresh = false) {
+    if (isRefresh) {
+      this.api.getApprovedTasks({ limit: 1000 }).subscribe(res => this.rawTasks.set(res.data));
+      this.api.getBranches().subscribe(data => this.branches.set(data));
+      this.loadAuthorities();
+    }
+
     this.api.getTaskSets().subscribe({
       next: (data) => {
         const mapped = data.map((row: any) => ({
@@ -642,14 +967,31 @@ export class TaskSetsComponent implements OnInit {
 
   onTypeChange(type: any) {
     this.targetTasks = [];
+    this.newTaskSetFrequency.set('');  // reset frequency so schedule fields re-evaluate
     if (type === 'INTERNAL') {
       this.ensureAuthoritiesLoaded();
       this.newTaskSetCircularId.set(null);
       this.formCircularFilter.set(null);
+      // clear REGULAR-only date fields
+      this.newTaskSetEndDate.set(null);
     } else if (type === 'REGULAR') {
       this.ensureCircularsLoaded();
       this.newTaskSetAuthorityId.set(null);
+      // clear INTERNAL-only fields
+      this.resetInternalFields();
     }
+  }
+
+  private resetInternalFields() {
+    this.newTaskSetReferenceNo.set('');
+    this.newTaskSetReportingTime.set('');
+    this.newTaskSetDueTime.set('');
+    this.newTaskSetReportingDayOfWeek.set(null);
+    this.newTaskSetDueDayOfWeek.set(null);
+    this.newTaskSetReportingDaysOfMonth.set('');
+    this.newTaskSetDueDaysOfMonth.set('');
+    this.newTaskSetReportingSchedule.set('');
+    this.newTaskSetDueSchedule.set('');
   }
 
   openCreateModal() { // Kept method name since html uses it, but it opens the form drawer
@@ -660,11 +1002,10 @@ export class TaskSetsComponent implements OnInit {
     this.newTaskSetAuthorityId.set(null);
     this.newTaskSetCircularId.set(null);
     this.formCircularFilter.set(null);
-    this.newTaskSetDueDate.set(null);
     this.newTaskSetStartDate.set(null);
     this.newTaskSetEndDate.set(null);
     this.newTaskSetFrequency.set('');
-    this.newTaskSetReportingDate.set(null);
+    this.resetInternalFields();
     this.targetTasks = [];
     this.selectedBranches = [];
     this.proposedDate.set(null);
@@ -703,19 +1044,28 @@ export class TaskSetsComponent implements OnInit {
     this.newTaskSetCircularId.set(row.circular_id || null);
     this.newTaskSetAuthorityId.set(row.authority_id || null);
     this.formCircularFilter.set(row.circular_id || null);
-    this.newTaskSetDueDate.set(row.default_due_date ? new Date(row.default_due_date) : null);
     this.newTaskSetStartDate.set(row.start_date ? new Date(row.start_date) : null);
     this.newTaskSetEndDate.set(row.end_date ? new Date(row.end_date) : null);
     this.newTaskSetFrequency.set(this.getFrequencyKeyByLabel(row.frequency || ''));
-    this.newTaskSetReportingDate.set(row.reporting_date ? new Date(row.reporting_date) : null);
+    // INTERNAL & REGULAR schedule fields
+    this.newTaskSetReferenceNo.set(row.reference_no || '');
+    this.newTaskSetReportingTime.set(row.reporting_time || '');
+    this.newTaskSetDueTime.set(row.due_time || '');
+    this.newTaskSetAssignmentTime.set(row.assignment_time || '');
+    this.newTaskSetReportingDayOfWeek.set(row.reporting_day_of_week || null);
+    this.newTaskSetDueDayOfWeek.set(row.due_day_of_week || null);
+    this.newTaskSetAssignmentDayOfWeek.set(row.assignment_day_of_week || null);
+    this.newTaskSetReportingDaysOfMonth.set(row.reporting_days_of_month || '');
+    this.newTaskSetDueDaysOfMonth.set(row.due_days_of_month || '');
+    this.newTaskSetAssignmentDaysOfMonth.set(row.assignment_days_of_month || '');
+    this.newTaskSetReportingSchedule.set(row.reporting_schedule || '');
+    this.newTaskSetDueSchedule.set(row.due_schedule || '');
+    this.newTaskSetAssignmentSchedule.set(row.assignment_schedule || '');
     this.selectedBranches = [];
     this.targetTasks = [];
+    this.selectionTick.set(this.selectionTick() + 1);
     this.showBranchAssignment.set(true);
-    if (row.default_due_date) {
-      this.proposedDate.set(new Date(row.default_due_date));
-    } else {
-      this.proposedDate.set(null);
-    }
+    this.proposedDate.set(null);
 
     // Open drawer immediately for instant response
     this.loadingFormDetails.set(true);
@@ -732,13 +1082,12 @@ export class TaskSetsComponent implements OnInit {
         const mappedIds = new Set((details.tasks || []).map((t: any) => t.id));
         const mappedBranchIds = new Set((details.branches || []).map((b: any) => b.id));
 
-        const defaultDueObj = this.newTaskSetDueDate();
         const applyMappedTasks = (tasksToMap: any[]) => {
           const mappedRawTasks = tasksToMap.map((t: any) => {
             const rawVal = dateMap.get(t.id);
             return {
               ...t,
-              due_date: this.parseToDate(rawVal) || defaultDueObj || null
+              due_date: this.parseToDate(rawVal) || null
             };
           });
           this.rawTasks.set(mappedRawTasks);
@@ -785,30 +1134,44 @@ export class TaskSetsComponent implements OnInit {
 
     const missingFields: string[] = [];
     const isRegular = this.newTaskSetType() === 'REGULAR';
+    const isInternal = this.newTaskSetType() === 'INTERNAL';
+    const freq = this.newTaskSetFrequency();
 
-    if (!this.newTaskSetType()) {
-      missingFields.push('Task Set Type');
-    }
-    if (isRegular && !this.newTaskSetCircularId()) {
-      missingFields.push('Circular');
-    }
-    if (!this.newTaskSetName() || !this.newTaskSetName().trim()) {
-      missingFields.push('Task Set Name');
-    }
-    if (!this.newTaskSetFrequency()) {
-      missingFields.push('Task Set Frequency');
-    }
-    if (!this.newTaskSetStartDate()) {
-      missingFields.push('Start Date');
-    }
-    if (isRegular && !this.newTaskSetEndDate()) {
-      missingFields.push('End Date');
-    }
-    if (isRegular && !this.newTaskSetReportingDate()) {
-      missingFields.push('Reporting Date');
-    }
-    if (isRegular && !this.newTaskSetDueDate()) {
-      missingFields.push('Due Date [For Branch]');
+    if (!this.newTaskSetType()) missingFields.push('Task Set Type');
+    if (isRegular && !this.newTaskSetCircularId()) missingFields.push('Circular');
+    if (!this.newTaskSetName() || !this.newTaskSetName().trim()) missingFields.push('Task Set Name');
+    if (!this.newTaskSetFrequency()) missingFields.push('Task Set Frequency');
+    if (!this.newTaskSetStartDate()) missingFields.push('Start Date');
+    if (!this.newTaskSetEndDate()) missingFields.push('End Date');
+
+    // Recurring schedule validations
+    if (freq !== '6') {
+      if (freq === '0') {
+        if (!this.newTaskSetAssignmentTime()?.trim()) missingFields.push('Assignment Time');
+        if (!this.newTaskSetReportingTime()?.trim()) missingFields.push('Reporting Time');
+        if (!this.newTaskSetDueTime()?.trim()) missingFields.push('Due Time');
+      }
+      if (freq === '7') {
+        if (!this.newTaskSetAssignmentDayOfWeek()) missingFields.push('Assignment Day of Week');
+        if (!this.newTaskSetReportingDayOfWeek()) missingFields.push('Reporting Day of Week');
+        if (!this.newTaskSetDueDayOfWeek()) missingFields.push('Due Day of Week');
+      }
+      if (freq === '1' || freq === '2') {
+        if (!this.newTaskSetAssignmentDaysOfMonth()?.trim()) missingFields.push('Assignment Days of Month');
+        if (!this.newTaskSetReportingDaysOfMonth()?.trim()) missingFields.push('Reporting Days of Month');
+        if (!this.newTaskSetDueDaysOfMonth()?.trim()) missingFields.push('Due Days of Month');
+      }
+      if (['3','4','5'].includes(freq)) {
+        if (!this.newTaskSetAssignmentSchedule()?.trim()) missingFields.push('Assignment Schedule');
+        if (!this.newTaskSetReportingSchedule()?.trim()) missingFields.push('Reporting Schedule');
+        if (!this.newTaskSetDueSchedule()?.trim()) missingFields.push('Due Schedule');
+      }
+
+      const valError = this.scheduleValidationError();
+      if (valError) {
+        this.messageService.add({ severity: 'error', summary: 'Validation Error', detail: valError });
+        return;
+      }
     }
 
     if (missingFields.length > 0) {
@@ -833,22 +1196,35 @@ export class TaskSetsComponent implements OnInit {
       return;
     }
 
-    const reportingDate = this.newTaskSetReportingDate();
-    if (isRegular && reportingDate && !this.validateTaskDueDates(reportingDate)) {
-      return;
-    }
-
     this.saving.set(true);
-    const payload = {
+
+    const payload: any = {
       name: this.newTaskSetName().trim(),
       type: this.newTaskSetType(),
+      frequency: freq || undefined,
+      start_date: this.formatDate(this.newTaskSetStartDate()),
+      // REGULAR-only fields
       circular_id: isRegular ? (this.newTaskSetCircularId() || undefined) : undefined,
       authority_id: undefined,
-      default_due_date: isRegular ? this.formatDate(this.newTaskSetDueDate()) : undefined,
-      start_date: this.formatDate(this.newTaskSetStartDate()),
       end_date: isRegular ? this.formatDate(this.newTaskSetEndDate()) : undefined,
-      frequency: this.newTaskSetFrequency() || undefined,
-      reporting_date: isRegular ? this.formatDate(this.newTaskSetReportingDate()) : undefined
+      // INTERNAL-only fields
+      reference_no: isInternal ? (this.newTaskSetReferenceNo()?.trim() || undefined) : undefined,
+      // Frequency schedule fields (apply to both REGULAR and INTERNAL if freq != '6')
+      assignment_time: (freq === '0') ? (this.newTaskSetAssignmentTime()?.trim() || undefined) : undefined,
+      reporting_time: (freq === '0') ? (this.newTaskSetReportingTime()?.trim() || undefined) : undefined,
+      due_time: (freq === '0') ? (this.newTaskSetDueTime()?.trim() || undefined) : undefined,
+      
+      assignment_day_of_week: (freq === '7') ? (this.newTaskSetAssignmentDayOfWeek() || undefined) : undefined,
+      reporting_day_of_week: (freq === '7') ? (this.newTaskSetReportingDayOfWeek() || undefined) : undefined,
+      due_day_of_week: (freq === '7') ? (this.newTaskSetDueDayOfWeek() || undefined) : undefined,
+      
+      assignment_days_of_month: (freq === '1' || freq === '2') ? (this.newTaskSetAssignmentDaysOfMonth()?.trim() || undefined) : undefined,
+      reporting_days_of_month: (freq === '1' || freq === '2') ? (this.newTaskSetReportingDaysOfMonth()?.trim() || undefined) : undefined,
+      due_days_of_month: (freq === '1' || freq === '2') ? (this.newTaskSetDueDaysOfMonth()?.trim() || undefined) : undefined,
+      
+      assignment_schedule: (['3','4','5'].includes(freq)) ? (this.newTaskSetAssignmentSchedule()?.trim() || undefined) : undefined,
+      reporting_schedule: (['3','4','5'].includes(freq)) ? (this.newTaskSetReportingSchedule()?.trim() || undefined) : undefined,
+      due_schedule: (['3','4','5'].includes(freq)) ? (this.newTaskSetDueSchedule()?.trim() || undefined) : undefined,
     };
 
     const finalizeAssignments = (setId: number) => {

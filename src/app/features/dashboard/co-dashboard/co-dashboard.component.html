@@ -176,21 +176,23 @@
           <tr *ngFor="let br of stats?.coMetrics?.branchReports; let i = index">
             <td class="text-center text-gray-500 font-semibold">{{ i + 1 }}</td>
             <td>
-              <span class="font-bold text-primary block text-base">{{ br.name }}</span>
+              <a [routerLink]="['/co-review']" [queryParams]="{ branch: br.name }" class="font-bold text-primary block text-base no-underline hover:underline cursor-pointer">{{ br.name }}</a>
               <span class="text-xs text-gray-400 font-medium uppercase">{{ br.type }}</span>
             </td>
-            <td class="text-center text-gray-800 font-semibold">{{ br.total_assignments }}</td>
-            <td class="text-center">
-              <span class="text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded text-xs">{{ br.active_assignments }}</span>
+            <td class="text-center text-gray-800 font-semibold">
+              <a [routerLink]="['/co-review']" [queryParams]="{ branch: br.name }" class="text-gray-800 no-underline hover:underline cursor-pointer">{{ br.total_assignments }}</a>
             </td>
             <td class="text-center">
-              <span class="text-purple-600 font-bold bg-purple-50 px-2 py-0.5 rounded text-xs">{{ br.review_pending_assignments }}</span>
+              <a [routerLink]="['/co-review']" [queryParams]="{ branch: br.name, status: 'In_Progress' }" class="text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded text-xs cursor-pointer hover:bg-blue-100 no-underline inline-block transition-colors">{{ br.active_assignments }}</a>
             </td>
             <td class="text-center">
-              <span class="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded text-xs">{{ br.completed_assignments }}</span>
+              <a [routerLink]="['/co-review']" [queryParams]="{ branch: br.name, status: 'REVIEW_PENDING' }" class="text-purple-600 font-bold bg-purple-50 px-2 py-0.5 rounded text-xs cursor-pointer hover:bg-purple-100 no-underline inline-block transition-colors">{{ br.review_pending_assignments }}</a>
             </td>
             <td class="text-center">
-              <span class="text-red-600 font-bold bg-red-50 px-2 py-0.5 rounded text-xs" [class.bg-red-100]="br.overdue_assignments > 0">{{ br.overdue_assignments }}</span>
+              <a [routerLink]="['/co-review']" [queryParams]="{ branch: br.name, status: 'COMPLETED' }" class="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded text-xs cursor-pointer hover:bg-green-100 no-underline inline-block transition-colors">{{ br.completed_assignments }}</a>
+            </td>
+            <td class="text-center">
+              <a [routerLink]="['/co-review']" [queryParams]="{ branch: br.name }" class="text-red-600 font-bold bg-red-50 px-2 py-0.5 rounded text-xs cursor-pointer hover:bg-red-200 no-underline inline-block transition-colors" [class.bg-red-100]="br.overdue_assignments > 0">{{ br.overdue_assignments }}</a>
             </td>
           </tr>
           <tr *ngIf="stats?.coMetrics?.branchReports?.length === 0">

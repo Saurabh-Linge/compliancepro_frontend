@@ -15,7 +15,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 @Component({
   selector: 'app-task-headers',
   standalone: true,
-  imports: [CommonModule, FormsModule, TableComponent, TextFieldComponent, PageComponent, DialogModule, DrawerModule, ButtonModule, ToastModule, ConfirmDialogModule],
+  imports: [CommonModule, FormsModule, TableComponent, TextFieldComponent, DialogModule, DrawerModule, ButtonModule, ToastModule, ConfirmDialogModule],
   template: `
     <div class="card">
       <div class="flex align-items-center justify-content-between mb-4">

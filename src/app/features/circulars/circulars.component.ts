@@ -40,7 +40,6 @@ import { TooltipModule } from 'primeng/tooltip';
     TextareaFieldComponent,
     SelectFieldComponent,
     CheckboxFieldComponent,
-    PageComponent,
     ButtonModule,
     InputTextModule,
     FloatLabelModule,
@@ -55,8 +54,7 @@ import { TooltipModule } from 'primeng/tooltip';
     TagModule,
     DatePickerModule,
     MenuModule,
-    TooltipModule,
-    DateRangeFieldComponent
+    TooltipModule
   ],
   templateUrl: './circulars.component.html',
   styleUrl: './circulars.component.css'
@@ -646,6 +644,12 @@ export class CircularsComponent implements OnInit, OnDestroy {
     }
 
     const hasFiles = this.selectedCircularFiles().length > 0;
+    const editingId = this.editingCircularId();
+
+    if (!editingId && !hasFiles) {
+      alert('PDF upload is mandatory for new circulars.');
+      return;
+    }
 
     this.uploading.set(true);
     this.processingState.set(hasFiles ? 'uploading' : 'processing');
@@ -671,7 +675,6 @@ export class CircularsComponent implements OnInit, OnDestroy {
       is_active: this.isActive(),
     };
 
-    const editingId = this.editingCircularId();
     if (editingId) {
       this.api.updateCircular(editingId, payload).subscribe({
         next: (res) => {

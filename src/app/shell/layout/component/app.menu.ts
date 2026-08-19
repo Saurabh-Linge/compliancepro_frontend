@@ -104,6 +104,7 @@ export class AppMenu implements OnInit {
       masterItems.push({ label: 'Branch and Department Master', icon: 'pi pi-fw pi-map-marker', routerLink: ['/admin/branches'] });
       masterItems.push({ label: 'Users Master', icon: 'pi pi-fw pi-users', routerLink: ['/admin/users'] });
       masterItems.push({ label: 'Manage Assignments', icon: 'pi pi-fw pi-calendar-times', routerLink: ['/admin/manage-assignments'] });
+      masterItems.push({ label: 'Holidays Master', icon: 'pi pi-fw pi-calendar', routerLink: ['/admin/holidays'] });
     }
 
     if (masterItems.length > 0) {

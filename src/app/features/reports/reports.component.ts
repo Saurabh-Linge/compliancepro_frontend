@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { TableComponent, TableColumn } from '../../shared/components/table/table.component';
 import { ButtonModule } from 'primeng/button';
 import { RippleModule } from 'primeng/ripple';
@@ -16,7 +16,7 @@ interface ReportItem {
 @Component({
   selector: 'app-reports',
   standalone: true,
-  imports: [CommonModule, TableComponent, ButtonModule, RippleModule, PageComponent],
+  imports: [CommonModule, RouterModule, TableComponent, ButtonModule, RippleModule],
   templateUrl: './reports.component.html',
   styleUrls: ['./reports.component.scss'],
 })

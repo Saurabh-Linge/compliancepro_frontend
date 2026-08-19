@@ -10,11 +10,12 @@ import { Textarea } from 'primeng/textarea';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { DatePickerModule } from 'primeng/datepicker';
+import { DialogModule } from 'primeng/dialog';
 
 @Component({
   selector: 'app-assignment-details',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, SelectModule, Textarea, TagModule, TooltipModule, DatePickerModule],
+  imports: [CommonModule, FormsModule, ButtonModule, SelectModule, Textarea, TagModule, TooltipModule, DatePickerModule, DialogModule],
   styleUrls: ['../../shared/styles/checklist-shared.css'],
   template: `
     <!-- Compact Premium Dashboard Header -->
@@ -73,17 +74,17 @@ import { DatePickerModule } from 'primeng/datepicker';
           <div class="flex items-center gap-2" style="display: flex; align-items: center; gap: 0.5rem;">
             <span class="px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider"
                   [ngClass]="{
-                    'bg-yellow-100 text-yellow-800': assignmentStatus()?.toUpperCase() === 'PENDING_TIMELINE' || assignmentStatus()?.toUpperCase() === 'TIMELINE_REVIEW',
-                    'bg-indigo-100 text-indigo-800': assignmentStatus()?.toUpperCase() === 'IN_PROGRESS' || assignmentStatus()?.toUpperCase() === 'PENDING_RECOMPLIANCE',
-                    'bg-orange-100 text-orange-800': assignmentStatus()?.toUpperCase() === 'REVIEW_PENDING' || assignmentStatus()?.toUpperCase() === 'ESCALATED_TO_CCO',
-                    'bg-green-100 text-green-800': assignmentStatus()?.toUpperCase() === 'COMPLETED',
-                    'bg-red-100 text-red-800': assignmentStatus()?.toUpperCase() === 'REJECTED'
+                    'bg-yellow-100 text-yellow-800': assignmentStatus().toUpperCase() === 'PENDING_TIMELINE' || assignmentStatus().toUpperCase() === 'TIMELINE_REVIEW',
+                    'bg-indigo-100 text-indigo-800': assignmentStatus().toUpperCase() === 'IN_PROGRESS' || assignmentStatus().toUpperCase() === 'PENDING_RECOMPLIANCE',
+                    'bg-orange-100 text-orange-800': assignmentStatus().toUpperCase() === 'REVIEW_PENDING' || assignmentStatus().toUpperCase() === 'ESCALATED_TO_CCO',
+                    'bg-green-100 text-green-800': assignmentStatus().toUpperCase() === 'COMPLETED',
+                    'bg-red-100 text-red-800': assignmentStatus().toUpperCase() === 'REJECTED'
                   }" style="font-size: 0.8rem; padding: 0.15rem 0.5rem;">
               {{ assignmentStatus() }}
             </span>
             <span class="text-xs font-bold text-indigo-600">
               {{ completedCount() }}/{{ tasks().length }}
-              {{ (assignmentStatus()?.toUpperCase() === 'PENDING_TIMELINE' || assignmentStatus()?.toUpperCase() === 'TIMELINE_REVIEW') ? 'Dates Set' : 'Done' }}
+              {{ (assignmentStatus().toUpperCase() === 'PENDING_TIMELINE' || assignmentStatus().toUpperCase() === 'TIMELINE_REVIEW') ? 'Dates Set' : 'Done' }}
             </span>
           </div>
           <div class="w-24 bg-gray-100 rounded-full h-1 overflow-hidden mt-1" style="width: 5rem; margin-top: 0.25rem;">
@@ -96,7 +97,7 @@ import { DatePickerModule } from 'primeng/datepicker';
     </div>
 
     <!-- Rejection Alert Banner -->
-    <div *ngIf="assignmentStatus()?.toUpperCase() === 'REJECTED'" class="p-3 mb-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg shadow-sm">
+    <div *ngIf="assignmentStatus().toUpperCase() === 'REJECTED'" class="p-3 mb-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg shadow-sm">
       <div class="flex">
         <div class="flex-shrink-0">
           <i class="pi pi-exclamation-triangle text-red-500 text-lg"></i>
@@ -128,7 +129,7 @@ import { DatePickerModule } from 'primeng/datepicker';
         </div>
         
         <div class="flex flex-column" style="padding: 0;">
-          <div *ngFor="let t of group.tasks; let i = index" 
+          <div *ngFor="let t of group.tasks; trackBy: trackByTaskId; let i = index" 
                class="question-card"
                [ngClass]="{
                  'border-left-green': t.status === 'COMPLETED' && t.compliance_status === 'COMPLIED',
@@ -422,42 +423,28 @@ import { DatePickerModule } from 'primeng/datepicker';
 
                     </div>
                   </ng-template>
-                </ng-container>
+                </ng-container>                <!-- History Action Trigger Buttons (Modal Overlay to maintain uniform card height) -->
+                <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem;">
+                  <button *ngIf="hasRemarksHistory(t)"
+                          type="button"
+                          pButton
+                          icon="pi pi-comments"
+                          [label]="'Remark Chain (' + t.remarks_history.length + ')'"
+                          class="p-button-outlined p-button-sm p-button-secondary"
+                          (click)="openRemarkChainDialog(t)"
+                          style="font-size: 0.725rem; padding: 0.3rem 0.6rem;">
+                  </button>
 
-                <!-- Iterative Remarks / History Timeline Feed -->
-                <details *ngIf="hasReviewerRemarks(t)" class="mt-3 bg-gray-50 border border-gray-100 rounded-lg w-full no-print" style="margin-top: 0.75rem; width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;" [open]="false">
-                  <summary class="cursor-pointer font-semibold text-gray-600 hover:bg-gray-100/50 transition-colors" style="font-size: 0.725rem; display: flex; align-items: center; justify-content: space-between; padding: 0.45rem 0.65rem; color: #4b5563; user-select: none; outline: none; list-style: none;">
-                    <span style="display: flex; align-items: center; gap: 0.3rem; white-space: nowrap;">
-                      <i class="pi pi-comments text-indigo-500" style="font-size: 0.8rem;"></i> Remarks ({{ t.remarks_history.length }})
-                    </span>
-                  </summary>
-                  <div style="display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem 1rem; border-top: 1px solid #f3f4f6; max-height: 250px; overflow-y: auto;">
-                    <div *ngFor="let h of t.remarks_history" 
-                         class="p-2 rounded border" 
-                         [ngClass]="{
-                           'bg-indigo-50/50 border-indigo-100': h.role === 'COMPLIER',
-                           'bg-amber-50/50 border-amber-100': h.role === 'REVIEWER'
-                         }" 
-                         style="padding: 0.5rem; border-radius: 6px; border: 1px solid; font-size: 0.75rem; text-align: left;">
-                      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
-                        <span class="font-bold" 
-                              [ngClass]="{
-                                'text-indigo-700': h.role === 'COMPLIER',
-                                'text-amber-700': h.role === 'REVIEWER'
-                              }">
-                          {{ h.username }} 
-                          <span style="font-weight: 400; color: #9ca3af;">({{ h.role === 'COMPLIER' ? 'Branch/Dept' : 'Reviewer' }})</span>
-                        </span>
-                        <span style="font-size: 0.65rem; color: #9ca3af;">
-                          {{ h.created_at | date:'dd-MM-yyyy HH:mm' }}
-                        </span>
-                      </div>
-                      <p class="m-0 line-height-3 text-gray-700" style="margin: 0; font-weight: 500;">
-                        {{ h.remark }}
-                      </p>
-                    </div>
-                  </div>
-                </details>
+                  <button *ngIf="hasEvidenceHistory(t)"
+                          type="button"
+                          pButton
+                          icon="pi pi-paperclip"
+                          [label]="'Evidence History (' + t.evidence_history.length + ')'"
+                          class="p-button-outlined p-button-sm p-button-info"
+                          (click)="openRemarkChainDialog(t)"
+                          style="font-size: 0.725rem; padding: 0.3rem 0.6rem;">
+                  </button>
+                </div>
 
               </div>
             </ng-template>
@@ -492,11 +479,132 @@ import { DatePickerModule } from 'primeng/datepicker';
     <div *ngIf="taskGroups().length === 0" class="glass-panel text-center py-8 text-gray-500 bg-white rounded-xl border border-gray-100">
       No compliance tasks found for this assignment.
     </div>
+
+    <!-- Remark Chain & Evidence History Dialog Overlay -->
+    <p-dialog [(visible)]="displayRemarkChainDialog" 
+              [header]="'Compliance Interaction History - Task #' + (selectedTaskForChain?.assignment_task_id || '')" 
+              [modal]="true" 
+              [style]="{ width: '650px', maxWidth: '92vw' }" 
+              [draggable]="false" 
+              [resizable]="false"
+              (onHide)="closeRemarkChainDialog()">
+
+      <div *ngIf="selectedTaskForChain" style="display: flex; flex-direction: column; gap: 1rem;">
+        <!-- Task Title Banner -->
+        <div style="background: #f8fafc; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+          <div style="font-size: 0.725rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.25rem;">
+            Task Description
+          </div>
+          <div style="font-size: 0.88rem; font-weight: 600; color: #1e293b; line-height: 1.4;">
+            {{ selectedTaskForChain.description }}
+          </div>
+        </div>
+
+        <!-- Evidence History Section in Dialog -->
+        <div *ngIf="hasEvidenceHistory(selectedTaskForChain)" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+          <div style="background: #f1f5f9; padding: 0.5rem 0.75rem; font-size: 0.78rem; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 0.4rem;">
+            <i class="pi pi-paperclip text-indigo-600"></i> Evidence Upload History ({{ selectedTaskForChain.evidence_history.length }})
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem; padding: 0.75rem; max-height: 180px; overflow-y: auto; background: #ffffff;">
+            <div *ngFor="let ev of selectedTaskForChain.evidence_history" style="padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid #cbd5e1; background: #f8fafc; font-size: 0.75rem;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                <a [href]="ev.file_url" target="_blank" style="display: inline-flex; align-items: center; gap: 0.35rem; font-weight: 700; color: #4f46e5; text-decoration: none;">
+                  <i class="pi pi-file-pdf text-red-500"></i> View Evidence PDF
+                </a>
+                <span style="font-size: 0.68rem; color: #64748b;" *ngIf="ev.submitted_at">
+                  {{ ev.submitted_at | date:'dd-MM-yyyy HH:mm' }}
+                </span>
+              </div>
+              <p style="margin: 0; font-weight: 500; color: #334155;" *ngIf="ev.remark">
+                <strong>Remark:</strong> {{ ev.remark }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visual Remark Chain Timeline in Dialog -->
+        <div *ngIf="hasRemarksHistory(selectedTaskForChain)" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+          <div style="background: #f1f5f9; padding: 0.5rem 0.75rem; font-size: 0.78rem; font-weight: 700; color: #334155; display: flex; align-items: center; justify-content: space-between;">
+            <span style="display: flex; align-items: center; gap: 0.4rem;">
+              <i class="pi pi-comments text-indigo-600"></i> Remark Chain Timeline ({{ selectedTaskForChain.remarks_history.length }})
+            </span>
+            <span style="font-size: 0.68rem; color: #6b7280; font-weight: 500;">Role Chain: Department &rarr; CO &rarr; CCO</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; max-height: 320px; overflow-y: auto; background: #fafafa;">
+            <div *ngFor="let h of selectedTaskForChain.remarks_history; let last = last" 
+                 style="position: relative; padding-left: 1.75rem; text-align: left;">
+                 
+              <!-- Vertical Connector Line -->
+              <div *ngIf="!last" style="position: absolute; left: 0.5rem; top: 1.25rem; bottom: -0.75rem; width: 2px; background: #cbd5e1;"></div>
+              
+              <!-- Node Icon Bullet -->
+              <div [ngClass]="{
+                     'bg-purple-600 text-white': (h.role || '').toUpperCase() === 'CCO',
+                     'bg-amber-500 text-white': (h.role || '').toUpperCase() === 'CO' || (h.role || '').toUpperCase() === 'REVIEWER',
+                     'bg-indigo-600 text-white': (h.role || '').toUpperCase() === 'COMPLIER' || (h.role || '').toUpperCase() === 'DEPARTMENT' || (h.role || '').toUpperCase() === 'BRANCH'
+                   }" 
+                   style="position: absolute; left: 0; top: 0.15rem; width: 1.1rem; height: 1.1rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; z-index: 10; box-shadow: 0 1px 2px rgba(0,0,0,0.15);">
+                <i [class]="(h.role || '').toUpperCase() === 'CCO' ? 'pi pi-verified' : ((h.role || '').toUpperCase() === 'CO' || (h.role || '').toUpperCase() === 'REVIEWER' ? 'pi pi-shield' : 'pi pi-user')"></i>
+              </div>
+
+              <!-- Node Content Card -->
+              <div [ngClass]="{
+                     'bg-purple-50/70 border-purple-200': (h.role || '').toUpperCase() === 'CCO',
+                     'bg-amber-50/70 border-amber-200': (h.role || '').toUpperCase() === 'CO' || (h.role || '').toUpperCase() === 'REVIEWER',
+                     'bg-indigo-50/70 border-indigo-200': (h.role || '').toUpperCase() === 'COMPLIER' || (h.role || '').toUpperCase() === 'DEPARTMENT' || (h.role || '').toUpperCase() === 'BRANCH'
+                   }"
+                   style="padding: 0.6rem 0.75rem; border-radius: 8px; border: 1px solid; font-size: 0.78rem;">
+                
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem; flex-wrap: wrap; gap: 0.25rem;">
+                  <div style="display: flex; align-items: center; gap: 0.35rem;">
+                    <span style="font-size: 0.8rem; font-weight: 700; color: #111827;">{{ h.username }}</span>
+                    <span [ngClass]="{
+                            'bg-purple-200 text-purple-800': (h.role || '').toUpperCase() === 'CCO',
+                            'bg-amber-200 text-amber-800': (h.role || '').toUpperCase() === 'CO' || (h.role || '').toUpperCase() === 'REVIEWER',
+                            'bg-indigo-200 text-indigo-800': (h.role || '').toUpperCase() === 'COMPLIER' || (h.role || '').toUpperCase() === 'DEPARTMENT' || (h.role || '').toUpperCase() === 'BRANCH'
+                          }"
+                          style="font-size: 0.65rem; padding: 0.1rem 0.45rem; border-radius: 9999px; font-weight: 700; text-transform: uppercase;">
+                      {{ (h.role || '').toUpperCase() === 'CCO' ? 'CCO' : ((h.role || '').toUpperCase() === 'CO' || (h.role || '').toUpperCase() === 'REVIEWER' ? 'CO Reviewer' : 'Department/Branch') }}
+                    </span>
+                  </div>
+                  
+                  <span style="font-size: 0.68rem; color: #6b7280; font-weight: 500;">
+                    <i class="pi pi-clock" style="font-size: 0.65rem; margin-right: 0.15rem;"></i> {{ h.created_at | date:'dd-MM-yyyy HH:mm' }}
+                  </span>
+                </div>
+
+                <p style="margin: 0; font-weight: 500; line-height: 1.4; color: #1f2937;">
+                  {{ h.remark }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ng-template pTemplate="footer">
+        <button pButton label="Close" icon="pi pi-times" class="p-button-secondary p-button-sm" (click)="closeRemarkChainDialog()"></button>
+      </ng-template>
+    </p-dialog>
     
-    <div style="height: 4rem;"></div> <!-- bottom padding spacing -->->
+    <div style="height: 4rem;"></div> <!-- bottom padding spacing -->
   `,
 })
 export class AssignmentDetailsComponent implements OnInit {
+  displayRemarkChainDialog = false;
+  selectedTaskForChain: any = null;
+
+  openRemarkChainDialog(task: any) {
+    this.selectedTaskForChain = task;
+    this.displayRemarkChainDialog = true;
+  }
+
+  closeRemarkChainDialog() {
+    this.displayRemarkChainDialog = false;
+    this.selectedTaskForChain = null;
+  }
+
   assignmentId: number | null = null;
 
   tasks = signal<any[]>([]);
@@ -587,7 +695,7 @@ export class AssignmentDetailsComponent implements OnInit {
   progressPercentage = computed(() => this.tasks().length ? Math.round((this.completedCount() / this.tasks().length) * 100) : 0);
 
   canEditAssignment(): boolean {
-    const status = this.assignmentStatus()?.toUpperCase();
+    const status = this.assignmentStatus().toUpperCase();
     if (status === 'REVIEW_PENDING' || status === 'COMPLETED') {
       return false;
     }
@@ -599,7 +707,7 @@ export class AssignmentDetailsComponent implements OnInit {
   }
 
   canEditTaskAssignment(task: any): boolean {
-    const status = this.assignmentStatus()?.toUpperCase();
+    const status = this.assignmentStatus().toUpperCase();
 
     // When submitted for review or completed, lock all tasks
     if (status === 'REVIEW_PENDING' || status === 'COMPLETED') {
@@ -743,17 +851,71 @@ export class AssignmentDetailsComponent implements OnInit {
         next: (data) => {
           console.log('API Response data received:', data);
 
-          // Map backend tasks to hold temporary form values for clean binding
+          // Map backend tasks to hold temporary form values while preserving unsaved user input
+          const currentTasksMap = new Map<number, any>();
+          (this.tasks() || []).forEach(ct => {
+            if (ct && ct.assignment_task_id) {
+              currentTasksMap.set(ct.assignment_task_id, ct);
+            }
+          });
+
           const mappedTasks = data.map(t => {
             const rawDate = t.proposed_due_date || t.due_date;
+            const existing = currentTasksMap.get(t.assignment_task_id);
+
+            // Preserve unsaved compliance remarks if modified locally by user
+            let preservedRemarks = t.remarks || '';
+            if (existing && existing.temp_remarks !== undefined && existing.temp_remarks !== null) {
+              const savedRemarks = existing.remarks || '';
+              if (existing.temp_remarks !== savedRemarks && existing.temp_remarks.trim().length > 0) {
+                preservedRemarks = existing.temp_remarks;
+              }
+            }
+
+            // Preserve unsaved compliance status
+            let preservedComplianceStatus = t.compliance_status && t.compliance_status !== 'PENDING' ? t.compliance_status : 'COMPLIED';
+            if (existing && existing.temp_compliance_status) {
+              const savedStatus = existing.compliance_status && existing.compliance_status !== 'PENDING' ? existing.compliance_status : 'COMPLIED';
+              if (existing.temp_compliance_status !== savedStatus) {
+                preservedComplianceStatus = existing.temp_compliance_status;
+              }
+            }
+
+            // Preserve unsaved proposed due date
+            let preservedProposedDate = rawDate ? rawDate.split('T')[0] : '';
+            let preservedProposedDateObj = rawDate ? new Date(rawDate) : null;
+            if (existing && existing.temp_proposed_due_date !== undefined) {
+              const dbDateStr = rawDate ? rawDate.split('T')[0] : '';
+              if (existing.temp_proposed_due_date !== dbDateStr && existing.temp_proposed_due_date) {
+                preservedProposedDate = existing.temp_proposed_due_date;
+                preservedProposedDateObj = existing.temp_proposed_due_date_obj || preservedProposedDateObj;
+              }
+            }
+
+            // Preserve unsaved proposed remark
+            let preservedProposedRemark = t.proposed_remark || '';
+            if (existing && existing.temp_proposed_remark !== undefined) {
+              if (existing.temp_proposed_remark !== (existing.proposed_remark || '')) {
+                preservedProposedRemark = existing.temp_proposed_remark;
+              }
+            }
+
+            // Preserve unsaved timeline review remark
+            let preservedTimelineReviewRemark = t.timeline_review_remark || '';
+            if (existing && existing.temp_timeline_review_remark !== undefined) {
+              if (existing.temp_timeline_review_remark !== (existing.timeline_review_remark || '')) {
+                preservedTimelineReviewRemark = existing.temp_timeline_review_remark;
+              }
+            }
+
             return {
               ...t,
-              temp_compliance_status: t.compliance_status && t.compliance_status !== 'PENDING' ? t.compliance_status : 'COMPLIED',
-              temp_remarks: t.remarks || '',
-              temp_proposed_due_date: rawDate ? rawDate.split('T')[0] : '',
-              temp_proposed_due_date_obj: rawDate ? new Date(rawDate) : null,
-              temp_proposed_remark: t.proposed_remark || '',
-              temp_timeline_review_remark: t.timeline_review_remark || '',
+              temp_compliance_status: preservedComplianceStatus,
+              temp_remarks: preservedRemarks,
+              temp_proposed_due_date: preservedProposedDate,
+              temp_proposed_due_date_obj: preservedProposedDateObj,
+              temp_proposed_remark: preservedProposedRemark,
+              temp_timeline_review_remark: preservedTimelineReviewRemark,
               has_evidence: false,
               evidence_url: '',
               remarks_history: []
@@ -764,10 +926,14 @@ export class AssignmentDetailsComponent implements OnInit {
           this.api.getAssignmentEvidence(this.assignmentId!).subscribe({
             next: (evidenceList) => {
               mappedTasks.forEach(task => {
-                const evidence = evidenceList.find(e => e.task_id === task.task_id);
-                if (evidence) {
+                const evidences = evidenceList.filter(e => e.assignment_task_id === task.assignment_task_id || e.task_id === task.task_id);
+                task.evidence_history = evidences.map(e => ({
+                  ...e,
+                  file_url: this.api.getFileUrl(e.file_url)
+                }));
+                if (task.evidence_history.length > 0) {
                   task.has_evidence = true;
-                  task.evidence_url = this.api.getFileUrl(evidence.file_url);
+                  task.evidence_url = task.evidence_history[0].file_url;
                 }
               });
 
@@ -782,7 +948,20 @@ export class AssignmentDetailsComponent implements OnInit {
               mappedTasks.forEach(task => {
                 this.api.getTaskRemarksHistory(this.assignmentId!, task.assignment_task_id).subscribe({
                   next: (history) => {
-                    task.remarks_history = history;
+                    const historyList = history || [];
+                    const reviewRemarkText = task.assignment_review_remark || task.review_remark;
+                    if (reviewRemarkText && reviewRemarkText.trim()) {
+                      const exists = historyList.some((h: any) => h.remark.includes(reviewRemarkText) || reviewRemarkText.includes(h.remark));
+                      if (!exists) {
+                        historyList.push({
+                          role: 'CO',
+                          username: 'CO Reviewer',
+                          remark: reviewRemarkText.toLowerCase().includes('re-compliance') ? reviewRemarkText : `[Re-compliance Requested] ${reviewRemarkText}`,
+                          created_at: task.reviewed_at || new Date().toISOString()
+                        });
+                      }
+                    }
+                    task.remarks_history = historyList;
                     completedCount++;
                     if (completedCount === mappedTasks.length) {
                       this.tasks.set(mappedTasks);
@@ -885,6 +1064,18 @@ export class AssignmentDetailsComponent implements OnInit {
     this.taskGroups.set(groups);
   }
 
+  trackByTaskId(index: number, item: any): number {
+    return item?.assignment_task_id || index;
+  }
+
+  hasRemarksHistory(task: any): boolean {
+    return !!(task.remarks_history && task.remarks_history.length > 0);
+  }
+
+  hasEvidenceHistory(task: any): boolean {
+    return !!(task.evidence_history && task.evidence_history.length > 0);
+  }
+
   hasReviewerRemarks(task: any): boolean {
     if (!task.remarks_history || task.remarks_history.length === 0) return false;
     return task.remarks_history.some((h: any) => h.role === 'REVIEWER');
@@ -928,52 +1119,24 @@ export class AssignmentDetailsComponent implements OnInit {
         const formData = new FormData();
         formData.append('files', file);
         formData.append('remark', task.temp_remarks);
+        formData.append('compliance_status', task.temp_compliance_status || 'COMPLIED');
 
         this.api.uploadTaskEvidence(this.assignmentId!, taskId, formData)
           .subscribe({
             next: () => {
-              // If status is NOT_COMPLIED, sync it to database
-              if (task.temp_compliance_status === 'NOT_COMPLIED') {
-                this.api.completeTaskDirectly(this.assignmentId!, taskId, 'NOT_COMPLIED', task.temp_remarks)
-                  .subscribe({
-                    next: () => {
-                      setTimeout(() => {
-                        this.selectedFilesMap.update(map => {
-                          const copy = { ...map };
-                          delete copy[taskId];
-                          return copy;
-                        });
-                        this.rowSavingMap.update(map => ({ ...map, [taskId]: false }));
-                        this.loadTasks();
-                        if (showNotification) {
-                          this.notification.success('Task compliance and evidence saved successfully!');
-                        }
-                        resolve(true);
-                      });
-                    },
-                    error: (err) => {
-                      setTimeout(() => {
-                        this.rowSavingMap.update(map => ({ ...map, [taskId]: false }));
-                        this.notification.error('Failed to complete task compliance: ' + (err.message || err.statusText));
-                        resolve(false);
-                      });
-                    }
-                  });
-              } else {
-                setTimeout(() => {
-                  this.selectedFilesMap.update(map => {
-                    const copy = { ...map };
-                    delete copy[taskId];
-                    return copy;
-                  });
-                  this.rowSavingMap.update(map => ({ ...map, [taskId]: false }));
-                  this.loadTasks();
-                  if (showNotification) {
-                    this.notification.success('Task compliance and evidence saved successfully!');
-                  }
-                  resolve(true);
+              setTimeout(() => {
+                this.selectedFilesMap.update(map => {
+                  const copy = { ...map };
+                  delete copy[taskId];
+                  return copy;
                 });
-              }
+                this.rowSavingMap.update(map => ({ ...map, [taskId]: false }));
+                this.loadTasks();
+                if (showNotification) {
+                  this.notification.success('Task compliance and evidence saved successfully!');
+                }
+                resolve(true);
+              });
             },
             error: (err) => {
               console.error(err);

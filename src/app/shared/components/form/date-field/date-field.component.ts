@@ -187,7 +187,7 @@ export class DateFieldComponent {
   touched = computed(() => this._touched);
 
   showError = computed(() => {
-    return this._touched && this.error().length > 0;
+    return this.error().length > 0;
   });
 
   onValueChange(value: Date | null): void {

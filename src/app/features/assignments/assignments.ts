@@ -50,6 +50,28 @@ import { SelectModule } from 'primeng/select';
             <!-- Project the Status filter inside the toolbar-actions slot -->
             <div toolbar-actions class="flex align-items-center gap-2">
               <p-select
+                [options]="taskSetTypeFilterOptions"
+                [ngModel]="selectedTaskSetTypeFilter()"
+                (ngModelChange)="onTaskSetTypeFilterChange($event)"
+                placeholder="Filter by Type"
+                [showClear]="true"
+                optionLabel="label"
+                optionValue="value"
+                class="w-full sm:w-12rem"
+                styleClass="h-2.5rem flex align-items-center"
+              ></p-select>
+              <p-select
+                [options]="frequencyFilterOptions"
+                [ngModel]="selectedFrequencyFilter()"
+                (ngModelChange)="onFrequencyFilterChange($event)"
+                placeholder="Filter by Frequency"
+                [showClear]="true"
+                optionLabel="label"
+                optionValue="value"
+                class="w-full sm:w-12rem"
+                styleClass="h-2.5rem flex align-items-center"
+              ></p-select>
+              <p-select
                 [options]="statusFilterOptions"
                 [ngModel]="selectedStatusFilter()"
                 (ngModelChange)="onStatusFilterChange($event)"
@@ -57,7 +79,7 @@ import { SelectModule } from 'primeng/select';
                 [showClear]="true"
                 optionLabel="label"
                 optionValue="value"
-                class="w-full sm:w-16rem"
+                class="w-full sm:w-12rem"
                 styleClass="h-2.5rem flex align-items-center"
               ></p-select>
             </div>
@@ -141,9 +163,39 @@ export class AssignmentsComponent implements OnInit {
     { label: 'Review Pending', value: 'REVIEW_PENDING' },
     { label: 'Completed', value: 'COMPLETED' },
     { label: 'Escalated to CCO', value: 'ESCALATED_TO_CCO' },
-    { label: 'Rejected', value: 'Rejected' },
     { label: 'Pending Recompliance', value: 'PENDING_RECOMPLIANCE' },
+    { label: 'Overdue', value: 'OVERDUE' }
   ];
+
+  selectedFrequencyFilter = signal<string | null>(null);
+  frequencyFilterOptions = [
+    { label: 'Daily',        value: '0' },
+    { label: 'Weekly',       value: '7' },
+    { label: 'Fortnightly',  value: '1' },
+    { label: 'Monthly',      value: '2' },
+    { label: 'Quarterly',    value: '3' },
+    { label: 'Semi-Annual',  value: '4' },
+    { label: 'Yearly',       value: '5' },
+    { label: '1-Time',       value: '6' }
+  ];
+
+  selectedTaskSetTypeFilter = signal<string | null>(null);
+  taskSetTypeFilterOptions = [
+    { label: 'Internal', value: 'INTERNAL' },
+    { label: 'Circular Based', value: 'CIRCULAR_BASED' }
+  ];
+
+  readonly frequencyLabelMap: Record<string, string> = {
+    '0': 'Daily',
+    '1': 'Fortnightly',
+    '2': 'Monthly',
+    '3': 'Quarterly',
+    '4': 'Semi-Annual',
+    '5': 'Yearly',
+    '6': '1-Time',
+    '7': 'Weekly'
+  };
+
   taskSets = signal<any[]>([]);
   branches = signal<any[]>([]);
 
@@ -173,11 +225,13 @@ export class AssignmentsComponent implements OnInit {
   }
 
   assignmentColumns: TableColumn[] = [
-    { field: 'task_set_name', header: 'Task Set Name', width: '30%' },
-    { field: 'created_at', header: 'Assignment Date', type: 'date', pipeFormat: 'mediumDate', width: '15%' },
-    { field: 'proposed_timeline', header: 'Due Date', type: 'date', pipeFormat: 'mediumDate', width: '15%' },
-    { field: 'branch_name', header: 'Dept/Branch', width: '20%' },
-    { field: 'status', header: 'Status', type: 'status', width: '15%' }
+    { field: 'task_set_name',     header: 'Task Set',       type: 'text',   width: '26%' },
+    { field: 'task_set_type',     header: 'Type',           type: 'badge',  width: '90px' },
+    { field: 'frequency_label',   header: 'Frequency',      type: 'text',   width: '110px' },
+    { field: 'branch_name',       header: 'Dept / Branch',  type: 'text',   width: '14%' },
+    { field: 'progress_text',     header: 'Progress',       type: 'text',   width: '90px', align: 'center' },
+    { field: 'due_schedule_text', header: 'Due Schedule',   type: 'text',   width: '140px' },
+    { field: 'status',            header: 'Status',         type: 'status', width: '160px' }
   ];
 
   taskSetColumns: TableColumn[] = [
@@ -229,9 +283,9 @@ export class AssignmentsComponent implements OnInit {
       visible: (row) => {
         const s = row.status?.toUpperCase();
         if (this.isRowInternal(row) && this.isBranchUser) {
-          return s === 'PENDING_TIMELINE' || s === 'IN_PROGRESS' || s === 'REJECTED' || s === 'PENDING_RECOMPLIANCE';
+          return s === 'PENDING_TIMELINE' || s === 'IN_PROGRESS' || s === 'REJECTED' || s === 'PENDING_RECOMPLIANCE' || s === 'OVERDUE';
         }
-        return (s === 'IN_PROGRESS' || s === 'REJECTED' || s === 'PENDING_RECOMPLIANCE') && this.isBranchUser;
+        return (s === 'IN_PROGRESS' || s === 'REJECTED' || s === 'PENDING_RECOMPLIANCE' || s === 'OVERDUE') && this.isBranchUser;
       },
       command: (row) => {
         this.goToTasks(row.id);
@@ -243,7 +297,7 @@ export class AssignmentsComponent implements OnInit {
       visible: (row) => {
         const s = row.status?.toUpperCase();
         return (s === 'REVIEW_PENDING' || s === 'COMPLETED' || s === 'ESCALATED_TO_CCO') ||
-          (this.isReviewerUser && (s === 'IN_PROGRESS' || s === 'PENDING_RECOMPLIANCE' || s === 'REJECTED'));
+          (this.isReviewerUser && (s === 'IN_PROGRESS' || s === 'PENDING_RECOMPLIANCE' || s === 'REJECTED' || s === 'OVERDUE'));
       },
       command: (row) => {
         this.goToTasks(row.id);
@@ -293,17 +347,47 @@ export class AssignmentsComponent implements OnInit {
       page: this.page,
       limit: this.limit,
     };
-    if (this.searchQuery) {
-      params.search = this.searchQuery;
-    }
+    if (this.searchQuery) params.search = this.searchQuery;
     const status = this.selectedStatusFilter();
-    if (status) {
-      params.status = status;
-    }
+    if (status) params.status = status;
+    const frequency = this.selectedFrequencyFilter();
+    if (frequency) params.frequency = frequency;
+    const type = this.selectedTaskSetTypeFilter();
+    if (type) params.task_set_type = type;
 
     this.api.getAssignments(params).subscribe(res => {
-      this.assignments.set(res.data);
+      this.assignments.set(this.transformAssignments(res.data));
       this.totalRecords.set(res.total);
+    });
+  }
+
+  private transformAssignments(rows: any[]): any[] {
+    return rows.map(row => {
+      const total     = parseInt(row.total_tasks, 10) || 0;
+      const completed = parseInt(row.completed_tasks, 10) || 0;
+      const pct       = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+      // Format standard Date string dd/MM/yyyy
+      let dateStr = '';
+      if (row.proposed_timeline) {
+        const d = new Date(row.proposed_timeline);
+        if (!isNaN(d.getTime())) {
+          dateStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+      }
+      
+      // Combine Date with Time if available
+      let dueScheduleText = dateStr || 'N/A';
+      if (row.due_time) {
+        dueScheduleText += ` ${row.due_time}`;
+      }
+
+      return {
+        ...row,
+        frequency_label: this.frequencyLabelMap[String(row.frequency)?.trim()] ?? row.frequency ?? '—',
+        progress_text:   total > 0 ? `${completed} / ${total} (${pct}%)` : '—',
+        due_schedule_text: dueScheduleText
+      };
     });
   }
 
@@ -330,6 +414,18 @@ export class AssignmentsComponent implements OnInit {
 
   onStatusFilterChange(value: string | null) {
     this.selectedStatusFilter.set(value);
+    this.page = 1;
+    this.loadAssignments();
+  }
+
+  onFrequencyFilterChange(value: string | null) {
+    this.selectedFrequencyFilter.set(value);
+    this.page = 1;
+    this.loadAssignments();
+  }
+
+  onTaskSetTypeFilterChange(value: string | null) {
+    this.selectedTaskSetTypeFilter.set(value);
     this.page = 1;
     this.loadAssignments();
   }

@@ -24,8 +24,7 @@ import { DrawerModule } from 'primeng/drawer';
     ToastModule,
     ConfirmDialogModule,
     TableComponent,
-    TextFieldComponent,
-    PageComponent
+    TextFieldComponent
   ],
   templateUrl: './authorities.html',
   styleUrls: ['./authorities.scss']
@@ -158,7 +157,7 @@ export class Authorities implements OnInit {
         this.apiService.createAuthority(payload).subscribe({
           next: (res) => {
             this.saving.set(false);
-            this.authorities.update(auths => [...auths, res]);
+            this.authorities.update(auths => [res, ...auths]);
             this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'Authority Created', life: 3000 });
             this.authorityDialog.set(false);
           },

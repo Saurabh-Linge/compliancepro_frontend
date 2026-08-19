@@ -60,30 +60,201 @@
         (onAdd)="openCreateModal()"
         [showAddButton]="true"
         [showRefreshButton]="true"
+        [showBulkUploadButton]="true"
+        bulkUploadButtonLabel="Bulk Upload (Internal)"
+        (onBulkUpload)="openBulkUploadModal()"
         [paginator]="true"
         [rows]="10"
     >
       <ng-container toolbar-actions>
-        <p-select
-          [options]="circularFilterOptions()"
-          [ngModel]="selectedCircularFilter()"
-          (ngModelChange)="selectedCircularFilter.set($event)"
-          (onShow)="ensureCircularsLoaded()"
-          placeholder="Filter by Circular"
-          [showClear]="true"
-          [filter]="true"
-          filterPlaceholder="Search circular..."
-          [virtualScroll]="true"
-          [virtualScrollItemSize]="38"
-          styleClass="w-20rem"
-          panelStyleClass="circular-dropdown-panel"
-        ></p-select>
+        <div class="flex align-items-center gap-2">
+          <p-select
+            [options]="circularFilterOptions()"
+            [ngModel]="selectedCircularFilter()"
+            (ngModelChange)="selectedCircularFilter.set($event)"
+            (onShow)="ensureCircularsLoaded()"
+            placeholder="Filter by Circular"
+            [showClear]="true"
+            [filter]="true"
+            filterPlaceholder="Search circular..."
+            [virtualScroll]="true"
+            [virtualScrollItemSize]="38"
+            styleClass="w-16rem h-2.5rem flex align-items-center"
+            panelStyleClass="circular-dropdown-panel"
+          ></p-select>
+
+          <p-select
+            [options]="frequencyFilterOptions()"
+            [ngModel]="selectedFrequencyFilter()"
+            (ngModelChange)="selectedFrequencyFilter.set($event)"
+            placeholder="Filter by Frequency"
+            [showClear]="true"
+            optionLabel="label"
+            optionValue="value"
+            styleClass="w-14rem h-2.5rem flex align-items-center"
+          ></p-select>
+
+          <p-select
+            [options]="branchFilterOptions()"
+            [ngModel]="selectedBranchFilter()"
+            (ngModelChange)="selectedBranchFilter.set($event)"
+            placeholder="Filter by Dept/Branch"
+            [showClear]="true"
+            [filter]="true"
+            filterPlaceholder="Search department..."
+            optionLabel="label"
+            optionValue="value"
+            styleClass="w-14rem h-2.5rem flex align-items-center"
+          ></p-select>
+        </div>
       </ng-container>
     </app-table>
   </div>
 
+<!-- ══════════════════ Bulk Upload Dialog ══════════════════ -->
+<p-dialog
+  [(visible)]="showBulkUploadDialog"
+  [modal]="true"
+  [closable]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '780px', maxWidth: '95vw' }"
+  appendTo="body"
+  styleClass="bulk-upload-dialog"
+>
+  <ng-template pTemplate="header">
+    <div class="flex align-items-center gap-3">
+      <span class="bulk-dialog-icon"><i class="pi pi-file-excel"></i></span>
+      <div>
+        <div class="text-900 font-bold text-lg">Bulk Upload — Internal Task Sets</div>
+        <div class="text-500 text-sm mt-1">Upload an XLSX file to create multiple internal task sets at once</div>
+      </div>
+    </div>
+  </ng-template>
+
+  <ng-template pTemplate="content">
+    <div class="bulk-upload-content">
+
+      <!-- Step 1: Drop Zone -->
+      @if (!bulkPreviewRows().length) {
+        <div
+          class="bulk-drop-zone"
+          [class.dragging]="isDraggingOver()"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave($event)"
+          (drop)="onDrop($event)"
+          (click)="bulkHiddenInput.click()"
+        >
+          <input
+            #bulkHiddenInput
+            type="file"
+            accept=".xlsx,.xls"
+            style="display:none"
+            (change)="onBulkFileChange($event)"
+          />
+          <div class="drop-icon"><i class="pi pi-cloud-upload"></i></div>
+          <div class="drop-title">Drag &amp; drop your XLSX file here</div>
+          <div class="drop-subtitle">or click to browse</div>
+          <div class="drop-formats">Accepts: .xlsx, .xls</div>
+        </div>
+      }
+
+      <!-- Step 2: Preview -->
+      @if (bulkPreviewRows().length) {
+        <div class="bulk-preview">
+          <div class="preview-header">
+            <div class="flex align-items-center gap-2 flex-wrap">
+              <i class="pi pi-check-circle text-green-500"></i>
+              <span class="font-semibold text-900">{{ bulkSelectedFileName() }}</span>
+              <p-tag [value]="bulkPreviewRows().length + ' rows'" severity="info"></p-tag>
+              <p-tag [value]="bulkPreviewSetCount() + ' task set(s)'" severity="success"></p-tag>
+            </div>
+            <button
+              pButton
+              type="button"
+              icon="pi pi-times"
+              label="Change File"
+              class="p-button-text p-button-secondary p-button-sm"
+              (click)="clearBulkFile()"
+            ></button>
+          </div>
+
+          <div class="preview-table-wrap">
+            <p-table
+              [value]="bulkPreviewRows()"
+              [scrollable]="true"
+              scrollHeight="280px"
+              styleClass="p-datatable-sm p-datatable-striped"
+            >
+              <ng-template pTemplate="header">
+                <tr>
+                  <th style="min-width:130px">Set Name</th>
+                  <th style="min-width:170px">Task Name</th>
+                  <th style="min-width:120px">Task Header</th>
+                  <th style="min-width:140px">Branch / Dept</th>
+                  <th style="min-width:110px">Type</th>
+                  <th style="min-width:100px">Authority</th>
+                  <th style="min-width:90px">Priority</th>
+                  <th style="min-width:100px">Frequency</th>
+                  <th style="min-width:100px">Start Date</th>
+                  <th style="min-width:100px">End Date</th>
+                  <th style="min-width:80px">Due</th>
+                  <th style="min-width:90px">Reporting</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-row let-rowIndex="rowIndex">
+                <tr [class.preview-set-start]="rowIndex === 0 || row.set_name !== bulkPreviewRows()[rowIndex - 1].set_name">
+                  <td><span class="font-semibold text-primary">{{ row.set_name }}</span></td>
+                  <td>{{ row.task_name }}</td>
+                  <td>{{ row.task_header }}</td>
+                  <td>{{ row.department_branch_name }}</td>
+                  <td><span [class]="row.for_branch_or_department?.toLowerCase() === 'department' ? 'badge-dept' : 'badge-branch'">{{ row.for_branch_or_department || 'branch' }}</span></td>
+                  <td>{{ row.authority }}</td>
+                  <td>{{ row.priority }}</td>
+                  <td>{{ row.frequency }}</td>
+                  <td>{{ row.start_date }}</td>
+                  <td>{{ row.end_date }}</td>
+                  <td>{{ row.due }}</td>
+                  <td>{{ row.reporting }}</td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </div>
+        </div>
+      }
+
+    </div>
+  </ng-template>
+
+  <ng-template pTemplate="footer">
+    <div class="flex align-items-center justify-content-between w-full">
+      <button
+        pButton
+        type="button"
+        icon="pi pi-download"
+        label="Download Template"
+        class="p-button-text p-button-success"
+        (click)="downloadTemplate()"
+      ></button>
+      <div class="flex gap-2">
+        <button pButton type="button" label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary" (click)="closeBulkUploadModal()"></button>
+        <button
+          pButton
+          type="button"
+          label="Upload & Create"
+          icon="pi pi-upload"
+          [loading]="saving()"
+          [disabled]="!bulkPreviewRows().length || saving()"
+          (click)="submitBulkUpload()"
+        ></button>
+      </div>
+    </div>
+  </ng-template>
+</p-dialog>
+
 <!-- Task Set Form Drawer -->
-<p-drawer [(visible)]="showFormDrawer" position="right" [style]="{ width: '55rem', maxWidth: '95vw' }" appendTo="body" [modal]="true" [showCloseIcon]="false">
+
+<p-drawer [(visible)]="showFormDrawer" position="right" [style]="{ width: '80vw', maxWidth: '98vw' }" appendTo="body" [modal]="true" [showCloseIcon]="false">
   <ng-template pTemplate="header">
     <div class="drawer-header-row">
       <div class="drawer-title-wrap">
@@ -121,6 +292,7 @@
             </app-select-field>
           </div>
 
+          <!-- REGULAR: Circular dropdown -->
           @if (newTaskSetType() === 'REGULAR') {
             <div class="field col-12 md:col-6">
               <app-select-field
@@ -141,76 +313,277 @@
             </div>
           }
 
+          <!-- INTERNAL: Reference Number text field instead -->
+          @if (newTaskSetType() === 'INTERNAL') {
+            <div class="field col-12 md:col-6">
+              <app-text-field
+                label="Reference Number"
+                [field]="newTaskSetReferenceNo"
+                placeholder="e.g. RBI/2024/001">
+              </app-text-field>
+            </div>
+          }
+
           <div class="field col-12 md:col-6">
             <app-text-field label="Task Set Name" [field]="newTaskSetName" [required]="true"></app-text-field>
           </div>
           <div class="field col-12 md:col-6">
-            <app-select-field label="Task Set Frequency" [field]="newTaskSetFrequency" [options]="frequencies" optionLabel="label" optionValue="value" [required]="true"></app-select-field>
+            <app-select-field
+              label="Task Set Frequency"
+              [field]="newTaskSetFrequency"
+              [options]="frequencies"
+              optionLabel="label"
+              optionValue="value"
+              [required]="true">
+            </app-select-field>
           </div>
           <div class="field col-12 md:col-6">
             <app-date-field label="Start Date" [field]="newTaskSetStartDate" dateFormat="dd/mm/yy" [required]="true"></app-date-field>
           </div>
+          <div class="field col-12 md:col-6">
+            <app-date-field label="End Date" [field]="newTaskSetEndDate" dateFormat="dd/mm/yy" [required]="true"></app-date-field>
+          </div>
 
-          @if (newTaskSetType() === 'REGULAR') {
-            <div class="field col-12 md:col-6">
-              <app-date-field label="End Date" [field]="newTaskSetEndDate" dateFormat="dd/mm/yy" [required]="true"></app-date-field>
-            </div>
-            <div class="field col-12 md:col-6">
-              <app-date-field label="Reporting Date" [field]="newTaskSetReportingDate" dateFormat="dd/mm/yy" [required]="true"></app-date-field>
-            </div>
-            <div class="field col-12 md:col-6">
-              <app-date-field label="Due Date [For Branch]" [field]="newTaskSetDueDate" (onChange)="onDueDateChange($event)" dateFormat="dd/mm/yy" [required]="true"></app-date-field>
-            </div>
-          }
+
+          <!-- ══ FREQUENCY-BASED SCHEDULE FIELDS (For ALL types except 1-Time Use) ══ -->
+          @if (newTaskSetFrequency() && newTaskSetFrequency() !== '6') {
+
+            <!-- DAILY → Reporting Time + Due Time -->
+            @if (newTaskSetFrequency() === '0') {
+              <div class="field col-12 md:col-4">
+                <label class="font-medium text-sm text-700 mb-1 block">Assignment Time <span class="text-red-500">*</span></label>
+                <input type="time" class="p-inputtext p-component w-full"
+                  [ngModel]="newTaskSetAssignmentTime()" (ngModelChange)="newTaskSetAssignmentTime.set($event)" />
+              </div>
+              <div class="field col-12 md:col-4">
+                <label class="font-medium text-sm text-700 mb-1 block">Reporting Time <span class="text-red-500">*</span></label>
+                <input type="time" class="p-inputtext p-component w-full"
+                  [ngModel]="newTaskSetReportingTime()" (ngModelChange)="newTaskSetReportingTime.set($event)" />
+              </div>
+              <div class="field col-12 md:col-4">
+                <label class="font-medium text-sm text-700 mb-1 block">Due Time <span class="text-red-500">*</span></label>
+                <input type="time" class="p-inputtext p-component w-full"
+                  [ngModel]="newTaskSetDueTime()" (ngModelChange)="newTaskSetDueTime.set($event)" />
+              </div>
+            }
+
+            <!-- WEEKLY → Assignment / Reporting / Due Day of Week Chips -->
+            @if (newTaskSetFrequency() === '7') {
+              <div class="field col-12">
+                <div class="grid formgrid">
+                  <div class="field col-12 md:col-4">
+                    <label class="font-medium text-sm text-700 mb-2 block">Assignment Day <span class="text-red-500">*</span></label>
+                    <div class="flex flex-wrap gap-1">
+                      @for (day of dayOfWeekOptions; track day.value) {
+                        <div 
+                          class="flex align-items-center justify-content-center px-3 py-1 border-round cursor-pointer text-sm font-medium transition-colors"
+                          [class]="newTaskSetAssignmentDayOfWeek() === day.value ? 'bg-primary text-white border-1 border-primary' : 'bg-surface-0 text-700 border-1 surface-border hover:surface-100'"
+                          (click)="newTaskSetAssignmentDayOfWeek.set(day.value)">
+                          {{ day.label.substring(0, 3) }}
+                        </div>
+                      }
+                    </div>
+                  </div>
+                  <div class="field col-12 md:col-4">
+                    <label class="font-medium text-sm text-700 mb-2 block">Reporting Day <span class="text-red-500">*</span></label>
+                    <div class="flex flex-wrap gap-1">
+                      @for (day of dayOfWeekOptions; track day.value) {
+                        <div 
+                          class="flex align-items-center justify-content-center px-3 py-1 border-round cursor-pointer text-sm font-medium transition-colors"
+                          [class]="newTaskSetReportingDayOfWeek() === day.value ? 'bg-blue-500 text-white border-1 border-blue-500' : 'bg-surface-0 text-700 border-1 surface-border hover:surface-100'"
+                          (click)="newTaskSetReportingDayOfWeek.set(day.value)">
+                          {{ day.label.substring(0, 3) }}
+                        </div>
+                      }
+                    </div>
+                  </div>
+                  <div class="field col-12 md:col-4">
+                    <label class="font-medium text-sm text-700 mb-2 block">Due Day <span class="text-red-500">*</span></label>
+                    <div class="flex flex-wrap gap-1">
+                      @for (day of dayOfWeekOptions; track day.value) {
+                        <div 
+                          class="flex align-items-center justify-content-center px-3 py-1 border-round cursor-pointer text-sm font-medium transition-colors"
+                          [class]="newTaskSetDueDayOfWeek() === day.value ? 'bg-red-500 text-white border-1 border-red-500' : 'bg-surface-0 text-700 border-1 surface-border hover:surface-100'"
+                          (click)="newTaskSetDueDayOfWeek.set(day.value)">
+                          {{ day.label.substring(0, 3) }}
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- FORTNIGHT / MONTHLY → Visual 31-Day Grids -->
+            @if (newTaskSetFrequency() === '1' || newTaskSetFrequency() === '2') {
+              <div class="field col-12">
+                <div class="grid formgrid">
+                  <div class="field col-12 xl:col-4">
+                    <label class="font-medium text-sm text-700 mb-2 block">Assignment Days <span class="text-red-500">*</span></label>
+                    <div class="flex flex-wrap gap-1 max-w-20rem">
+                      @for (day of daysArray; track day) {
+                        <div 
+                          class="flex align-items-center justify-content-center border-round cursor-pointer text-xs font-medium transition-colors"
+                          style="width: 28px; height: 28px;"
+                          [class]="isDayOfMonthSelected(newTaskSetAssignmentDaysOfMonth, day) ? 'bg-primary text-white border-1 border-primary shadow-1' : 'bg-surface-0 text-600 border-1 surface-border hover:bg-primary-50'"
+                          (click)="toggleDayOfMonth(newTaskSetAssignmentDaysOfMonth, day)">
+                          {{ day }}
+                        </div>
+                      }
+                    </div>
+                  </div>
+                  <div class="field col-12 xl:col-4">
+                    <label class="font-medium text-sm text-700 mb-2 block">Reporting Days <span class="text-red-500">*</span></label>
+                    <div class="flex flex-wrap gap-1 max-w-20rem">
+                      @for (day of daysArray; track day) {
+                        <div 
+                          class="flex align-items-center justify-content-center border-round cursor-pointer text-xs font-medium transition-colors"
+                          style="width: 28px; height: 28px;"
+                          [class]="isDayOfMonthSelected(newTaskSetReportingDaysOfMonth, day) ? 'bg-blue-500 text-white border-1 border-blue-500 shadow-1' : 'bg-surface-0 text-600 border-1 surface-border hover:bg-blue-50'"
+                          (click)="toggleDayOfMonth(newTaskSetReportingDaysOfMonth, day)">
+                          {{ day }}
+                        </div>
+                      }
+                    </div>
+                  </div>
+                  <div class="field col-12 xl:col-4">
+                    <label class="font-medium text-sm text-700 mb-2 block">Due Days <span class="text-red-500">*</span></label>
+                    <div class="flex flex-wrap gap-1 max-w-20rem">
+                      @for (day of daysArray; track day) {
+                        <div 
+                          class="flex align-items-center justify-content-center border-round cursor-pointer text-xs font-medium transition-colors"
+                          style="width: 28px; height: 28px;"
+                          [class]="isDayOfMonthSelected(newTaskSetDueDaysOfMonth, day) ? 'bg-red-500 text-white border-1 border-red-500 shadow-1' : 'bg-surface-0 text-600 border-1 surface-border hover:bg-red-50'"
+                          (click)="toggleDayOfMonth(newTaskSetDueDaysOfMonth, day)">
+                          {{ day }}
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- QUARTERLY / SEMI-ANNUAL / YEARLY → Reporting Schedule + Due Schedule -->
+            @if (newTaskSetFrequency() === '3' || newTaskSetFrequency() === '4' || newTaskSetFrequency() === '5') {
+              <div class="field col-12 md:col-4">
+                <label class="font-medium text-sm text-700 mb-1 block">
+                  Assignment Schedule <span class="text-red-500">*</span>
+                </label>
+                <input type="text" class="p-inputtext p-component w-full"
+                  [ngModel]="newTaskSetAssignmentSchedule()" (ngModelChange)="newTaskSetAssignmentSchedule.set($event)"
+                  placeholder="e.g. 1 Jan" />
+              </div>
+              <div class="field col-12 md:col-4">
+                <label class="font-medium text-sm text-700 mb-1 block">
+                  Reporting Schedule <span class="text-red-500">*</span>
+                </label>
+                <input type="text" class="p-inputtext p-component w-full"
+                  [ngModel]="newTaskSetReportingSchedule()" (ngModelChange)="newTaskSetReportingSchedule.set($event)"
+                  placeholder="e.g. 15 Jan" />
+              </div>
+              <div class="field col-12 md:col-4">
+                <label class="font-medium text-sm text-700 mb-1 block">
+                  Due Schedule <span class="text-red-500">*</span>
+                </label>
+                <input type="text" class="p-inputtext p-component w-full"
+                  [ngModel]="newTaskSetDueSchedule()" (ngModelChange)="newTaskSetDueSchedule.set($event)"
+                  placeholder="e.g. 28 Jan" />
+              </div>
+            }
+
+            }
+
+            @if (scheduleValidationError()) {
+              <div class="col-12 mt-2">
+                <div class="p-3 border-round bg-red-50 border-1 border-red-200 text-red-700 flex align-items-center gap-2 text-sm font-medium">
+                  <i class="pi pi-exclamation-triangle"></i>
+                  <span>{{ scheduleValidationError() }}</span>
+                </div>
+              </div>
+            }
+
         </div>
       </section>
 
       <!-- Section: Map Tasks -->
+      <!-- Section: Map Tasks (Side-by-Side) -->
       <section class="drawer-section">
         <div class="section-heading">
           <span class="section-kicker">Map Tasks</span>
           <span class="section-line"></span>
           <span class="text-sm font-bold text-primary flex-shrink-0"><i class="pi pi-check-circle mr-1"></i>{{ targetTasks.length }} Selected</span>
         </div>
-        <div class="border-round border-1 border-300 w-full" style="height: 28rem; display: flex; flex-direction: column;">
-          <app-table
-            [data]="allTasks()"
-            [columns]="taskColumns()"
-            [globalFilterFields]="newTaskSetType() === 'INTERNAL' ? ['description', 'priority', 'authority_name'] : ['description', 'priority']"
-            [loading]="loadingFormDetails()"
-            [selectable]="true"
-            [(selection)]="targetTasks"
-            [paginator]="true"
-            [rows]="5"
-            [dataKey]="'id'"
-            [showAddButton]="newTaskSetType() === 'INTERNAL'"
-            addButtonLabel="Add Task"
-            (onAdd)="openInlineTaskDialog()"
-            (onActionClick)="onTaskTableAction($event)"
-            style="flex: 1; display: flex; flex-direction: column; overflow: hidden;"
-          >
-            <div toolbar-actions class="flex align-items-center ml-2">
-              <p-select
-                *ngIf="newTaskSetType() === 'REGULAR'"
-                [options]="circularFilterOptions()"
-                [ngModel]="formCircularFilter()"
-                (ngModelChange)="formCircularFilter.set($event)"
-                (onShow)="ensureCircularsLoaded()"
-                placeholder="Filter by Circular"
-                [showClear]="true"
-                optionLabel="label"
-                optionValue="value"
-                [filter]="true"
-                filterBy="label"
-                [virtualScroll]="true"
-                [virtualScrollItemSize]="38"
-                class="w-20rem"
-                styleClass="h-2.5rem flex align-items-center animate-fadein"
-                panelStyleClass="circular-dropdown-panel"
-                appendTo="body"
-              ></p-select>
+        
+        <div class="grid w-full m-0 p-0">
+          
+          <!-- Available Tasks Table -->
+          <div class="col-12 md:col-6 p-0 pr-2">
+            <div class="text-sm font-semibold text-600 mb-2">Available Tasks</div>
+            <div class="border-round border-1 border-300 w-full" style="height: 35rem; display: flex; flex-direction: column;">
+              <app-table
+                [data]="availableTasks()"
+                [columns]="availableTaskColumns()"
+                [globalFilterFields]="newTaskSetType() === 'INTERNAL' ? ['description', 'priority', 'authority_name'] : ['description', 'priority']"
+                [loading]="loadingFormDetails()"
+                [selectable]="false"
+                [paginator]="true"
+                [rows]="10"
+                [dataKey]="'id'"
+                [showAddButton]="newTaskSetType() === 'INTERNAL'"
+                [showRefreshButton]="false"
+                addButtonLabel="Add Task"
+                (onAdd)="openInlineTaskDialog()"
+                (onActionClick)="onAvailableTaskAction($event)"
+                style="flex: 1; display: flex; flex-direction: column; overflow: hidden;"
+              >
+                <div toolbar-actions class="flex align-items-center ml-2">
+                  <p-select
+                    *ngIf="newTaskSetType() === 'REGULAR'"
+                    [options]="circularFilterOptions()"
+                    [ngModel]="formCircularFilter()"
+                    (ngModelChange)="formCircularFilter.set($event)"
+                    (onShow)="ensureCircularsLoaded()"
+                    placeholder="Filter by Circular"
+                    [showClear]="true"
+                    optionLabel="label"
+                    optionValue="value"
+                    [filter]="true"
+                    filterBy="label"
+                    [virtualScroll]="true"
+                    [virtualScrollItemSize]="38"
+                    class="w-20rem"
+                    styleClass="h-2.5rem flex align-items-center animate-fadein"
+                    panelStyleClass="circular-dropdown-panel"
+                    appendTo="body"
+                  ></p-select>
+                </div>
+              </app-table>
             </div>
-          </app-table>
+          </div>
+
+          <!-- Selected Tasks Table -->
+          <div class="col-12 md:col-6 p-0 pl-2">
+            <div class="text-sm font-semibold text-primary mb-2">Selected Tasks</div>
+            <div class="border-round border-1 border-300 w-full" style="height: 35rem; display: flex; flex-direction: column;">
+              <app-table
+                [data]="targetTasks"
+                [columns]="selectedTaskColumns()"
+                [globalFilterFields]="newTaskSetType() === 'INTERNAL' ? ['description', 'priority', 'authority_name'] : ['description', 'priority']"
+                [loading]="loadingFormDetails()"
+                [selectable]="false"
+                [paginator]="true"
+                [rows]="10"
+                [dataKey]="'id'"
+                [showAddButton]="false"
+                [showRefreshButton]="false"
+                (onActionClick)="onSelectedTaskAction($event)"
+                style="flex: 1; display: flex; flex-direction: column; overflow: hidden;"
+              >
+              </app-table>
+            </div>
+          </div>
+          
         </div>
       </section>
 

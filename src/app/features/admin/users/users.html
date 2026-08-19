@@ -69,7 +69,9 @@
                     <div class="field col-12">
                         <app-text-field
                             label="Email"
-                            [field]="email">
+                            [field]="email"
+                            [required]="true"
+                            [error]="submitted() ? (!email().trim() ? 'Email is required' : (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email().trim()) ? 'Invalid email format' : '')) : ''">
                         </app-text-field>
                     </div>
 
@@ -98,7 +100,7 @@
                             [options]="roles"
                             optionLabel="label"
                             optionValue="value"
-                            (onChange)="role() === 'CO' ? branchId.set(null) : managedBranchIds.set([])"
+                            (onChange)="onRoleChange($event)"
                             [required]="true"
                             [virtualScroll]="false"
                             [error]="submitted() && !role() ? 'Role is required' : ''">

@@ -211,8 +211,12 @@
     <span class="font-medium text-lg block" style="text-align: center;">No records found. Adjust filters and try again.</span>
   </div>
 
-  <!-- Loading State -->
-  <div class="empty-state no-print" *ngIf="loading()">
-    <i class="pi pi-spin pi-spinner mr-2 text-2xl"></i> Retrieving report dataset...
+  <!-- Global Loader Overlay -->
+  <div class="global-loader-overlay no-print" *ngIf="loading()">
+    <div class="loader-content">
+      <i class="pi pi-spin pi-spinner text-5xl text-primary mb-3"></i>
+      <div class="text-xl font-medium text-800">Generating Report...</div>
+      <div class="text-sm text-500 mt-2">Please wait while we gather the data</div>
+    </div>
   </div>
 </div>

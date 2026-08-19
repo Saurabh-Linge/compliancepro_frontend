@@ -402,5 +402,25 @@ export class ComplianceApiService {
   createBulkTasks(circularId: number, tasks: { description: string }[]) {
     return this.http.post<any>(`${this.baseUrl}/tasks/bulk`, { circular_id: circularId, tasks });
   }
+
+  bulkUploadTaskSets(formData: FormData) {
+    return this.http.post<any>(`${this.baseUrl}/task-sets/bulk-upload`, formData);
+  }
+
+  // Holidays
+  getHolidays(year?: number, month?: number) {
+    let params = new HttpParams();
+    if (year) params = params.set('year', year.toString());
+    if (month) params = params.set('month', month.toString());
+    return this.http.get<any[]>(`${this.baseUrl}/holidays`, { params });
+  }
+
+  addHoliday(date: string, name: string) {
+    return this.http.post<any>(`${this.baseUrl}/holidays`, { date, name });
+  }
+
+  deleteHoliday(id: number) {
+    return this.http.delete<any>(`${this.baseUrl}/holidays/${id}`);
+  }
 }
 

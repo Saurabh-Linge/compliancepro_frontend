@@ -154,8 +154,7 @@ export class TextFieldComponent {
 
   showError = computed(() => {
     const errorMsg = this.error();
-    const isTouched = this._touched();
-    return isTouched && errorMsg.length > 0;
+    return errorMsg.length > 0;
   });
 
   onInput(event: Event): void {

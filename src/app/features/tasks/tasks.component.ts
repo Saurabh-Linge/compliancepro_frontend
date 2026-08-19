@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ComplianceApiService, ComplianceTask } from '../../core/services/api/compliance-api.service';
 import { AuthService } from '../../core/services/auth/auth.service';
 import { DialogModule } from 'primeng/dialog';
@@ -16,6 +16,7 @@ import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { ToastModule } from 'primeng/toast';
 import { TagModule } from 'primeng/tag';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MessageService } from 'primeng/api';
 import { FileUploadModule } from 'primeng/fileupload';
 import { BulkUploadComponent } from './bulk-upload/bulk-upload.component';
@@ -23,7 +24,7 @@ import { BulkUploadComponent } from './bulk-upload/bulk-upload.component';
 @Component({
   selector: 'app-tasks',
   standalone: true,
-  imports: [CommonModule, FormsModule, DialogModule, DrawerModule, ButtonModule, TabsModule, PageComponent, TableComponent, TextareaFieldComponent, SelectFieldComponent, SelectModule, TableModule, ToastModule, TagModule, FileUploadModule, BulkUploadComponent],
+  imports: [CommonModule, RouterModule, FormsModule, DialogModule, DrawerModule, ButtonModule, TabsModule, TableComponent, TextareaFieldComponent, SelectFieldComponent, SelectModule, TableModule, ToastModule, TagModule, FileUploadModule, BulkUploadComponent, ConfirmDialogModule],
   template: `
     @if (cameFromCirculars() && currentCircular()) {
       <div class="card mb-4 surface-card border-round border-1 surface-border p-3 flex flex-column md:flex-row md:align-items-center md:justify-content-between gap-3">

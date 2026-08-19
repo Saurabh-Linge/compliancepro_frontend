@@ -30,8 +30,7 @@ import { DrawerModule } from 'primeng/drawer';
     TextFieldComponent,
     SelectFieldComponent,
     CheckboxFieldComponent,
-    MultiSelectModule,
-    PageComponent
+    MultiSelectModule
   ],
   templateUrl: './users.html',
   styles: [`
@@ -164,6 +163,15 @@ export class Users implements OnInit {
   branchId = signal<number | null>(null);
   managedBranchIds = signal<number[]>([]);
   isActive = signal<boolean>(true);
+  
+  onRoleChange(newRole: string | null) {
+    if (newRole === 'CO') {
+      this.branchId.set(null);
+    } else {
+      this.managedBranchIds.set([]);
+    }
+    this.updateBranchOptions();
+  }
 
   submitted = signal<boolean>(false);
 
@@ -222,10 +230,11 @@ export class Users implements OnInit {
   }
 
   updateBranchOptions() {
-    // Map options. If the branch is assigned to a CO other than the one currently being edited, disable it.
+    // Map options. If the branch is assigned to a CO other than the one currently being edited, disable it ONLY if assigning a CO.
     const currentUserId = this.userId();
+    const currentRole = this.role();
     const options = this.rawBranches().map(b => {
-      const isAssignedToOther = b.co_user_id && b.co_user_id !== currentUserId;
+      const isAssignedToOther = currentRole === 'CO' && b.co_user_id && b.co_user_id !== currentUserId;
       return {
         label: isAssignedToOther ? `${b.name} (Assigned)` : b.name,
         value: b.id,
@@ -296,8 +305,9 @@ export class Users implements OnInit {
     const isNew = !this.userId();
     // For new users, password is required
     const isPasswordValid = !isNew || !!this.password().trim();
+    const isEmailValid = !!this.email().trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email().trim());
 
-    if (this.username().trim() && this.fullName().trim() && this.role() && isPasswordValid) {
+    if (this.username().trim() && this.fullName().trim() && this.role() && isPasswordValid && isEmailValid) {
       this.saving.set(true);
       const payload: any = {
         username: this.username(),
@@ -343,7 +353,7 @@ export class Users implements OnInit {
             const branch = this.branches().find(b => b.value === res.branch_id);
             if (branch) res.branch_name = branch.label;
 
-            this.users.update(list => [...list, res]);
+            this.users.update(list => [res, ...list]);
             this.messageService.add({ severity: 'success', summary: 'Successful', detail: 'User Created', life: 3000 });
             this.userDialog.set(false);
             this.loadData();

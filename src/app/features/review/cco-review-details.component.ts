@@ -8,15 +8,29 @@ import { ButtonModule } from "primeng/button";
 import { TagModule } from "primeng/tag";
 import { Textarea } from "primeng/textarea";
 import { TooltipModule } from "primeng/tooltip";
+import { DialogModule } from "primeng/dialog";
 
 @Component({
   selector: "app-cco-review-details",
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonModule, TagModule, Textarea, TooltipModule],
+  imports: [CommonModule, FormsModule, ButtonModule, TagModule, Textarea, TooltipModule, DialogModule],
   templateUrl: "./cco-review-details.component.html",
   styleUrls: ["../../shared/styles/checklist-shared.css", "./cco-review-details.component.css"]
 })
 export class CcoReviewDetailsComponent implements OnInit {
+  displayRemarkChainDialog = false;
+  selectedTaskForChain: any = null;
+
+  openRemarkChainDialog(task: any) {
+    this.selectedTaskForChain = task;
+    this.displayRemarkChainDialog = true;
+  }
+
+  closeRemarkChainDialog() {
+    this.displayRemarkChainDialog = false;
+    this.selectedTaskForChain = null;
+  }
+
   assignmentId: number | null = null;
   tasks = signal<any[]>([]);
   taskGroups = signal<{ headerName: string; tasks: any[] }[]>([]);
@@ -37,7 +51,7 @@ export class CcoReviewDetailsComponent implements OnInit {
 
   isReviewActive(): boolean {
     const status = this.assignmentMeta()?.assignment_status?.toUpperCase();
-    return !!status && status !== 'COMPLETED';
+    return status === 'ESCALATED_TO_CCO' || status === 'TIMELINE_REVIEW';
   }
 
   getFormattedStatus(): string {
@@ -61,6 +75,8 @@ export class CcoReviewDetailsComponent implements OnInit {
       case 'COMPLETED':
         return 'success';
       case 'REJECTED':
+      case 'Overdue':
+      case 'OVERDUE':
         return 'danger';
       default:
         return 'secondary';
@@ -106,41 +122,103 @@ export class CcoReviewDetailsComponent implements OnInit {
     if (!this.assignmentId) return;
     this.api.getAssignmentTasks(this.assignmentId).subscribe({
       next: (data) => {
-        const enriched = data.map(t => ({
-          ...t,
-          review_status: t.review_status || null,
-          saved_review_status: t.review_status || null,
-          review_remark: t.review_remark || "",
-          evidence_url: t.evidence_url ? this.api.getFileUrl(t.evidence_url) : null,
-          remarks_history: []
-        }));
+        const currentTasksMap = new Map<number, any>();
+        (this.tasks() || []).forEach(ct => {
+          if (ct && ct.assignment_task_id) {
+            currentTasksMap.set(ct.assignment_task_id, ct);
+          }
+        });
 
-        let completedCount = 0;
-        if (enriched.length === 0) {
-          this.tasks.set(enriched);
-          this.groupTasks(enriched);
-          return;
-        }
+        const enriched = data.map(t => {
+          const existing = currentTasksMap.get(t.assignment_task_id);
 
-        enriched.forEach(task => {
-          this.api.getTaskRemarksHistory(this.assignmentId!, task.assignment_task_id).subscribe({
-            next: (history) => {
-              task.remarks_history = history;
-              completedCount++;
-              if (completedCount === enriched.length) {
-                this.tasks.set(enriched);
-                this.groupTasks(enriched);
-              }
-            },
-            error: (err) => {
-              console.error("Failed to load remarks history for task:", task.assignment_task_id, err);
-              completedCount++;
-              if (completedCount === enriched.length) {
-                this.tasks.set(enriched);
-                this.groupTasks(enriched);
-              }
+          // Preserve unsaved draft review status if user changed it locally
+          let preservedReviewStatus = t.review_status || null;
+          if (existing && existing.review_status !== undefined && existing.review_status !== (existing.saved_review_status || null)) {
+            preservedReviewStatus = existing.review_status;
+          }
+
+          // Preserve unsaved draft review remark if user typed it locally
+          let preservedReviewRemark = t.review_remark || "";
+          if (existing && existing.review_remark !== undefined) {
+            const savedRemark = existing.saved_review_remark || t.review_remark || "";
+            if (existing.review_remark !== savedRemark && existing.review_remark !== "") {
+              preservedReviewRemark = existing.review_remark;
             }
-          });
+          }
+
+          return {
+            ...t,
+            review_status: preservedReviewStatus,
+            saved_review_status: t.review_status || null,
+            review_remark: preservedReviewRemark,
+            saved_review_remark: t.review_remark || "",
+            evidence_url: t.evidence_url ? this.api.getFileUrl(t.evidence_url) : null,
+            remarks_history: [],
+            evidence_history: []
+          };
+        });
+
+        this.api.getAssignmentEvidence(this.assignmentId!).subscribe({
+          next: (evidenceList) => {
+            enriched.forEach(task => {
+              const evidences = evidenceList.filter(e => e.assignment_task_id === task.assignment_task_id || e.task_id === task.task_id);
+              task.evidence_history = evidences.map(e => ({
+                ...e,
+                file_url: this.api.getFileUrl(e.file_url)
+              }));
+              if (task.evidence_history.length > 0 && !task.evidence_url) {
+                task.evidence_url = task.evidence_history[0].file_url;
+                task.has_evidence = true;
+              }
+            });
+
+            let completedCount = 0;
+            if (enriched.length === 0) {
+              this.tasks.set(enriched);
+              this.groupTasks(enriched);
+              return;
+            }
+
+            enriched.forEach(task => {
+              this.api.getTaskRemarksHistory(this.assignmentId!, task.assignment_task_id).subscribe({
+                next: (history) => {
+                  const historyList = history || [];
+                  const reviewRemarkText = task.assignment_review_remark || task.review_remark;
+                  if (reviewRemarkText && reviewRemarkText.trim()) {
+                    const exists = historyList.some((h: any) => h.remark.includes(reviewRemarkText) || reviewRemarkText.includes(h.remark));
+                    if (!exists) {
+                      historyList.push({
+                        role: 'CCO',
+                        username: 'CCO Reviewer',
+                        remark: reviewRemarkText.toLowerCase().includes('re-compliance') ? reviewRemarkText : `[Re-compliance Requested] ${reviewRemarkText}`,
+                        created_at: task.reviewed_at || new Date().toISOString()
+                      });
+                    }
+                  }
+                  task.remarks_history = historyList;
+                  completedCount++;
+                  if (completedCount === enriched.length) {
+                    this.tasks.set(enriched);
+                    this.groupTasks(enriched);
+                  }
+                },
+                error: (err) => {
+                  console.error("Failed to load remarks history for task:", task.assignment_task_id, err);
+                  completedCount++;
+                  if (completedCount === enriched.length) {
+                    this.tasks.set(enriched);
+                    this.groupTasks(enriched);
+                  }
+                }
+              });
+            });
+          },
+          error: (err) => {
+            console.error("Failed to load evidence list:", err);
+            this.tasks.set(enriched);
+            this.groupTasks(enriched);
+          }
         });
       },
       error: (err) => this.notification.error("Failed to load tasks: " + (err.message || err.statusText))
@@ -169,9 +247,16 @@ export class CcoReviewDetailsComponent implements OnInit {
     this.taskGroups.set(Array.from(groupsMap.entries()).map(([headerName, tasks]) => ({ headerName, tasks })));
   }
 
-  hasReviewerRemarks(task: any): boolean {
-    if (!task.remarks_history || task.remarks_history.length === 0) return false;
-    return task.remarks_history.some((h: any) => h.role === 'REVIEWER');
+  trackByTaskId(index: number, item: any): number {
+    return item?.assignment_task_id || index;
+  }
+
+  hasRemarksHistory(task: any): boolean {
+    return !!(task.remarks_history && task.remarks_history.length > 0);
+  }
+
+  hasEvidenceHistory(task: any): boolean {
+    return !!(task.evidence_history && task.evidence_history.length > 0);
   }
 
   isTaskSavedByDept(task: any): boolean {
